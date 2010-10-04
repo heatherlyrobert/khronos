@@ -1,0 +1,824 @@
+#======  ===========================(purpose)============================= 
+PREP     include the prototype headers                                     
+  incl   include crond header                   cron.h                    
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     crontab name validation                                            name()                     
+
+COND     prepare for run                                                   
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+
+COND     put a simple name through                                         
+  exec   call the crontab name validation       name                       "root.crontab", '-'                                      i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : root                                 
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : crontab                              
+  get    review the crontab name                unit_accessor              "name",          0                                       s_equal    crontab name     : root.crontab                         
+
+COND     put a one part name through                                       
+  exec   call the crontab name validation       name                       "root"                      , '-'                        i_not      0                                                       
+
+COND     put a three part name though                                      
+  exec   call the crontab name validation       name                       "root.crontab.special"      , '-'                        i_not      0                                                       
+
+COND     put a NEW version through                                         
+  exec   call the crontab name validation       name                       "root.crontab.NEW"          , '-'                        i_not      0                                                       
+
+COND     put a DEL version through                                         
+  exec   call the crontab name validation       name                       "root.crontab.DEL"          , '-'                        i_not      0                                                       
+
+COND     put a hidden file through                                         
+  exec   call the crontab name validation       name                       ".root.crontab"             , '-'                        i_not      0                                                       
+
+COND     put a name with a internal space through                          
+  exec   call the crontab name validation       name                       "root.my crontab"           , '-'                        i_not      0                                                       
+
+COND     put a name with a dash through                                    
+  exec   call the crontab name validation       name                       "root.my-crontab"           , '-'                        i_not      0                                                       
+
+COND     put a name with an underscore through                             
+  exec   call the crontab name validation       name                       "root.my_crontab"           , '-'                        i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : root                                 
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : my_crontab                           
+  get    review the crontab name                unit_accessor              "name",          0                                       s_equal    crontab name     : root.my_crontab                      
+
+COND     put a null user name through                                      
+  exec   call the crontab name validation       name                       ".my-crontab"               , '-'                        i_not      0                                                       
+
+COND     put a backup file through                                         
+  exec   call the crontab name validation       name                       "root.my-crontab~"          , '-'                        i_not      0                                                       
+
+COND     put a null description through                                    
+  exec   call the crontab name validation       name                       "root."                     , '-'                        i_not      0                                                       
+
+COND     put a name with a hash through                                    
+  exec   call the crontab name validation       name                       "root.my#crontab"           , '-'                        i_not      0                                                       
+
+COND     put a name with a parens through                                  
+  exec   call the crontab name validation       name                       "root.my(best)crontab"      , '-'                        i_not      0                                                       
+
+COND     put a name with a brackets through                                
+  exec   call the crontab name validation       name                       "root.my[best]crontab"      , '-'                        i_not      0                                                       
+
+COND     put a name with a splat through                                   
+  exec   call the crontab name validation       name                       "root.my*crontab"           , '-'                        i_not      0                                                       
+
+COND     put a user with a internal space through                          
+  exec   call the crontab name validation       name                       "my user.crontab"           , '-'                        i_not      0                                                       
+
+COND     put a user with a internal dash through                           
+  exec   call the crontab name validation       name                       "my user.crontab"           , '-'                        i_not      0                                                       
+
+COND     put a user with a leading hash                                    
+  exec   call the crontab name validation       name                       "#myuser.crontab"           , '-'                        i_not      0                                                       
+
+COND     put a short name through                                          
+  exec   call the crontab name validation       name                       "a.a"                      , '-'                         i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : a                                    
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : a                                    
+  get    review the crontab name                unit_accessor              "name",          0                                       s_equal    crontab name     : a.a                                  
+
+COND     put a max user name through                                       
+  exec   call the crontab name validation       name                       "abcdefghijklmnopqrst.uvwxyzabcdefghijklmnopqrstuvwxy", '-'   i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : abcdefghijklmnopqrst                 
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : uvwxyzabcdefghijklmnopqrstuvwxy      
+
+COND     put a one over user name through                                  
+  exec   call the crontab name validation       name                       "abcdefghijklmnopqrstu.vwxyzabcdefghijklmnopqrstuvwxy", '-'   i_not      0                                                       
+
+COND     put a long user name through                                      
+  exec   call the crontab name validation       name                       "abcdefghijklmnopqrstuvwxyz.abcdefghijklmnopqrstuvwxy", '-'   i_not      0                                                       
+
+COND     put a max decription through                                      
+  exec   call the crontab name validation       name                       "a.abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwx", '-'   i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : a                                    
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : abcdefghijklmnopqrstuvwxyzabcdefghi  
+
+COND     put a one over description through                                
+  exec   call the crontab name validation       name                       "a.abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxy", '-'  i_not      0                                                       
+
+COND     put a NEW version through with crontab switch                     
+  exec   call the crontab name validation       name                       "root.crontab.NEW"          , 'c'                        i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : root                                 
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : crontab                              
+  get    review the crontab name                unit_accessor              "name",          0                                       s_equal    crontab name     : root.crontab.NEW                     
+
+COND     put a DEL version through with crontab switch                     
+  exec   call the crontab name validation       name                       "root.crontab.DEL"          , 'c'                        i_equal    0                                                       
+  get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : root                                 
+  get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : crontab                              
+  get    review the crontab name                unit_accessor              "name",          0                                       s_equal    crontab name     : root.crontab.DEL                     
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     create and retire cronfiles                                        create(), retire()         
+
+COND     prepare for run                                                   
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create a cronfile pointer              tCFILE *the_cfile = NULL;                                                                                                                              
+
+COND     review initial cronfile list                                      
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  0) : (empty)                              
+
+COND     add a cronfile entry                                              
+  exec   add a new file                         create                     "root.crontab",       "root",     &the_cfile             i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    1f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  1) : F                                    
+
+COND     add another entry                                                 
+  exec   add a new file                         create                     "dotsuu.crontab",     "dotsuu",   &the_cfile             i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  2) : FF                                   
+
+COND     add a third entry                                                 
+  exec   add a new file                         create                     "root.system",        "root",     &the_cfile             i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    3f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  3) : FFF                                  
+
+COND     retire the first cronfile                                         
+  exec   retire a file                          retire                     "root.crontab"                                           i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  2) : FF                                   
+
+COND     retire the fake cronfile name                                     
+  exec   retire a file                          retire                     "joe.crontab"                                            i_equal    -1                                                      
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  2) : FF                                   
+
+COND     retire the already deleted one again                              
+  exec   retire a file                          retire                     "root.crontab"                                           i_equal    -1                                                      
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  2) : FF                                   
+
+COND     purge the remaining cronfiles                                     
+  exec   retire a file                          purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    0f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  0) : (empty)                              
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     create and retire cron lines                                       inventory(), retire()      
+
+COND     prepare for run                                                   
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create a cronfile pointer              tCFILE *the_1st   = NULL;                                                                                                                              
+  code   create a cronfile pointer              tCFILE *the_2nd   = NULL;                                                                                                                              
+
+COND     add a cronfile entry                                              
+  exec   add a new file                         create                     "root.crontab",       "root",     &the_1st               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    1f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  1) : F                                    
+
+COND     add another entry                                                 
+  exec   add a new file                         create                     "dotsuu.crontab",     "dotsuu",   &the_2nd               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  2) : FF                                   
+
+COND     add a line to the second                                          
+  load   add a basic line to stdin              * * * * * /bin/true > /dev/null                                                                                                                           
+  exec   add a new line                         inventory                  the_2nd,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     1e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  3) : FF_                                  
+
+COND     add a line to the first                                           
+  load   add a basic line to stdin              * * * * * /bin/ls > /dev/null                                                                                                                             
+  exec   add a new line                         inventory                  the_1st,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     2e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  4) : F_F_                                 
+
+COND     add a line to the second                                          
+  load   add a basic line to stdin              * * * * * /bin/echo > /dev/null                                                                                                                           
+  exec   add a new line                         inventory                  the_2nd,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     3e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  5) : F_F__                                
+
+COND     retire the first cronfile                                         
+  exec   retire a file                          retire                     "root.crontab"                                           i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    1f     2e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  3) : F__                                  
+
+COND     purge the remaining cronfiles                                     
+  exec   retire a file                          purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    0f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  0) : (empty)                              
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     verify the running of jobs                                         parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create a cronfile pointer              tCFILE *the_1st  = NULL;                                                                                                                               
+
+COND     run fast on a empty list                                          
+  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
+
+COND     run dispatch on an empty list                                     
+  exec   run dispatch                           dispatch                   1                                                        i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
+
+COND     run check on an empty list                                        
+  code   pause while jobs complete              sleep(2);                                                                                                                                              
+  exec   run check                              check                                                                               i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
+
+COND     add the first file                                                
+  exec   add a new file                         create                     "root.run_test",      "root",     &the_1st               i_equal    0                                                       
+
+COND     run fast on a lineless file                                       
+  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
+
+COND     run dispatch on a lineless file                                   
+  exec   run dispatch                           dispatch                   1                                                        i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
+
+COND     run check on a lineless file                                      
+  code   pause while jobs complete              sleep(2);                                                                                                                                              
+  exec   run check                              check                                                                               i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
+
+COND     add a couple quick frequent jobs                                  
+  load   add a basic line to stdin              * * * * * /bin/true > /dev/null                                                                                                                           
+  load   add a basic line to stdin              * * * * * /bin/true > /dev/null                                                                                                                           
+  load   add a basic line to stdin              * * * * * /bin/true > /dev/null                                                                                                                           
+  exec   add a new line                         inventory                  the_1st,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    1f     3e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  4) : F___                                 
+
+COND     run fast on it                                                    
+  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    3 line,    3 fast,    0 proc      
+
+COND     run dispatch on it                                                
+  exec   run dispatch                           dispatch                   1                                                        i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    3 line,    3 fast,    3 proc      
+
+COND     run check on it                                                   
+  code   pause while jobs complete              sleep(2);                                                                                                                                              
+  exec   run check                              check                                                                               i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+  get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    3 line,    3 fast,    0 proc      
+
+COND     purge the remaining cronfiles                                     
+  exec   retire a file                          purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    0f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  0) : (empty)                              
+
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     retire files with running lines                                    inventory(), retire()      
+
+COND     prepare for run                                                   
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create a cronfile pointer              tCFILE *the_1st   = NULL;                                                                                                                              
+  code   create a cronfile pointer              tCFILE *the_2nd   = NULL;                                                                                                                              
+
+COND     add a cronfile entry                                              
+  exec   add a new file                         create                     "root.crontab",       "root",     &the_1st               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    1f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  1) : F                                    
+
+COND     add another entry                                                 
+  exec   add a new file                         create                     "dotsuu.crontab",     "dotsuu",   &the_2nd               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  2) : FF                                   
+
+COND     add a line to the second                                          
+  load   add a basic line to stdin              6 6 9 9 1 /bin/true > /dev/null                                                                                                                           
+  exec   add a new line                         inventory                  the_2nd,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     1e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  3) : FF_                                  
+
+COND     add a line to the first                                           
+  load   add a basic line to stdin              * * * * * /bin/echo > /dev/null                                                                                                                           
+  exec   add a new line                         inventory                  the_1st,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     2e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  4) : F_F_                                 
+
+COND     add a line to the second                                          
+  load   add a basic line to stdin              * * * * * /bin/sleep 1 > /dev/null                                                                                                                        
+  exec   add a new line                         inventory                  the_2nd,              yUNIT_stdin                        i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     3e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  5) : F_F__                                
+
+COND     run fast on it                                                    
+  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+
+COND     run dispatch on it                                                
+  exec   run dispatch                           dispatch                   1                                                        i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+
+COND     retire the first cronfile                                         
+  exec   retire a file                          retire                     "root.crontab"                                           i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     3e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  5) : F_F__                                
+
+COND     run check on it                                                   
+  code   pause while jobs complete              sleep(2);                                                                                                                                              
+  exec   run check                              check                                                                               i_equal    0                                                       
+  exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
+  exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
+
+COND     retire the first cronfile                                         
+  get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    1f     2e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  3) : F__                                  
+
+COND     purge the remaining cronfiles                                     
+  code   pause while jobs complete              sleep(2);                                                                                                                                              
+  exec   run check                              check                                                                               i_equal    0                                                       
+  exec   retire a file                          purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+  get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    0f     0e                         
+  exec   list the lines                         list_cron                                                                           i_equal    0                                                       
+  exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  0) : (empty)                              
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with individual values                         parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse a min value                                                 
+  code   put the field value in the input       strcpy(the_input, "0");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1_____________________________       
+
+COND     force a failure to check                                          
+  code   put the field value in the input       strcpy(the_input, "0");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  mode   failure mode                                                      "FORCED_FAIL"                                                                                                                 
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+  mode   normal mode                                                       "NORMAL"                                                                                                                      
+
+COND     parse a small value                                               
+  code   put the field value in the input       strcpy(the_input, "2");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __1___________________________       
+
+COND     parse a moderate value                                            
+  code   put the field value in the input       strcpy(the_input, "15");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _______________1______________       
+
+COND     parse a max value                                                 
+  code   put the field value in the input       strcpy(the_input, "29");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____________________________1       
+
+COND     parse a just over max value                                       
+  code   put the field value in the input       strcpy(the_input, "30");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -25                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a overly large value                                        
+  code   put the field value in the input       strcpy(the_input, "31");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -25                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a negative value                                            
+  code   put the field value in the input       strcpy(the_input, "-4");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -24                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a overly long value                                         
+  code   put the field value in the input       strcpy(the_input, "316");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -22                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse an alpha value                                              
+  code   put the field value in the input       strcpy(the_input, "b");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -23                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a zero led value                                            
+  code   put the field value in the input       strcpy(the_input, "03");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ___1__________________________       
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with lists of values                           parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse a small list                                                
+  code   put the field value in the input       strcpy(the_input, "0,1");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 11____________________________       
+
+COND     force a failure to check                                          
+  code   put the field value in the input       strcpy(the_input, "0,1");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  mode   failure mode                                                      "FORCED_FAIL"                                                                                                                 
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+  mode   normal mode                                                       "NORMAL"                                                                                                                      
+
+COND     parse a small spread                                              
+  code   put the field value in the input       strcpy(the_input, "0,5");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1____1________________________       
+
+COND     parse a moderate spread                                           
+  code   put the field value in the input       strcpy(the_input, "0,15");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1______________1______________       
+
+COND     parse a max spread                                                
+  code   put the field value in the input       strcpy(the_input, "0,29");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1____________________________1       
+
+COND     parse a just over max spread                                      
+  code   put the field value in the input       strcpy(the_input, "0,30");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -25                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse an overly large spread                                      
+  code   put the field value in the input       strcpy(the_input, "0,50");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -25                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a zero lead list                                            
+  code   put the field value in the input       strcpy(the_input, "0,05");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1____1________________________       
+
+COND     parse a doubled value list                                        
+  code   put the field value in the input       strcpy(the_input, "5,05");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1________________________       
+
+COND     parse a backward list                                             
+  code   put the field value in the input       strcpy(the_input, "10,5");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1____1___________________       
+
+COND     parse a triple list                                               
+  code   put the field value in the input       strcpy(the_input, "5,10,15");                                                                                                                           
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1____1____1______________       
+
+COND     parse a quad list                                                 
+  code   put the field value in the input       strcpy(the_input, "5,10,15,25");                                                                                                                           
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1____1____1_________1____       
+
+COND     parse a bad quad list                                             
+  code   put the field value in the input       strcpy(the_input, "5,10,15,35");                                                                                                                        
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -25                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a big list                                                  
+  code   put the field value in the input       strcpy(the_input, "1,2,3,4,5,6,7,8,9,10,15,25");                                                                                                        
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _1111111111____1_________1____       
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with steps                                     parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse an all (*)                                                  
+  code   put the field value in the input       strcpy(the_input, "*");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 111111111111111111111111111111       
+
+COND     force a failure to check                                          
+  code   put the field value in the input       strcpy(the_input, "*");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  mode   failure mode                                                      "FORCED_FAIL"                                                                                                                 
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_       
+  mode   normal mode                                                       "NORMAL"                                                                                                                      
+
+COND     parse an all with min step                                        
+  code   put the field value in the input       strcpy(the_input, "*/1");                                                                                                                                 
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 111111111111111111111111111111       
+
+COND     parse an all with small step                                      
+  code   put the field value in the input       strcpy(the_input, "*/2");                                                                                                                                 
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_       
+
+COND     parse an all with larger step                                     
+  code   put the field value in the input       strcpy(the_input, "*/3");                                                                                                                                 
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1__1__1__1__1__1__1__1__1__1__       
+
+COND     parse an all with moderate step                                   
+  code   put the field value in the input       strcpy(the_input, "*/10");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1_________1_________1_________       
+
+COND     parse an all with large step                                      
+  code   put the field value in the input       strcpy(the_input, "*/20");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1___________________1_________       
+
+COND     parse an all with oversize step                                   
+  code   put the field value in the input       strcpy(the_input, "*/40");                                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -15                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse an all with double steps                                    
+  code   put the field value in the input       strcpy(the_input, "*/10/40");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -10                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse an all with negative step                                   
+  code   put the field value in the input       strcpy(the_input, "*/-4");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -13                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse an all with zero step                                       
+  code   put the field value in the input       strcpy(the_input, "*/0");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -14                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse an all with alpha step                                      
+  code   put the field value in the input       strcpy(the_input, "*/b");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -13                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a a value and a step                                        
+  code   put the field value in the input       strcpy(the_input, "3/2");                                                                                                                               
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -15                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with ranges                                    parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse a min range                                                 
+  code   put the field value in the input       strcpy(the_input, "1-2");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _11___________________________       
+
+COND     parse a little range                                              
+  code   put the field value in the input       strcpy(the_input, "1-4");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _1111_________________________       
+
+COND     parse a moderage range                                            
+  code   put the field value in the input       strcpy(the_input, "1-15");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _111111111111111______________       
+
+COND     parse a shifted range                                             
+  code   put the field value in the input       strcpy(the_input, "16-28");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ________________1111111111111_       
+
+COND     parse a max range                                                 
+  code   put the field value in the input       strcpy(the_input, "0-29");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 111111111111111111111111111111       
+
+COND     parse a backward range                                            
+  code   put the field value in the input       strcpy(the_input, "10-5");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -34                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a range starting too early                                  
+  code   put the field value in the input       strcpy(the_input, "-2-8");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -24                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a range ending too late                                     
+  code   put the field value in the input       strcpy(the_input, "5-30");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -35                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a doubled range                                             
+  code   put the field value in the input       strcpy(the_input, "5-10-15");                                                                                                                           
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -20                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a range with two same values                                
+  code   put the field value in the input       strcpy(the_input, "5-5");                                                                                                                              
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1________________________       
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with ranges and steps                          parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse a small range and step                                      
+  code   put the field value in the input       strcpy(the_input, "1-5/2");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _1_1_1________________________       
+
+COND     force a failure to check                                          
+  code   put the field value in the input       strcpy(the_input, "1-5/2");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  mode   failure mode                                                      "FORCED_FAIL"                                                                                                                 
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _11111________________________       
+  mode   normal mode                                                       "NORMAL"                                                                                                                      
+
+COND     parse a small range and larger step                               
+  code   put the field value in the input       strcpy(the_input, "1-5/3");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _1__1_________________________       
+
+COND     parse a small range and big step                                  
+  code   put the field value in the input       strcpy(the_input, "1-5/5");                                                                                                                             
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -15                                                     
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+
+COND     parse a moderate range and small step                             
+  code   put the field value in the input       strcpy(the_input, "5-20/2");                                                                                                                            
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1_1_1_1_1_1_1_1__________       
+
+COND     parse a moderate range and middling step                          
+  code   put the field value in the input       strcpy(the_input, "5-20/8");                                                                                                                            
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1_______1________________       
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with lists and ranges                          parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse two small ranges                                            
+  code   put the field value in the input       strcpy(the_input, "2-3,10-12");                                                                                                                         
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11______111_________________       
+
+COND     force a failure to check                                          
+  code   put the field value in the input       strcpy(the_input, "2-3,10-12");                                                                                                                         
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  mode   failure mode                                                      "FORCED_FAIL"                                                                                                                 
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11______111_____1111111_____       
+  mode   normal mode                                                       "NORMAL"                                                                                                                      
+
+COND     parse two larger ranges                                           
+  code   put the field value in the input       strcpy(the_input, "2-12,20-28");                                                                                                                        
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11111111111_______111111111_       
+
+COND     parse three ranges                                                
+  code   put the field value in the input       strcpy(the_input, "2-3,10-12,20-28");                                                                                                                   
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11______111_______111111111_       
+
+COND     parse three ranges with an overlap                                
+  code   put the field value in the input       strcpy(the_input, "2-3,10-12,8-14");                                                                                                                    
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11____1111111_______________       
+
+COND     larger range before the smaller                                   
+  code   put the field value in the input       strcpy(the_input, "10-12,2-3");                                                                                                                         
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11______111_________________       
+
+
+
+
+#======  ===========================(purpose)=============================  =========(method)========= 
+SCRP     field level parsing with lists, ranges, and steps                  parse()                    
+
+COND     prepare for parsing                                               
+  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+  code   create an string for the input         char the_input[1000];                                                                                                                                  
+  code   create an string for the output        char the_output[1000];                                                                                                                                 
+
+COND     parse two ranges one with steps                                   
+  code   put the field value in the input       strcpy(the_input, "2-10/2,20-28");                                                                                                                       
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __1_1_1_1_1_________111111111_       
+
+COND     force a failure to check                                          
+  code   put the field value in the input       strcpy(the_input, "2-10/2,20-28");                                                                                                                       
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  mode   failure mode                                                      "FORCED_FAIL"                                                                                                                 
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
+  mode   normal mode                                                       "NORMAL"                                                                                                                      
+
+COND     parse two ranges both with steps                                  
+  code   put the field value in the input       strcpy(the_input, "2-10/2,20-28/3");                                                                                                                     
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __1_1_1_1_1_________1__1__1___       
+
+COND     parse an all with step, and two ranges both with steps            
+  code   put the field value in the input       strcpy(the_input, "*/5,2-10/2,20-28/3");                                                                                                                
+  exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
+  get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1_1_111_1_1____1____1__1_11___       
+
+
+
