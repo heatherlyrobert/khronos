@@ -226,11 +226,13 @@ watch         (void)
    int      len;
    /*---(get the last stop time)-----------------*/
    pulser = fopen(PULSER, "r");
-   fgets(buffer, 50 , pulser);
-   fclose(pulser);
-   len    = strlen(buffer) - 1;
-   buffer[len] = '\0';
-   yLOG_info  ("last end", buffer);
+   if (pulser != NULL) {
+      fgets(buffer, 50 , pulser);
+      fclose(pulser);
+      len    = strlen(buffer) - 1;
+      buffer[len] = '\0';
+      yLOG_info  ("last end", buffer);
+   }
    /*---(write the last end time)----------------*/
    watcher = fopen(WATCHER, "a");
    fprintf(watcher, "%s   end\n", buffer);
@@ -675,10 +677,14 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       if (recds == my.for_line + 1) {
          strncpy(cline->title, my.title, 20);
          cline->duration = my.duration;
-         cline->resched  = my.resched;
-         yLOG_delim ("title",   cline->title);
-         yLOG_char  ("dur",     cline->duration);
-         yLOG_char  ("resched", cline->resched);
+         cline->recovery = my.recovery;
+         cline->priority = my.priority;
+         cline->alerting = my.alerting;
+         yLOG_delim ("title",    cline->title);
+         yLOG_char  ("duration", cline->duration);
+         yLOG_char  ("recovery", cline->recovery);
+         yLOG_char  ("priority", cline->priority);
+         yLOG_char  ("alerting", cline->alerting);
       }
       /*---(parse)------------------------------*/
       rc = 0;
@@ -704,6 +710,19 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
 char               /* PURPOSE : read job context lines for additional data ---*/
 context            (int a_recd, cchar *a_data)
 {
+   /*---(design notes)-------------------*/
+   /*
+    *   this information makes crond more resilent, recoverable, and
+    *   informative while maintaining backwards compatibility with
+    *   previous crons as the additions would appear as comments to them.
+    *
+    *   the additional fields are...
+    *      - name      : summary text to give the operator a description
+    *      - duration  : guidance on how long is the job expected to take
+    *      - recovery  : what to do if execution falls behind
+    *      - priority  : relative importance of the job
+    *      - alerting  : how to notify the operator of the failure/issue
+    */
    /*---(locals)--------------------------------*/
    int       len      = 0;
    int       i        = 0;                   /* loop iterator                 */
@@ -712,7 +731,7 @@ context            (int a_recd, cchar *a_data)
    /*---(basic formatting)----------------------*/
    if (a_data[0]   != '#')            return 0;
    len = strlen(a_data);
-   if (len <  80)                     return 0;
+   if (len !=  80)                    return 0;
    /*---(formatting clues)----------------------*/
    if (a_data[47]  != '[')            return 0;
    if (a_data[68]  != ']')            return 0;
@@ -721,9 +740,13 @@ context            (int a_recd, cchar *a_data)
    /*---(parse)---------------------------------*/
    my.for_line = a_recd;
    my.duration = '-';
-   my.resched  = '-';
+   my.recovery = '-';
+   my.priority = '-';
+   my.alerting = '-';
    if (strchr("-SMLBZ", a_data[71]) != NULL)     my.duration = a_data[71];
-   if (strchr("-qhtc",  a_data[73]) != NULL)     my.resched  = a_data[73];
+   if (strchr("-qhtc",  a_data[73]) != NULL)     my.recovery = a_data[73];
+   if (strchr("-"    ,  a_data[75]) != NULL)     my.priority = a_data[75];
+   if (strchr("-"    ,  a_data[77]) != NULL)     my.alerting = a_data[75];
    strncpy(my.title, a_data + 48, 21);
    my.title[20] = '\0';
    for (i = 19; i >= 0; --i) {
@@ -1207,8 +1230,10 @@ cronline_add (tCFILE *a_file, tCLINE *a_line)
    a_line->active       = 0;
    a_line->deleted      = 'n';
    strcpy(a_line->title, "");
-   a_line->resched      = '-';
    a_line->duration     = '-';
+   a_line->recovery     = '-';
+   a_line->priority     = '-';
+   a_line->alerting     = '-';
    /*---(null pointers)---------------*/
    a_line->next         = NULL;
    a_line->prev         = NULL;

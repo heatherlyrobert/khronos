@@ -10,11 +10,18 @@
 char        /* PURPOSE : display the current time and return the minute       */
 show_time     (void)
 {
+   FILE     *pulser;
    long      now       = time(NULL);
    tTIME    *curr      = localtime(&now);
    char      msg[60];
    strftime(msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", curr);
    yLOG_info  ("time",   msg);
+   pulser = fopen(PULSER, "w");
+   if (pulser != NULL) {
+      strftime(msg, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
+      fprintf(pulser, "%s\n", msg);
+      fclose(pulser);
+   }
    return curr->tm_min;
 }
 

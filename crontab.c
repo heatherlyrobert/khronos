@@ -24,6 +24,9 @@
  */
 
 
+char      debug_crontab     = 'n';
+#define   DEBUG_CRONTAB     if (debug_crontab == 'y')
+
 int       uid       = 0;               /* user id of the caller               */
 char      user[25]  = "";              /* user name of the caller             */
 uint      ulen      = 0;               /* length of the user name             */
@@ -50,6 +53,8 @@ char      crontab_dir     (void);
 char        /* PURPOSE : search for and process crontab updates               */
 crontab_source(cchar *a_name)
 {
+   DEBUG_CRONTAB  printf("crontab_source      : begin\n");
+   DEBUG_CRONTAB  printf("crontab_source      : %s\n", a_name);
    /*---(locals)--------------------------------*/
    tDIRENT  *den;
    DIR      *dir;
@@ -59,12 +64,15 @@ crontab_source(cchar *a_name)
       printf("can not open source directory\n");
       return -1;
    }
+   DEBUG_CRONTAB  printf("crontab_source      : half\n");
    while ((den = readdir(dir)) != NULL) {
+      DEBUG_CRONTAB  printf("crontab_source      : %s\n", den->d_name);
       if (strncmp(a_name, den->d_name, NAME)  == 0) {
          return 1;
       }
    }
    /*---(complete)------------------------------*/
+   DEBUG_CRONTAB  printf("crontab_source      : end\n");
    return 0;
 }
 
@@ -293,13 +301,16 @@ crontab_hup   (void)
    int       rc        = 0;
    FILE      *f = NULL;
    int        crond_pid = 0;
-   /*---(read pid)------------------------------*/
+   /*---(check for run file)--------------------*/
    f = fopen(LOCKFILE, "r");
+   if (f == NULL)   return -1;
+   /*---(read pid)------------------------------*/
    rc = fscanf(f, "%d", &crond_pid);
    if (rc < 1) {
       printf("can not locate pid for crond\n");
       return -1;
    }
+   /*---(close file)----------------------------*/
    fclose(f);
    /*---(send signal)---------------------------*/
    kill(crond_pid, SIGHUP);
@@ -310,17 +321,21 @@ crontab_hup   (void)
 char
 crontab_inst  (cchar *a_source)
 {
+   DEBUG_CRONTAB  printf("crontab_inst        : begin\n");
    /*---(locals)--------------------------------*/
    int       rc        = 0;
    char      x_file[500]= "";          /* file name                           */
    /*---(verify source file)-----------------*/
    rc = crontab_source(a_source);
+   DEBUG_CRONTAB  printf("crontab_inst        : back\n");
    if (rc != 1) {
       printf("crontab source file (%s) not found\n", a_source);
       return -1;
    }
    /*---(break up the file name)-------------*/
+   DEBUG_CRONTAB  printf("crontab_inst        : before name\n");
    rc = name (a_source, '-');
+   DEBUG_CRONTAB  printf("crontab_inst        : after name\n");
    if (rc <  0) {
       printf("crontab name is found, but format is not valid\n");
       return -2;
@@ -335,6 +350,7 @@ crontab_inst  (cchar *a_source)
    snprintf (x_file, 500, "%s/%s.%s", CRONTABS, user, my.desc);
    rc = remove   (x_file);
    /*---(copy file to crontab dir)-----------*/
+   DEBUG_CRONTAB  printf("crontab_inst        : before copy\n");
    snprintf (x_file, 500, "cp %s %s/%s.%s.NEW", a_source, CRONTABS, user, my.desc);
    rc = system   (x_file);
    if (WIFEXITED(rc) <  0) {
@@ -342,8 +358,10 @@ crontab_inst  (cchar *a_source)
       return -3;
    }
    /*---(send update)------------------------*/
+   DEBUG_CRONTAB  printf("crontab_inst        : before hup\n");
    crontab_hup();
    /*---(complete)---------------------------*/
+   DEBUG_CRONTAB  printf("crontab_inst        : end\n");
    return 0;
 }
 
@@ -426,6 +444,8 @@ main (int argc, char *argv[])
    /*---(no logger)-----------------------------*/
    my.logger = yLOG_begin("crontab", 2);
    /*---(init)----------------------------------*/
+   /*> if      (argc >= 1 && strncmp(argv[2], "@d",     5) == 0) debug_crontab = 'y';   <*/
+   /*> debug_crontab = 'y';                                                           <*/
    crontab_init();
    /*---(process)-------------------------------*/
    if      (argc == 4 && strncmp(argv[2], "-u",     5) == 0) crontab_user (argv[3]);

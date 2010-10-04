@@ -20,6 +20,9 @@ COND     put a simple name through                                         
 COND     put a one part name through                                       
   exec   call the crontab name validation       name                       "root"                      , '-'                        i_not      0                                                       
 
+COND     put a traditional name through                                    
+  exec   call the crontab name validation       name                       "crontab"                   , '-'                        i_not      0                                                       
+
 COND     put a three part name though                                      
   exec   call the crontab name validation       name                       "root.crontab.special"      , '-'                        i_not      0                                                       
 

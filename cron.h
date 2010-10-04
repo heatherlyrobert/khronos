@@ -26,37 +26,41 @@
  *
  *   ---------------------------------------------------------------------------
  *
- *
- *
- *
- *
- *
- *
- *   a job scheduler is a program that is in charge of unattended background
- *   executions, commonly known as batch processing.  job scheduling usually
- *   falls into one of four domains...
- *      - time-based        : run at specific frequencies, intevals, or times
- *      - dependency-based  : linked together in a chain of actions
- *      - event-based       : run when something specific happens
- *      - resource-based    : run when the resource are sufficently available
- *
- *   crond is intended to specifically provide time-based scheduling which is
- *   the most common form of small to moderate size batch automation in most
- *   environments.  dependency-based tools can be linked to time-based ones to
- *   refine system usage.  event-based is usually the domain of specific daemons
- *   to address specific needs, such as plug-and-play.
- *
  *   while crond has easily withstood the test of time, modern variations have
  *   developed a few clever new ideas, a great deal of cruft, and some wicked
  *   feature creep that has made the daemon grow big and complex.  our goal is
- *   to separate out the tools and provide a tool-chain to accomplish all these
+ *   to separate out the tools and provide a toolset to accomplish all these
  *   scheduling situations, but to keep each piece clean and tidy.
  *
- *   our cron is an attempt to get back to a more pure cron in the spirit of the
- *   original clean feature set, but with modern algorithm advancements.  it
- *   must also be highly maintainable and resiliant as well as much easier to
- *   debug and monitor than existing crons.  finally, we will be stripping a
- *   few features that can be done with other tools are/or are rarely used.
+ *   our crond tries to be a simplified and streamlined version which combines
+ *   the original simplicity, clarity, and power with updated algorithms,
+ *   automated testing, adjustable logging, and a few added job recovery
+ *   features.  the goal is to maintain backward compatibility while
+ *   accomodating an automation-intensive, power-user environment for our own
+ *   personal use.
+ *
+ *   crond will provide...
+ *      - near posix compatibility so it can do the full job
+ *      - backwards compatible existing crontab formats and contents
+ *      - strict glibc/ansi-c so it can be ported to and compilied on anything
+ *      - fast and efficient because we want to enable tons of automation
+ *      - solid logging and status updates to greatly assist monitoring
+ *      - clean, clean code so we can maintain it after long absences
+ *      - fullsome unit testing and regression testing suite
+ *      - eliminate known and potential security gaps and hacking vectors
+ *
+ *   crond will not provide...
+ *      - any automatic email -- everyone hates this in the long run anyway
+ *      - names for days and months, just use the numbers and like it
+ *      - extended shell variables (gonna have a spartan shell environment)
+ *      - alternate shells (we're gonna run dash by default, bash where we must)
+ *      - run-time configuration (its only for us, we can update code)
+ *      - special symbols for easly expressible things (@hourly, @weekly)
+ *
+ *   on a large scale, crond will not provide the other parts of batch work...
+ *      - dependency-based scheduling (like init systems provide)
+ *      - event-based launches like @reboot (daemons can and should do this)
+ *      - resource-based changes to schedules, such as system load or avail
  *
  *   we don't want to just use the system, we want to *own* it; so that means
  *   we have to fundmentally understand the critical services which only tearing
@@ -107,33 +111,6 @@
  *   cronline    : graphical timeline of cron jobs and statuses
  *      - simple tool to place jobs on a visual timeline
  *      - no need to build it in as it is ad-hoc and not always desired
- *
- */
-/*===[[ REQUIREMENTS ]]========================================================*
-
- *   our key characteristics and requirements are...
- *      - posix compatibility so it can do the full job
- *      - backwards compatible existing crontab formats and contents
- *      - drop in replacement for other crons, including dcron and vixie-cron
- *      - strict glibc/ansi-c so it can be ported to and compilied on anything
- *      - fast and efficient because we want to enable tons of automation
- *      - solid logging and status updates to greatly assist monitoring
- *      - clean, clean code so we can maintain it after long absences
- *      - fullsome unit testing and regression testing suite
- *      - eliminate known and potential security gaps and vectors
- *      - avoids duplicate, overruns when one call is still running
- *
- *   our cron will not provide...
- *      - any automatic email -- everyone hates this in the long run anyway
- *      - dependency-based services (that will be the task of init)
- *      - event-based services such as @reboot (other tools for that)
- *      - names for days and months, just use the numbers and like it
- *      - extended shell variables (gonna have a spartan shell environment)
- *      - alternate shells (preferably sash/dash, but also bash)
- *      - run-time configuration (its only for us, we can update code)
- *      - special symbols for easly expressible things (@hourly, @weekly)
- *      - run gui jobs
- *      - use of % signs in commands to indicate new lines
  *
  */
 /*===[[ SISO : STRICT IN, STRICT OUT ]]========================================*
@@ -287,8 +264,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5a"
-#define VER_TXT   "start evolving to self-checking and setup"
+#define VER_NUM   "0.5b"
+#define VER_TXT   "up and running again with cronpulse and passing unit test"
 
 
 /*---(headers)--------------------------------------------------*/
@@ -377,8 +354,10 @@ struct cACCESSOR
    /*---(context info)---------*/
    int       for_line;           /* line which uses context (next one)        */
    char      title[DESC];        /* title of current cron line                */
-   char      resched;            /* -=never, c=cumm, f=fixed, w=+2hrs         */
    char      duration;           /* -=<m, s=1-5m, m=5-20m, l=20-60m, b=>60m   */
+   char      recovery;           /* -=never, c=cumm, f=fixed, w=+2hrs         */
+   char      priority;           /* -=normal                                  */
+   char      alerting;           /* -=none                                    */
    /*---(trigger)--------------*/
    char      resync;             /* update crontabs : n=not, -=marked, a=all  */
 } my;
@@ -410,7 +389,9 @@ struct cCLINE {
    char      dow[7];         /* bools : launch on day of week 0-6, beg sun    */
    char      title[DESC];    /* user assigned title of current cron line      */
    char      duration;       /* -=<m, S=<5m,  M=<20m,  L=<60m,  B=>60m        */
-   char      resched;        /* -=no, q=+15m, h=+1hr,  t=+2hr,  c=cumm        */
+   char      recovery;       /* -=no, q=+15m, h=+1hr,  t=+2hr,  c=cumm        */
+   char      priority;       /* -=normal                                      */
+   char      alerting;       /* -=none                                        */
    tCLINE   *next;           /* next line in line's doubly linked list        */
    tCLINE   *prev;           /* next line in line's doubly linked list        */
    tCLINE   *fnext;          /* next line in the fast path linked list        */
