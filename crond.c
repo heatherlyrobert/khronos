@@ -26,8 +26,8 @@ int       nproc  = 0;
 /*====================------------------------------------====================*/
 static void      o___HOUSEKEEPING____________o (void) {;};
 
-char        /* PURPOSE : early initialization                          */
-initialize    (const char a_quiet)
+char               /* PURPOSE : get the logging up and going -----------------*/
+initialize         (const char a_quiet)
 {
    /*---(defense)-------------------------------*/
    if (getuid() != 0) {
@@ -44,7 +44,8 @@ initialize    (const char a_quiet)
       exit(1);
    }
    yLOG_info  ("purpose",  "consistent, reliable time-based job scheduling");
-   yLOG_info  ("version",  "0.2f - building cronfile entries and SLL");
+   yLOG_info  ("ver_num",  VER_NUM);
+   yLOG_info  ("ver_txt",  VER_TXT);
    yLOG_info  ("cli args", "none");
    /*---(init)----------------------------------*/
    yLOG_enter (__FUNCTION__);
@@ -55,8 +56,8 @@ initialize    (const char a_quiet)
    return 0;
 }
 
-char        /* PURPOSE : exit on completion                            */
-terminate     (const char *a_func, const int a_exit)
+char               /* PURPOSE : exit on termintation/signal ------------------*/
+terminate          (const char *a_func, const int a_exit)
 {
    if (strncmp(a_func, "", 1) != 0) yLOG_exit  (a_func);
    /*---(complete)------------------------------*/
@@ -65,8 +66,8 @@ terminate     (const char *a_func, const int a_exit)
    return 0;
 }
 
-void        /* PURPOSE : handle signals                                */
-communicate   (const int a_signal)
+void               /* PURPOSE : handle signals -------------------------------*/
+communicate        (const int a_signal)
 {
    switch (a_signal) {
    case  SIGHUP:
@@ -87,8 +88,8 @@ communicate   (const int a_signal)
    return;
 }
 
-char        /* PURPOSE : setup signal handling                         */
-signals       (void)
+char               /* PURPOSE : setup signal handling ------------------------*/
+signals            (void)
 {
    signal(SIGCHLD,  SIG_IGN);        /* ignore child          */
    signal(SIGTSTP,  SIG_IGN);        /* ignore tty signals    */
@@ -100,8 +101,8 @@ signals       (void)
    return 0;
 }
 
-char        /* PURPOSE : daemonize the program                         */
-daemonize     (void)
+char               /* PURPOSE : daemonize the program ------------------------*/
+daemonize          (void)
 {
    yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
@@ -377,6 +378,20 @@ assimilate    (cchar *a_name)
       yLOG_exit  (__FUNCTION__);
       return -1;
    }
+   /*---(check on crontab file)-----------------*/
+   struct    stat s;
+   rc = lstat(a_name, &s);
+   if  (rc < 0) {
+      yLOG_info  ("FAILED",  "crontab file does not exist");
+      yLOG_exit  (__FUNCTION__);
+      return -2;
+   }
+   if  (!S_ISREG(s.st_mode))  {
+      yLOG_info  ("FAILED",  "crontab is not a regular file");
+      yLOG_exit  (__FUNCTION__);
+      return -2;
+   }
+   yLOG_info  ("file stat", "crontab is a normal file");
    /*---(elimintate exiting copy)---------------*/
    rc      = retire (my.name);
    if (strncmp(my.action, "DEL", 5) == 0) {
@@ -495,7 +510,7 @@ retire        (cchar *a_name)
    int       found = 0;
    /*---(process)-------------------------------*/
    for (file = cronhead; file != NULL; file = file->next) {
-      yLOG_info ("current", file->name);
+      yLOG_info ("compare", file->name);
       /*---(defense)-------------------------*/
       if (file->retire   == 'y')                  continue; /* already retired*/
       if (strncmp(a_name, file->name, NAME) != 0) continue; /* name wrong     */
@@ -533,7 +548,7 @@ retire        (cchar *a_name)
    }
    /*---(summarize)-----------------------------*/
    if (found == 0) {
-      yLOG_warn  ("crontab",  "not found, continuing");
+      yLOG_info  ("crontab",  "existing not found, continuing");
       yLOG_exit  (__FUNCTION__);
       return -1;
    }

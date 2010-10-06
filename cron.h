@@ -368,8 +368,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5d"
-#define VER_TXT   "added specific/fatal security checks on CRONDIR during startup"
+#define VER_NUM   "0.5e"
+#define VER_TXT   "added regular file type check to assimilating crontabs"
 
 
 /*---(headers)--------------------------------------------------*/
