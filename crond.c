@@ -146,6 +146,31 @@ daemonize     (void)
       yLOG_info  ("sid",    "creation FAILED");
       terminate(__FUNCTION__, 3);
    }
+   /*---(check security on crontabs)------------*/
+   struct    stat s;
+   int       rc = 0;
+   rc = lstat(CRONTABS, &s);
+   if  (rc < 0) {
+      yLOG_info  ("crondir", "directory does not exist");
+      terminate(__FUNCTION__, 6);
+   }
+   if  (!S_ISDIR(s.st_mode))  {
+      yLOG_info  ("crondir", "not a directory");
+      terminate(__FUNCTION__, 6);
+   }
+   if  (s.st_uid  != 0)  {
+      yLOG_info  ("crondir", "directory not owned by root");
+      terminate(__FUNCTION__, 6);
+   }
+   if  (s.st_gid  != 0)  {
+      yLOG_info  ("crondir", "directory group is not root");
+      terminate(__FUNCTION__, 6);
+   }
+   if  ((s.st_mode & 00777) != 00700)  {
+      yLOG_info  ("crondir", "directory permissions not 0700");
+      terminate(__FUNCTION__, 6);
+   }
+   yLOG_info  ("crondir", "directory owned by root:root and 0700");
    /*---(change to safe location)---------------*/
    yLOG_info  ("location", "change current dir to a safe place");
    if (chdir(CRONTABS) < 0) {

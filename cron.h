@@ -368,8 +368,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5c"
-#define VER_TXT   "converted strcmp to strncmp to start buffer hardening"
+#define VER_NUM   "0.5d"
+#define VER_TXT   "added specific/fatal security checks on CRONDIR during startup"
 
 
 /*---(headers)--------------------------------------------------*/
