@@ -58,7 +58,7 @@ initialize    (const char a_quiet)
 char        /* PURPOSE : exit on completion                            */
 terminate     (const char *a_func, const int a_exit)
 {
-   if (strcmp(a_func, "") != 0) yLOG_exit  (a_func);
+   if (strncmp(a_func, "", 1) != 0) yLOG_exit  (a_func);
    /*---(complete)------------------------------*/
    yLOG_end   ();
    if (a_exit > 0) exit(a_exit);
@@ -222,7 +222,7 @@ watch         (void)
    if (my.updates) return 0;
    FILE    *pulser;
    FILE    *watcher;
-   char     buffer[50];
+   char     buffer[55];
    int      len;
    /*---(get the last stop time)-----------------*/
    pulser = fopen(PULSER, "r");
@@ -269,56 +269,6 @@ prepare       (void)
 /*===----                        crontab updates                       ----===*/
 /*====================------------------------------------====================*/
 static void      o___CRONTABS________________o (void) {;};
-
-char        /* PURPOSE : search for and process crontab updates               */
-search_OLD    (cchar a_scope)
-{
-   if (a_scope == '?' && my.resync == 'n')  return -1;
-   yLOG_enter (__FUNCTION__);
-   /*---(locals)--------------------------------*/
-   tDIRENT  *den;
-   DIR      *dir;
-   char     *name;
-   int       count = 0;
-   /*---(save scope)-----------------------------*/
-   if (a_scope    != '?')  my.resync   = a_scope;
-   /*---(open dir)------------------------------*/
-   dir = opendir(CRONTABS);
-   if (dir == NULL) {
-      yLOG_info("crondir", "FATAL, not found");
-      yLOG_exit  (__FUNCTION__);
-      return 0;
-   }
-   if (my.resync == 'a') yLOG_info("scope", "clear and load all files");
-   else                  yLOG_info("scope", "look only for updated files");
-   while ((den = readdir(dir)) != NULL) {
-      /*---(filter files)-----------------------*/
-      if (den->d_name[0] ==  '.')                             continue;
-      if (den->d_name[0] != '#') {
-         if (my.resync == 'a') {
-            assimilate (den->d_name);
-            ++count;
-         }
-         continue;
-      }
-      if (strlen(den->d_name) < 2) continue;
-      ++count;
-      /*---(rename)-----------------------------*/
-      name = den->d_name + 1;
-      rename(den->d_name, name);
-      /*---(process)----------------------------*/
-      assimilate(name);
-   }
-   closedir(dir);
-   yLOG_value ("count",  count);
-   /*---(complete)------------------------------*/
-   my.resync = 'n';
-   yLOG_exit  (__FUNCTION__);
-   /*---(run fast)------------------------------*/
-   if (count > 0) fast (0, 0);
-   /*---(complete)------------------------------*/
-   return 0;
-}
 
 char        /* PURPOSE : search for and process crontab updates               */
 search        (cchar a_scope)
@@ -490,7 +440,7 @@ name          (cchar *a_name, cchar a_loc)
    /*---(defense, improper format)--------------*/
    p = strtok(NULL,   ".");
    if (a_loc == 'c') {
-      if (p != NULL && strcmp(p, "NEW") != 0 && strcmp(p, "DEL") != 0) {
+      if (p != NULL && strncmp(p, "NEW", 4) != 0 && strncmp(p, "DEL", 4) != 0) {
          yLOG_info  ("name",  "crontab name is illegally suffixed");
          yLOG_exit  (__FUNCTION__);
          return -7;
@@ -641,7 +591,7 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
    yLOG_point ("cfile",    a_cfile);
    while (1) {
       /*---(get the line)-----------------------*/
-      fgets(buffer, LINE, a_source);
+      fgets(buffer, LINE - 5, a_source);
       if (feof(a_source))    break;
       len = strlen(buffer) - 1;
       buffer[len] = '\0';
@@ -1343,21 +1293,21 @@ char          unit_answer [ LEN_TEXT ];
 char*
 unit_accessor(char *a_question, int a_num)
 {
-   if        (strcmp(a_question, "parsed")      == 0) {
+   if        (strncmp(a_question, "parsed", 20)      == 0) {
       snprintf(unit_answer, LEN_TEXT, "parsed frequency : %.35s", my.parsed);
-   } else if (strcmp(a_question, "name")        == 0) {
+   } else if (strncmp(a_question, "name", 20)        == 0) {
       snprintf(unit_answer, LEN_TEXT, "crontab name     : %.35s", my.name);
-   } else if (strcmp(a_question, "user")        == 0) {
+   } else if (strncmp(a_question, "user", 20)        == 0) {
       snprintf(unit_answer, LEN_TEXT, "user name        : %.35s", my.user);
-   } else if (strcmp(a_question, "desc")        == 0) {
+   } else if (strncmp(a_question, "desc", 20)        == 0) {
       snprintf(unit_answer, LEN_TEXT, "description      : %.35s", my.desc);
-   } else if (strcmp(a_question, "cron count")  == 0) {
+   } else if (strncmp(a_question, "cron count", 20)  == 0) {
       snprintf(unit_answer, LEN_TEXT, "cron counters    : %4df %5de", nfile, nentry);
-   } else if (strcmp(a_question, "counters")    == 0) {
+   } else if (strncmp(a_question, "counters", 20)    == 0) {
       snprintf(unit_answer, LEN_TEXT, "counters         : %4d line, %4d fast, %4d proc", nentry, nfast, nproc);
-   } else if (strcmp(a_question, "file list")   == 0) {
+   } else if (strncmp(a_question, "file list", 20)   == 0) {
       snprintf(unit_answer, LEN_TEXT, "cronfile list    : %3d %10p %10p", nfile, cronhead, crontail);
-   } else if (strcmp(a_question, "cron shape")  == 0) {
+   } else if (strncmp(a_question, "cron shape", 20)  == 0) {
       char   xshape[40] = "(empty)";
       shape(xshape);
       snprintf(unit_answer, LEN_TEXT, "cron shape (%3d) : %s", nfile + nentry, xshape);

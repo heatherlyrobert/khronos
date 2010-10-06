@@ -2,7 +2,7 @@
 /*===[[ HEADER ]]=============================================================#
 
  *   focus         : system_admin
- *   niche         : scheduling
+ *   niche         : batch automation
  *   application   : crond
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
@@ -19,29 +19,28 @@
  */
 /*===[[ PURPOSE ]]=============================================================*
 
- *   crond is a posix-defined daemon that provides time-based job scheduling.
- *   in the best spirit of unix, it was designed to do one thing and do it well.
- *   crond uses a direct, expressive scheduling grammar in clear, clean, and
- *   simple text files to enable reliable, generalized time-based automation.
+ *   crond is a well-worn, familiar, time-tested, and posix-defined daemon that
+ *   provides time-based job scheduling.  while this is just one aspect of batch
+ *   automation, it is the most commonly used and crond does it exceptionally
+ *   well.  many attempts have been made to "do it better", but its still here.
  *
- *   ---------------------------------------------------------------------------
+ *   but, there are now many implementations of crond screaming out for use,
+ *   each of which comes with its own set of creeping featurism, cruft, and
+ *   accessibility "improvements."  they all just tend to piss me off as
+ *   everything seems to be trending towards a tighter integration, gui-focus,
+ *   kitchen-sink mentality that then tends to never get used.
  *
- *   while crond has easily withstood the test of time, modern variations have
- *   developed a few clever new ideas, a great deal of cruft, and some wicked
- *   feature creep that has made the daemon grow big and complex.  our goal is
- *   to separate out the tools and provide a toolset to accomplish all these
- *   scheduling situations, but to keep each piece clean and tidy.
+ *   our crond will attempt to implement the original simplicity, clarity, and
+ *   power with updated algorithms, automated testing, strong logging and
+ *   monitoring, stronger security, and a few added recovery/notification
+ *   features.  we will maintain backward compatibility while focusing on an
+ *   automation-intensive, power-user environment for our own personal use.
  *
- *   our crond tries to be a simplified and streamlined version which combines
- *   the original simplicity, clarity, and power with updated algorithms,
- *   automated testing, adjustable logging, and a few added job recovery
- *   features.  the goal is to maintain backward compatibility while
- *   accomodating an automation-intensive, power-user environment for our own
- *   personal use.
+ *   "do one thing and do it well (securely) and focus on technical power users"
  *
  *   crond will provide...
  *      - near posix compatibility so it can do the full job
- *      - backwards compatible existing crontab formats and contents
+ *      - backwards compatible with existing crontab formats (great design)
  *      - strict glibc/ansi-c so it can be ported to and compilied on anything
  *      - fast and efficient because we want to enable tons of automation
  *      - solid logging and status updates to greatly assist monitoring
@@ -79,6 +78,72 @@
  *   seek what they sought ~ Matsuo Basho
  *
  *   at the end of the day, this is wicked critical and deserves the attention
+ *
+ */
+/*===[[ ALTERNATIVES and COMPONENTS ]]=========================================*
+
+ *   this is a survey of current cron implementations and related tools so we
+ *   can get a good sense of what's out there, what it can do, and what problems
+ *   they are trying to solve...
+ *
+ *    sys-process/vixie-cron (57k)
+ *       - "standard" cron system for linux distributions (vixie = paul vixie)
+ *
+ *    sys-process/anacron (23k)
+ *       - supplements cron to deal with inconsistent uptime, like laptops
+ *       - is run daily and looks for jobs for that day or that haven't run yet
+ *       - helps with housekeeping, but doesn't schedule tighter than days
+ *       - INTERESTING IDEA, we'll see about some features
+ *
+ *    sys-process/bcron (56k)
+ *       - security focused version (b = bruce guetner)
+ *       - JUST TIGHTEN THE CRON SYSTEM AS IT IS?
+ *
+ *    sys-process/cronie (196k)
+ *       - slang for follower or yes-man
+ *       - very close to the original but with PAM and SELinux enhancements
+ *       - I WILL NOT GET CAUGHT IN THE PAM/SELINUX TRAP
+ *
+ *    kde-base/kcron (1215k)
+ *       - kde's task scheduler that runs on top of cron (WTF)
+ *       - can set environment variables and jobs
+ *       - MASSIVE PIG AT OVER A MEG !!!!
+ *
+ *    sys-process/dcron (21k)
+ *       - clean, lean cron version (d = matt dillon)
+ *       - great base for our code
+ *
+ *    sys-process/mcron (???)
+ *       - written in guile/scheme craziness (m = dale mellor)
+ *       - YOU GOTTA BE KIDDING ME
+ *
+ *    sys-process/fcron (539k)
+ *       - adds "nice" settings on the job (TOO COMPLEX)
+ *       - can run a job once between X and Y time (BUT HOW TO DECIDE WHEN)
+ *       - can take system load average into account (not allowed over NN%)
+ *       - lots of environment variable setting features (NO, NO, NO)
+ *       - "@" to indicate an interval or time relative to fcron's startup (NO)
+ *       - "%" to indicate "hourly", "daily", "monthly", etc (MAYBE SHORTCUTS)
+ *       - '!' to set a variable like niceness, mailto, load level, etc. (NO)
+ *       - allows one user running a job as another ("runas") (SECURITY RISK)
+ *       - "serial" to run next jobs finish-to-start (USE BASH SCRIPT &&, ||, !)
+ *       - WHOLLY COW ITS FAT!!!
+ *
+ *    sys-process/incron (196k)
+ *       - inotify based cron system (in = inotify)
+ *       - reacts to changes in the file system
+ *       - TOTALLY DIFFERENT THING, REJECTED
+ *
+ *    sys-process/at (96k)
+ *       - set a job to run once at a specific time
+ *
+ *   sys-process/cronbase (---k)
+ *      - appears to essentially be the "run-crons" written in shell/bash
+ *      - allows jobs to be dropped in a directory and run vs. using a crontab
+ *      - it makes packages easier to install and setup a simple cron job
+ *      - but, also makes it easy for jobs sneaking in and circumventing review
+ *      - this appears to be a "dumification" feature to me (with security risk)
+ *      - REJECTED
  *
  */
 /*===[[ COMPONENTS ]]==========================================================*
@@ -225,6 +290,45 @@
  *
  *
  */
+/*===[[ SECURITY ]]============================================================*
+
+ *   below is a list of security alerts relating to cron packages
+ *
+ *   2009-06 ubuntu
+ *      - did not properly check setgid and initgroups return codes
+ *      - could lead to security escalation
+ *
+ *   1996-12 department of energy
+ *      - buffer overrun potential reading CLI from users
+ *      - buffer overrun potential on setting environment variables
+ *      - local users can gain root privileges
+ *
+ *   2000-11 all
+ *      - crontab directory not secured from users so they can update crontabs
+ *      - local users can gain root privileges
+ *      * properly secure /var/spool/cron to 0700 (instead of 0755)
+ *
+ *   2007-10 aix
+ *      - buffer overrun on reading crontabs
+ *      - local users can gain root privileges
+ *      * limit line length and number of lines to prevent hacking !!!
+ *
+ *   2001-01 freebsd
+ *      - users can use crontab to read other folks crontabs
+ *      - security violation and potential updates allowing privilege escalation
+ *      * properly secure /var/spool/cron to 0700 (instead of 0755)
+ *
+ *   2001-05 vixie-cron
+ *      - crontab does not drop privileges before allowing crontab editing
+ *      - security violation and potential updates allowing privilege escalation
+ *      * do not allow editing of crontabs with crontab (traceability issue) !!!
+ *
+ *   unknown
+ *      - cron missets environment variable and sends mail to wrong address
+ *      - security violation and potential loss of access/secured information
+ *      * do not allow the setting of environment variables !!!
+ *
+ */
 /*===[[ DCRON ]]===============================================================*
 
  *   command line arguments...
@@ -264,8 +368,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5b"
-#define VER_TXT   "up and running again with cronpulse and passing unit test"
+#define VER_NUM   "0.5c"
+#define VER_TXT   "converted strcmp to strncmp to start buffer hardening"
 
 
 /*---(headers)--------------------------------------------------*/

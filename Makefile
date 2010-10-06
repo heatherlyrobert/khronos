@@ -59,11 +59,12 @@ bigclean           :
 install            : ${DAEMON}
 	${ECHO}  installing in b_nvdo
 	${COPY}  ${DAEMON}  /usr/sbin/
-	chmod    0700  /usr/sbin/${DAEMON}
-	chown    root  /usr/sbin/${DAEMON}
+	chmod    0700       /usr/sbin/${DAEMON}
+	chown    root:root  /usr/sbin/${DAEMON}
 	${COPY}  ${FRONT}   /usr/bin/
-	chown root /usr/bin/${FRONT}
-	chmod +s   /usr/bin/${FRONT}
+	chmod    0711       /usr/sbin/${DAEMON}
+	chown    root:users /usr/bin/${FRONT}
+	chmod    +s         /usr/bin/${FRONT}
 
 
 
