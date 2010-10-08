@@ -167,11 +167,11 @@ daemonize          (void)
       yLOG_info  ("crondir", "directory group is not root");
       terminate(__FUNCTION__, 6);
    }
-   if  ((s.st_mode & 00777) != 00700)  {
-      yLOG_info  ("crondir", "directory permissions not 0700");
+   if  ((s.st_mode & 00777) != 00600)  {
+      yLOG_info  ("crondir", "directory permissions not 0600");
       terminate(__FUNCTION__, 6);
    }
-   yLOG_info  ("crondir", "directory owned by root:root and 0700");
+   yLOG_info  ("crondir", "directory owned by root:root and 0600");
    /*---(change to safe location)---------------*/
    yLOG_info  ("location", "change current dir to a safe place");
    if (chdir(CRONTABS) < 0) {
@@ -489,7 +489,7 @@ name          (cchar *a_name, cchar a_loc)
       if (p != NULL) {
          yLOG_info  ("name",  "crontab name is illegally suffixed");
          yLOG_exit  (__FUNCTION__);
-         return -7;
+         return -8;
       }
    }
    /*---(complete)------------------------------*/
@@ -1019,7 +1019,7 @@ run        (tCFILE *a_file, tCLINE *a_line)
       yLOG_sexit  ();
       return 0;              /* parent moves on to next task     */
    }
-   output = fopen("/home/dotsuu/z_gehye/cronpulse.txt", "w");
+   output = fopen(STUFF, "a");
    /*---(display header for debugging)----------*/
    fprintf(output, "=== crond : the heatherly cron system ==================================begin===\n");
    /*---(get the date)-----------------------*/
@@ -1029,7 +1029,6 @@ run        (tCFILE *a_file, tCLINE *a_line)
    fprintf(output, "start     : %s\n",   msg);
    /*---(get user information)------------------*/
    pass = getpwnam(a_file->user);
-   fprintf(output, "pass      : got the user information from passwd\n");
    if (pass == NULL) {
       exit (-2);
    }
@@ -1060,7 +1059,6 @@ run        (tCFILE *a_file, tCLINE *a_line)
    }
    /*---(set permossions)-----------------------*/
    rc = initgroups(a_file->user, pass->pw_gid);
-   fprintf(output, "groups    : read initgroups\n");
    if (rc <  0) {
       exit (-3);
    }
@@ -1084,15 +1082,15 @@ run        (tCFILE *a_file, tCLINE *a_line)
    }
    /*---(close log)-----------------------------*/
    fprintf(output, "execl     : %.50s\n", a_line->cmd);
-   fprintf(output, "========================================================================begin===\n");
+   fprintf(output, "==========================================================================end===\n");
    fflush (output);
    fclose (output);
-   system("set > /home/dotsuu/z_gehye/environ.txt");
+   /*> system("set > /home/dotsuu/z_gehye/environ.txt");                              <*/
    /*---(execute)-------------------------------*/
    envp[6][0] = '\0';
    rc = execl(SHELL, SHELL, "-c", a_line->cmd, NULL, NULL);
    /*> rc = execle(SHELL, SHELL, "-c", a_line->cmd, NULL, envp);                      <*/
-   /*---(they should never come back)-----------*/
+   /*---(this should never come back)-----------*/
    _exit (-3);    /* must use _exit to get out properly                       */
 }
 

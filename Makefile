@@ -26,6 +26,7 @@ ${DAEMON}          : ${DAEMON}_main.o ${DAEMON}.o
 
 ${FRONT}           : ${FRONT}.o ${DAEMON}.o
 	${LINK}  -o ${FRONT}        ${FRONT}.o ${DAEMON}.o ${LIBS}
+	sha1sum ${FRONT}
 
 ${DAEMON}_unit     : ${DAEMON}_unit.o ${DAEMON}.o 
 	${LINK}  -o ${DAEMON}_unit  ${DAEMON}_unit.o ${DAEMON}.o ${LIBS} -lyUNIT -lyVAR 
@@ -61,10 +62,12 @@ install            : ${DAEMON}
 	${COPY}  ${DAEMON}  /usr/sbin/
 	chmod    0700       /usr/sbin/${DAEMON}
 	chown    root:root  /usr/sbin/${DAEMON}
+	sha1sum ${DAEMON}
 	${COPY}  ${FRONT}   /usr/bin/
 	chmod    0711       /usr/sbin/${DAEMON}
 	chown    root:users /usr/bin/${FRONT}
 	chmod    +s         /usr/bin/${FRONT}
+	sha1sum ${FRONT}
 
 
 

@@ -1,27 +1,6 @@
 /*====================--------[[ start-of-code ]]---------====================*/
 #include  "cron.h"
 
-/*
- * options....
- *    <desc>           add the file to the spool directory and SIGHUP crond
- *    -t <desc>        test a crontab file
- *    -l               list names of user's crontabs
- *    -d <desc>        delete crontab by name
- *    -a               list all crontabs (root only)
- *    -s               load as system crontab (root only)
- *
- *
- * rejected...
- *    -                bring in crontab from stdin (no traceability)
- *    -u <user>        manipulate crontabs for another user (no traceability)
- *    -e               edit the crontab in spool (no traceability)
- *    -c <dir>         specify the crontab directory (security risk)
- *
- *
- *
- *
- *
- */
 
 
 char      debug_crontab     = 'n';
@@ -135,9 +114,10 @@ crontab_local (cchar a_action)
    /*> printf("--crontabs-------------------------\n", a_user);                       <*/
    while ((den = readdir(dir)) != NULL) {
       rc = name (den->d_name, '-');
+      if (strcmp(my.user, "crontab") != 0) continue;
       if (rc == 0) {
-         if      (a_action == 'i') crontab_inst(den->d_name);
-         else                      printf("%s\n", den->d_name);
+         if      (a_action == 'i') crontab_inst  (my.desc);
+         else                      printf("%s\n", my.desc);
          ++count;
       }
    }
@@ -172,7 +152,7 @@ crontab_list  (cchar *a_user, cchar a_cat)
    /*> printf("--crontabs-------------------------\n", a_user);                       <*/
    while ((den = readdir(dir)) != NULL) {
       rc = name (den->d_name, 'c');
-      /*> if (rc != 0)                         continue;                              <*/
+      if (rc != 0)                         continue;
       /*---(filter files)-----------------------*/
       if (strncmp(a_user, "all", 5) == 0 && am_root == 'y') {
          if (a_cat == 'y') crontab_cat(den->d_name);
@@ -196,33 +176,40 @@ crontab_list  (cchar *a_user, cchar a_cat)
 char
 crontab_help (void)
 {
+   printf("\n");
    printf("usage: crontab [OPTION] [<FILE>]\n");
-   printf("crontab (by the heatherlys) manages crontab files for the cron daemon\n");
+   printf("\n");
+   printf("crontab (by the heatherlys) manages crontab source files for our crond daemon\n");
+   printf("\n");
    printf("posix/standard options implemented:\n");
    printf("   <file>           install/replace a crontab file\n");
    printf("   -l               list all your installed crontabs to stdout\n");
-   printf("   -d <file>        delete one of your crontabs by name\n");
-   printf("   -r <file>        delete one of your crontabs by name\n");
+   printf("   -d <desc>        delete one of your crontabs by name\n");
+   printf("   -r <desc>        delete one of your crontabs by name\n");
    printf("   -u <user>        act as another user (root only)\n");
+   printf("\n");
    printf("posix/standard options rejected:\n");
    printf("   - or null        install from stdin (no traceability, over-write risk)\n");
    printf("   -e               edit your crontab (no traceability or backup)\n");
-   printf("   -c <dir>         change the crontab dir (security risk)\n");
+   printf("   -c <dir>         change the crontab dir (no way, security risk)\n");
+   printf("\n");
    printf("extended options:\n");
    printf("   --all            list all installed crontabs (root only)\n");
    printf("   --list           list all your installed crontabs\n");
    printf("   --here           list all local crontabs that could be installed\n");
-   printf("   --test <file>    test a crontab file for correctness\n");
-   printf("   --system <file>  install system crontab (root only)\n");
+   printf("   --test <desc>    test a crontab file for formatting correctness\n");
+   printf("   --system <desc>  install system crontab (root only)\n");
    printf("   --purge          delete all your installed crontabs\n");
    printf("   --reload         delete all then install your crontabs\n");
-   printf("   --help           print usage information\n");
+   printf("   --help, -h       print usage information\n");
+   printf("\n");
    printf("crontab file naming rules\n");
-   printf("   - our version allows multiple crontabs per user\n");
    printf("   - must be formatted as \"crontab.<description>\"\n");
+   printf("   - our version allows multiple crontabs per user (different descritions)\n");
    printf("   - description is '.' plus 1 to 50 characters\n");
    printf("   - valid characters in the description are [A-Za-z0-9_] only\n");
-   printf("   - if you have only one crontab, just call it \"crontab.base\"\n");
+   printf("   - if you have only one crontab, likely just call it \"crontab.base\"\n");
+   printf("\n");
    return 0;
 }
 
@@ -325,20 +312,21 @@ crontab_inst  (cchar *a_source)
    /*---(locals)--------------------------------*/
    int       rc        = 0;
    char      x_file[500]= "";          /* file name                           */
-   /*---(verify source file)-----------------*/
-   rc = crontab_source(a_source);
-   DEBUG_CRONTAB  printf("crontab_inst        : back\n");
-   if (rc != 1) {
-      printf("crontab source file (%s) not found\n", a_source);
-      return -1;
-   }
    /*---(break up the file name)-------------*/
+   snprintf (x_file, 500, "%s.%s", "crontab", a_source);
    DEBUG_CRONTAB  printf("crontab_inst        : before name\n");
-   rc = name (a_source, '-');
+   rc = name (x_file, '-');
    DEBUG_CRONTAB  printf("crontab_inst        : after name\n");
    if (rc <  0) {
-      printf("crontab name is found, but format is not valid\n");
+      printf("crontab name is found, but format is not valid [%d]\n", rc);
       return -2;
+   }
+   /*---(verify source file)-----------------*/
+   rc = crontab_source(x_file);
+   DEBUG_CRONTAB  printf("crontab_inst        : back\n");
+   if (rc != 1) {
+      printf("crontab source file (%s) not found [%d]\n", x_file, rc);
+      return -1;
    }
    /*---(make sure to clear NEW)-------------*/
    snprintf (x_file, 500, "%s/%s.%s.NEW", CRONTABS, user, my.desc);
@@ -351,11 +339,25 @@ crontab_inst  (cchar *a_source)
    rc = remove   (x_file);
    /*---(copy file to crontab dir)-----------*/
    DEBUG_CRONTAB  printf("crontab_inst        : before copy\n");
-   snprintf (x_file, 500, "cp %s %s/%s.%s.NEW", a_source, CRONTABS, user, my.desc);
+   snprintf (x_file, 500, "cp %s.%s %s/%s.%s.NEW", "crontab", my.desc, CRONTABS, user, my.desc);
    rc = system   (x_file);
    if (WIFEXITED(rc) <  0) {
-      printf("can not copy file (%s.%s.NEW) to crondir\n", user, my.desc);
+      printf("can not copy file (%s.%s.NEW) to crondir [%d]\n", "crontab", my.desc, rc);
       return -3;
+   }
+   /*---(change to root ownership)-----------*/
+   snprintf (x_file, 500, "chown root:root %s/%s.%s.NEW", CRONTABS, user, my.desc);
+   rc = system   (x_file);
+   if (WIFEXITED(rc) <  0) {
+      printf("can not change to root ownership (%s.%s.NEW) [%d]\n", "crontab", my.desc, rc);
+      return -4;
+   }
+   /*---(change to strict permissions)-------*/
+   snprintf (x_file, 500, "chmod 0700 %s/%s.%s.NEW", CRONTABS, user, my.desc);
+   rc = system   (x_file);
+   if (WIFEXITED(rc) <  0) {
+      printf("can not change to strict permissions (%s.%s.NEW) [%d]\n", "crontab", my.desc, rc);
+      return -5;
    }
    /*---(send update)------------------------*/
    DEBUG_CRONTAB  printf("crontab_inst        : before hup\n");
@@ -453,6 +455,7 @@ main (int argc, char *argv[])
    /*---(process)-------------------------------*/
    char  *a = argv[1];
    if      (argc == 1)                                   crontab_stdin ();
+   else if (argc >= 2 && strncmp(a, "-h",      10) == 0) crontab_help  ();
    else if (argc >= 2 && strncmp(a, "--help",  10) == 0) crontab_help  ();
    else if (argc >= 2 && strncmp(a, "--list",  10) == 0) crontab_list  (user,  'n');
    else if (argc >= 2 && strncmp(a, "--all",   10) == 0) crontab_list  ("all", 'n');
@@ -466,6 +469,8 @@ main (int argc, char *argv[])
    else if (argc >= 2 && strncmp(a, "-e",       5) == 0) crontab_edit  ();
    else if (argc >= 2 && strncmp(a, "-",        5) == 0) crontab_stdin ();
    else if (argc >= 2 && argv[1][0] != '-')              crontab_inst  (argv[1]);
+   else if (argc >= 2 && strncmp(a, "--system",10) == 0) printf("feature not implemented yet\n");
+   else if (argc >= 2 && strncmp(a, "--test",  10) == 0) printf("feature not implemented yet\n");
    else    printf("requested action not understood or incomplete\n");
    /*---(complete)------------------------------*/
    yLOG_end   ();

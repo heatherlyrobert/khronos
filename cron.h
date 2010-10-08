@@ -1,8 +1,8 @@
 /*===[[ START HDOC ]]=========================================================*/
 /*===[[ HEADER ]]=============================================================#
 
- *   focus         : system_admin
- *   niche         : batch automation
+ *   focus         : (SA) system_admin
+ *   niche         : (au) automation
  *   application   : crond
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
@@ -210,9 +210,9 @@
  *   into disuse.  worse yet, folks start teaching other application to wake
  *   themselves up periodically to do some task -- wasting resources.
  *
- *   system maintenance...
- *      - cleansing temp and cache directories
- *      - checking user accounts
+ *   cleansing temp and cache directories
+ *
+ *   checking user accounts
  *
  *   getting latest map images on cloud cover
  *
@@ -229,6 +229,8 @@
  *   hourly chimes
  *
  *   indexing files
+ *
+ *   checking for root kits and/or viruses
  *
  */
 /*===[[ DESIGN DECISIONS ]]====================================================*
@@ -354,9 +356,7 @@
 
  *   TODO : handle system time changes -- look at dcron's logic
  *
- *   TODO : work out lauching in dash (perfect POSIX) only
- *
- *   TODO : cut down environment variables
+ *   TODO : look at a restart myself signal
  *
  */
 /*===[[ END HDOC ]]===========================================================*/
@@ -368,8 +368,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5e"
-#define VER_TXT   "added regular file type check to assimilating crontabs"
+#define VER_NUM   "0.5f"
+#define VER_TXT   "locked down crontab permissions and options for security"
 
 
 /*---(headers)--------------------------------------------------*/
@@ -397,6 +397,7 @@
 #define    LOCKFILE      "/var/run/crond.pid"
 #define    PULSER        "/var/log/yLOG.program_logging/cronpulse.intrarun_last_check"
 #define    WATCHER       "/var/log/yLOG.program_logging/cronwatch.interrun_monitoring"
+#define    STUFF         "/var/log/yLOG.program_logging/cronextra.execution_feedback"
 
 /*---(work files and directories)-------------------------------*/
 #define    CRONTABS      "/var/spool/cron/crontabs"
@@ -404,7 +405,7 @@
 #define    CRONCONF      "/etc"
 #define    CRONSYS       "/etc"
 #define    CRONUPDATE    "cron.update"
-#define    PATH          "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+#define    PATH          "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
 #define    SHELL         "/bin/dash"
 
 #define    USER            21     /* max user field   */
