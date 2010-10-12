@@ -8,7 +8,7 @@
  *
  *   base_system   : gnu/linux
  *   lang_name     : gnu/ansi-c (because it's right, just, best, and universal)
- *   dependencies  : yLOG
+ *   dependencies  : yLOG only
  *   size          : small (less than 2,000 slocL)
  * 
  *   author        : the_heatherlys
@@ -107,7 +107,7 @@
  *    kde-base/kcron (1215k)
  *       - kde's task scheduler that runs on top of cron (WTF)
  *       - can set environment variables and jobs
- *       - MASSIVE PIG AT OVER A MEG !!!!
+ *       - MASSIVE PIG AT OVER A MEG !!!! plus needs qt and kde !!!!
  *
  *    sys-process/dcron (21k)
  *       - clean, lean cron version (d = matt dillon)
@@ -368,8 +368,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5f"
-#define VER_TXT   "locked down crontab permissions and options for security"
+#define VER_NUM   "0.5g"
+#define VER_TXT   "works beautifully with latest _environ script in new system"
 
 
 /*---(headers)--------------------------------------------------*/
@@ -412,8 +412,8 @@
 #define    DESC            51     /* max desc field   */
 #define    NAME            72     /* max crontab name */
 #define    LEN            100     /* max text field   */
-#define    LINE          2500     /* max crontab line */
-#define    CMD           2000     /* max command len  */
+#define    LINE           500     /* max crontab line */
+#define    CMD            500     /* max command len  */
 
 #define    HOUR          3600     /* seconds per hour */
 

@@ -64,7 +64,7 @@ install            : ${DAEMON}
 	chown    root:root  /usr/sbin/${DAEMON}
 	sha1sum ${DAEMON}
 	${COPY}  ${FRONT}   /usr/bin/
-	chmod    0711       /usr/sbin/${DAEMON}
+	chmod    0711       /usr/bin/${FRONT}
 	chown    root:users /usr/bin/${FRONT}
 	chmod    +s         /usr/bin/${FRONT}
 	sha1sum ${FRONT}

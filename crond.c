@@ -167,11 +167,11 @@ daemonize          (void)
       yLOG_info  ("crondir", "directory group is not root");
       terminate(__FUNCTION__, 6);
    }
-   if  ((s.st_mode & 00777) != 00600)  {
-      yLOG_info  ("crondir", "directory permissions not 0600");
+   if  ((s.st_mode & 00777) != 00700)  {
+      yLOG_info  ("crondir", "directory permissions not 0700");
       terminate(__FUNCTION__, 6);
    }
-   yLOG_info  ("crondir", "directory owned by root:root and 0600");
+   yLOG_info  ("crondir", "directory owned by root:root and 0700");
    /*---(change to safe location)---------------*/
    yLOG_info  ("location", "change current dir to a safe place");
    if (chdir(CRONTABS) < 0) {
