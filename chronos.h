@@ -361,8 +361,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.6a"
-#define VER_TXT   "renamed to chronos (greek god of time)"
+#define VER_NUM   "0.6b"
+#define VER_TXT   "added direct execvp execution for speed and control"
 
 
 /*---(headers)--------------------------------------------------*/
