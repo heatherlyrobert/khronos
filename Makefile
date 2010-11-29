@@ -1,9 +1,9 @@
 #*============================---(source-start)---============================*#
 
 #*---(current variables)--------------*#
-BASE    = cron
-DAEMON  = crond
+BASE    = chronos
 FRONT   = crontab
+DIR     = /home/system/p_gvskav/chronos.heatherly_cron_daemon
 
 #*---(standard variables)-------------*#
 COMP    = gcc -c -std=gnu89 -g -pg -Wall -Wextra
@@ -17,34 +17,39 @@ ECHO    = @echo
 
 
 #*---(MAIN)---------------------------*#
-all                : ${DAEMON} ${FRONT} ${DAEMON}_unit
+all                : ${BASE} ${FRONT} ${BASE}_unit
 
 
 #*---(executables)--------------------*#
-${DAEMON}          : ${DAEMON}_main.o ${DAEMON}.o
-	${LINK}  -o ${DAEMON}       ${DAEMON}_main.o ${DAEMON}.o ${LIBS}
+${BASE}          : ${BASE}_main.o ${BASE}_list.o ${BASE}.o
+	${LINK}  -o ${BASE}         ${BASE}_main.o ${BASE}_list.o ${BASE}.o ${LIBS}
 
-${FRONT}           : ${FRONT}.o ${DAEMON}.o
-	${LINK}  -o ${FRONT}        ${FRONT}.o ${DAEMON}.o ${LIBS}
-	sha1sum ${FRONT}
+${BASE}_unit     : ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}.o 
+	${LINK}  -o ${BASE}_unit    ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}.o ${LIBS} -lyUNIT -lyVAR 
 
-${DAEMON}_unit     : ${DAEMON}_unit.o ${DAEMON}.o 
-	${LINK}  -o ${DAEMON}_unit  ${DAEMON}_unit.o ${DAEMON}.o ${LIBS} -lyUNIT -lyVAR 
+${FRONT}         : ${FRONT}.o ${BASE}_list.o
+	${LINK}  -o ${FRONT}        ${FRONT}.o ${BASE}_list.o   ${BASE}.o   ${LIBS}
 
 
 #*---(objects)------------------------*#
-${DAEMON}.o        : ${BASE}.h ${DAEMON}.c
-	${COMP}  ${DAEMON}.c ${INC}
+${BASE}.o        : ${BASE}.h ${BASE}.c
+	${COMP}  ${BASE}.c ${INC}
 
-${DAEMON}_main.o   : ${BASE}.h ${DAEMON}_main.c
-	${COMP}  ${DAEMON}_main.c
+${BASE}_main.o   : ${BASE}.h ${BASE}_main.c
+	${COMP}  ${BASE}_main.c
 
-${FRONT}.o         : ${BASE}.h ${FRONT}.c
-	${COMP}  ${FRONT}.c
+${BASE}_list.o   : ${BASE}.h ${BASE}_list.c
+	${COMP}  ${BASE}_list.c
 
-${DAEMON}_unit.o   : ${DAEMON}.unit
-	uUNIT    ${DAEMON}
-	${COMP}  -x c ${DAEMON}_unit.code
+${BASE}_test.o   : ${BASE}.h ${BASE}_test.c
+	${COMP}  ${BASE}_test.c
+
+${FRONT}.o       : ${BASE}.h ${FRONT}.c
+	${COMP}  ${FRONT}.c ${INC}
+
+${BASE}_unit.o   : ${BASE}.unit
+	uUNIT    ${BASE}
+	${COMP}  -x c ${BASE}_unit.code
 
 
 #*---(housecleaning)------------------*#
@@ -53,22 +58,43 @@ clean              :
 	${CLEAN} *.o
 	${CLEAN} *~
 	${CLEAN} temp*
+	${CLEAN} ${BASE}
 
 bigclean           :
 	${CLEAN} .*.swp
 
-install            : ${DAEMON}
+install            : ${BASE}
 	${ECHO}  installing in b_nvdo
-	${COPY}  ${DAEMON}  /usr/sbin/
-	chmod    0700       /usr/sbin/${DAEMON}
-	chown    root:root  /usr/sbin/${DAEMON}
-	sha1sum ${DAEMON}
-	${COPY}  ${FRONT}   /usr/bin/
+	cp -f    ${BASE}    /usr/sbin/
+	chown    root:root  /usr/sbin/${BASE}
+	chmod    0700       /usr/sbin/${BASE}
+	sha1sum  ${BASE}
+	cp -f    ${FRONT}    /usr/bin/
+	chown    root:root  /usr/bin/${FRONT}
 	chmod    0711       /usr/bin/${FRONT}
-	chown    root:users /usr/bin/${FRONT}
 	chmod    +s         /usr/bin/${FRONT}
-	sha1sum ${FRONT}
+	sha1sum  ${FRONT}
+	~/b_nvdo/call_graph
 
+gotesting          : 
+	mount --bind /bin     ${DIR}/unit_root/bin
+	#mount --bind /dev     ${DIR}/unit_root/dev
+	#mount --bind /etc     ${DIR}/unit_root/etc
+	#mount --bind /home    ${DIR}/unit_root/home
+	#mount --bind /lib     ${DIR}/unit_root/lib
+	#mount --bind /sbin    ${DIR}/unit_root/sbin
+	#mount --bind /usr     ${DIR}/unit_root/usr
+
+untesting          : 
+	mount | grep "${DIR}/unit_root/bin"  | wc -l
+	echo "rc=$?"
+	#mount -f  ${DIR}/unit_root/bin   2> /dev/null ||  umount ${DIR}/unit_root/bin
+	#mount -f  ${DIR}/unit_root/dev   ||  umount ${DIR}/unit_root/dev
+	#mount -f  ${DIR}/unit_root/etc   ||  umount ${DIR}/unit_root/etc
+	#mount -f  ${DIR}/unit_root/home  ||  umount ${DIR}/unit_root/home
+	#mount -f  ${DIR}/unit_root/lib   ||  umount ${DIR}/unit_root/lib
+	#mount -f  ${DIR}/unit_root/sbin  ||  umount ${DIR}/unit_root/sbin
+	#mount -f  ${DIR}/unit_root/usr   ||  umount ${DIR}/unit_root/usr
 
 
 #*============================----(source-end)----============================*#

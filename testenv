@@ -1,0 +1,79 @@
+#!/bin/bash
+
+BASE="/home/system/p_gvskav/crond.heatherly_cron_daemon"
+
+function  my_mount {
+   #---(name mountpoint)----------------------------#
+   mpoint="${BASE}/${1}"
+   #---(make mountpoint)----------------------------#
+   mkdir "$1" 2> /dev/null
+   rc="$?"
+   if [ "${rc}" = "0" ]; then
+      printf "make directory     :: %s\n" "$mpoint"
+   else
+      printf "already created    :: %s\n" "$mpoint"
+   fi
+   #---(umount)-------------------------------------#
+   umount  "$mpoint" 2> /dev/null
+   mount  --bind "/$1" "$mpoint" 2> /dev/null
+   rc="$?"
+   if [ "${rc}" = "0" ]; then
+      printf "mounted            :: %s\n" "$mpoint"
+   else
+      printf "already mounted    :: %s\n" "$mpoint"
+   fi
+   #---(complete)-----------------------------------#
+   return
+}
+
+
+function  my_umount {
+   #---(name mountpoint)----------------------------#
+   mpoint="${BASE}/${1}"
+   #---(umount)-------------------------------------#
+   umount  "$mpoint" 2> /dev/null
+   rc="$?"
+   if [ "${rc}" = "0" ]; then
+      printf "umounted           :: %s\n" "$mpoint"
+   else
+      printf "already umounted   :: %s\n" "$mpoint"
+   fi
+   #---(remove mountpoint)--------------------------#
+   rmdir "$1" 2> /dev/null
+   rc="$?"
+   if [ "${rc}" = "0" ]; then
+      printf "removed directory  :: %s\n" "$mpoint"
+   else
+      printf "already removed    :: %s\n" "$mpoint"
+   fi
+   #---(complete)-----------------------------------#
+   return
+}
+
+
+if [ "$1" = "mount" ]; then
+   if [ ! -f "/crond.c" ]; then
+      my_mount  "bin"
+      my_mount  "dev"
+      my_mount  "etc"
+      my_mount  "home"
+      my_mount  "lib"
+      my_mount  "opt"
+      my_mount  "root"
+      my_mount  "sbin"
+      my_mount  "usr"
+      chroot  "$BASE/" "/bin/bash"
+   fi
+else
+   if [ ! -f "/crond.c" ]; then
+      my_umount "bin"
+      my_umount "dev"
+      my_umount "etc"
+      my_umount "home"
+      my_umount "lib"
+      my_umount "opt"
+      my_umount "root"
+      my_umount "sbin"
+      my_umount "usr"
+   fi
+fi

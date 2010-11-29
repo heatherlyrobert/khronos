@@ -1,12 +1,13 @@
-/*===[[ START HDOC ]]=========================================================*/
+/*=============================[[ beg-of-code ]]==============================*/
+
 /*===[[ HEADER ]]=============================================================#
 
  *   focus         : (SA) system_admin
- *   niche         : (au) automation
- *   application   : crond
+ *   niche         : (ts) scheduler
+ *   application   : chronos
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
- *   base_system   : gnu/linux
+ *   base_system   : gnu/linux  (because it's powerful, universal, and hackable)
  *   lang_name     : gnu/ansi-c (because it's right, just, best, and universal)
  *   dependencies  : yLOG only
  *   size          : small (less than 2,000 slocL)
@@ -15,7 +16,15 @@
  *   created       : 2010-05
  *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
  *   end goal      : loosely coupled, strict interface, maintainable, portable
+ *
+ *   as always, keep the code small but defend tightly and log like crazy
  * 
+ */
+/*===[[ SUMMARY ]]=============================================================*
+
+ *   chronos is a fast, light, modern, technical, and simplified version of the
+ *   classic posix-defined crond time-based process scheduler.
+ *
  */
 /*===[[ PURPOSE ]]=============================================================*
 
@@ -24,13 +33,18 @@
  *   automation, it is the most commonly used and crond does it exceptionally
  *   well.  many attempts have been made to "do it better", but its still here.
  *
+ *   brian kernighan nailed it in the original (1979) by focusing on a real and
+ *   definite need by folks that understood automation on low power systems.  he
+ *   coupled it with an elegant, expressive, and terse scheduling grammar built
+ *   by computer science folks and kept it simple and robust.  bloody brilliant.
+ *
  *   but, there are now many implementations of crond screaming out for use,
  *   each of which comes with its own set of creeping featurism, cruft, and
  *   accessibility "improvements."  they all just tend to piss me off as
- *   everything seems to be trending towards a tighter integration, gui-focus,
- *   kitchen-sink mentality that then tends to never get used.
+ *   everything seems to be trending towards the closely coupled, gui-focused,
+ *   kitchen-sink mentality that then tends to display well but never gets used.
  *
- *   our crond will attempt to implement the original simplicity, clarity, and
+ *   chronos will attempt to implement the original simplicity, clarity, and
  *   power with updated algorithms, automated testing, strong logging and
  *   monitoring, stronger security, and a few added recovery/notification
  *   features.  we will maintain backward compatibility while focusing on an
@@ -38,38 +52,39 @@
  *
  *   "do one thing and do it well (securely) and focus on technical power users"
  *
- *   crond will provide...
- *      - near posix compatibility so it can do the full job
+ *   chronos will provide...
+ *      - near posix compatibility so it can do the full job on core features
  *      - backwards compatible with existing crontab formats (great design)
+ *      - additional, specific job recovery features (don't break compatibility)
  *      - strict glibc/ansi-c so it can be ported to and compilied on anything
  *      - fast and efficient because we want to enable tons of automation
- *      - solid logging and status updates to greatly assist monitoring
- *      - clean, clean code so we can maintain it after long absences
+ *      - solid logging and status updates so you never have to guess
+ *      - clean, clear code so we can maintain it after long absences
  *      - fullsome unit testing and regression testing suite
  *      - eliminate known and potential security gaps and hacking vectors
  *
- *   crond will not provide...
- *      - any automatic email -- everyone hates this in the long run anyway
- *      - names for days and months, just use the numbers and like it
+ *   chronos will not provide...
+ *      - automatic email -- everyone ultimately hates it (security risk)
+ *      - alternate shells (we're gonna run pure posix dash)
  *      - extended shell variables (gonna have a spartan shell environment)
- *      - alternate shells (we're gonna run dash by default, bash where we must)
- *      - run-time configuration (its only for us, we can update code)
+ *      - run-time configuration (no, its only for us, we can update code)
+ *      - names for days and months, just use the numbers and like it ;)
  *      - special symbols for easly expressible things (@hourly, @weekly)
  *
- *   on a large scale, crond will not provide the other parts of batch work...
+ *   on a large scale, chronos will not provide the other parts of batch work...
  *      - dependency-based scheduling (like init systems provide)
  *      - event-based launches like @reboot (daemons can and should do this)
  *      - resource-based changes to schedules, such as system load or avail
  *
  *   we don't want to just use the system, we want to *own* it; so that means
  *   we have to fundmentally understand the critical services which only tearing
- *   down and rebuilding can really teach.
+ *   down and rebuilding can really teach -- even if its more basic in the end.
  *
  *   as luck would have it, dcron (dillon's cron) is a wonderfully straight
  *   forward and clean implementation that we can build on.  it is licenced
  *   under the gnu gpl and so is perfect as our base.  so, we fork dcron...
  *
- *   so, as always, there are many, stable, accepted, existing programs and
+ *   so, as always, there are many stable, accepted, existing programs and
  *   utilities written by better programmers which are likely superior in
  *   speed, size, capability, and reliability; BUT, i would not have learned
  *   nearly as much just using them, so i follow the adage..
@@ -77,7 +92,8 @@
  *   TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;
  *   seek what they sought ~ Matsuo Basho
  *
- *   at the end of the day, this is wicked critical and deserves the attention
+ *   at the end of the day, this is wicked critical and deserves the attention.
+ *   it is also full of learning opportunities ;)
  *
  */
 /*===[[ ALTERNATIVES and COMPONENTS ]]=========================================*
@@ -115,7 +131,7 @@
  *
  *    sys-process/mcron (???)
  *       - written in guile/scheme craziness (m = dale mellor)
- *       - YOU GOTTA BE KIDDING ME
+ *       - YOU GOTTA BE KIDDING ME, SCHEME ?
  *
  *    sys-process/fcron (539k)
  *       - adds "nice" settings on the job (TOO COMPLEX)
@@ -127,7 +143,7 @@
  *       - '!' to set a variable like niceness, mailto, load level, etc. (NO)
  *       - allows one user running a job as another ("runas") (SECURITY RISK)
  *       - "serial" to run next jobs finish-to-start (USE BASH SCRIPT &&, ||, !)
- *       - WHOLLY COW ITS FAT!!!
+ *       - WHOLLY COW ITS HUGE!!!
  *
  *    sys-process/incron (196k)
  *       - inotify based cron system (in = inotify)
@@ -153,7 +169,7 @@
  *   components should function like quick little filters and wrappers rather
  *   than applications...
  *
- *   crond       : continuously running job launching daemon
+ *   chronos     : continuously running job launching daemon
  *      - pure dispatcher with overly strong monitoring and logging
  *      - attempt to build in as few exceptions and mutations as possiible
  *
@@ -187,18 +203,18 @@
  *   makes them extraordinarily vulnerable to attack and misuse.
  *
  *   so, we will be using a different model where inputs are limited and
- *   validated rigorously in such that it would be very difficult to exploit the
- *   program.
+ *   validated rigorously in such that it would be more difficult to exploit.
  *
  *   basic limits...
  *      - file names : 3-71 char, [A-Za-z0-9_], with '.' separating user.desc
  *      - user names : 1-20 characters and [A-Za-z0-9_] only
  *      - descripion : 1-50 characters and [A-Za-z0-9_] only
- *      - commands   : no longer than 2000 characters
- *      - records    : no longer than 2500 characters
+ *      - commands   : no longer than 250 characters
+ *      - records    : no longer than 250 characters
  *      - files      : unlimited per user
  *      - lines      : less than 1000 per file
  *      - VARS       : none
+ *      - SHELL      : /bin/dash
  *      - PATH       : /bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
  *
  */
@@ -241,7 +257,7 @@
  *      - we have seen several options for triggering a reread of the crontab
  *        files in the spool directory
  *      1 dcron saves a file called "cron.update" with a list of users that
- *        have updated their cron files (using crontab)
+ *        have updated their cron files (could lose the file)
  *      2 many crons change the date on the crontab directory to trigger a
  *        reread of the files (also requires crontab)
  *      3 we could save all updated crontabs with an extention of ".updated"
@@ -266,7 +282,7 @@
  *      - crond is typically just a process that runs without anyone paying
  *        any attention unless jobs stop completing -- hours or days later
  *      - i would like to create a mechanism whereby cron can somehow make it
- *        obvious if it is not running (something watching the watcher ;)
+ *        obvious if it is not running (someone watching the watcher ;)
  *      - i would also like to have an easy time knowing when cron was up and
  *        active versus down without manual work or research required
  *
@@ -282,7 +298,7 @@
  *      - usually crontabs are named after the users that submit them, but i
  *        like dillon's idea that a user should be able to have multiple
  *      - with that idea, names could be named anything, but i like the idea of
- *        doing "<username>_<description>" so that they sort easily
+ *        doing "<username>.<description>" so that they sort easily
  *
  *   security changes...
  *      - do not take any names with any characters outside a very basic range,
@@ -331,49 +347,27 @@
  *      * do not allow the setting of environment variables !!!
  *
  */
-/*===[[ DCRON ]]===============================================================*
-
- *   command line arguments...
- *      - logging level        : we will not make configurable
- *      - debugging level      : will use yLOG
- *      - foreground mode      : not an option
- *
- *
- *
- *   code size...
- *      - main       200
- *      - job        200
- *      - database   600
- *      - crontab    300
- *      - subs       150
- *      - defs       100
- *      - TOTAL     1500
- *
- *   our goal is to come in at 1000
- *
- */
 /*===[[ TODOS ]]===============================================================*
 
  *   TODO : handle system time changes -- look at dcron's logic
- *
- *   TODO : look at a restart myself signal
  *
  */
 /*===[[ END HDOC ]]===========================================================*/
 
 
 /*===[[ HEADER GUARD ]]=======================================================*/
-#ifndef YCRON
-#define YCRON loaded
+#ifndef YCHRONOS
+#define YCHRONOS loaded
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.5g"
-#define VER_TXT   "works beautifully with latest _environ script in new system"
+#define VER_NUM   "0.6a"
+#define VER_TXT   "renamed to chronos (greek god of time)"
 
 
 /*---(headers)--------------------------------------------------*/
 #include <yLOG.h>
+
 #include <sys/unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -395,16 +389,12 @@
 
 /*---(communcation files)---------------------------------------*/
 #define    LOCKFILE      "/var/run/crond.pid"
-#define    PULSER        "/var/log/yLOG.program_logging/cronpulse.intrarun_last_check"
-#define    WATCHER       "/var/log/yLOG.program_logging/cronwatch.interrun_monitoring"
-#define    STUFF         "/var/log/yLOG.program_logging/cronextra.execution_feedback"
+#define    PULSER        "/var/log/yLOG/cronpulse.intrarun_last_check"
+#define    STUFF         "/var/log/yLOG/cronextra.execution_feedback"
+#define    WATCHER       "/var/log/yLOG/cronwatch.interrun_monitoring"
 
 /*---(work files and directories)-------------------------------*/
 #define    CRONTABS      "/var/spool/cron/crontabs"
-#define    CRONLOGS      "/var/log/cron"
-#define    CRONCONF      "/etc"
-#define    CRONSYS       "/etc"
-#define    CRONUPDATE    "cron.update"
 #define    PATH          "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
 #define    SHELL         "/bin/dash"
 
@@ -442,7 +432,9 @@ struct cACCESSOR
    char      updates;            /* bool : 0=normal, 1=quiet                  */
    int       logger;             /* log file so that we don't close it        */
    int       locker;             /* lock file in /var/run                     */
-   char      pulse_time[50];     /* last time string written to pulse         */
+   char      pulse_time [50];    /* last time string written to pulse         */
+   char      pulse_begin[50];    /* start of this cron run as string          */
+   char      pulse_end  [50];    /* ending of last cron run as string         */
    /*---(idenfiers)------------*/
    int       uid;                /* user of person who launches crond         */
    int       pid;                /* process id of crond                       */
@@ -455,16 +447,18 @@ struct cACCESSOR
    char      desc[DESC];         /* descrpition for current crontab           */
    char      action[5];          /* crontab action requested                  */
    long      fast_beg;           /* current fast list start                   */
-   int       fast_dur;           /* current fast list duration                */
    /*---(context info)---------*/
    int       for_line;           /* line which uses context (next one)        */
    char      title[DESC];        /* title of current cron line                */
-   char      duration;           /* -=<m, s=1-5m, m=5-20m, l=20-60m, b=>60m   */
-   char      recovery;           /* -=never, c=cumm, f=fixed, w=+2hrs         */
+   char      duration;           /* -=?, t<m, s<5m, m<20m, L<1h, X<2h, #>2h   */
+   char      recovery;           /* -=?, x=no, 1=once, B=batch                */
    char      priority;           /* -=normal                                  */
    char      alerting;           /* -=none                                    */
+   long      last_end;           /* last end                                  */
+   long      this_start;         /* present start                             */
    /*---(trigger)--------------*/
    char      resync;             /* update crontabs : n=not, -=marked, a=all  */
+   char      silent;             /* y=log runs, n=no logging                  */
 } my;
 
 
@@ -506,6 +500,23 @@ struct cCLINE {
 };
 
 
+/*---(file linked list)--------*/
+tCFILE   *cronhead;
+tCFILE   *crontail;
+int       nfile;
+int       nentry;
+
+/*---(fast path linked list)---*/
+tCLINE   *fasthead;
+tCLINE   *fasttail;
+int       nfast;
+
+/*---(processing linked list)--*/
+tCLINE   *prochead;
+tCLINE   *proctail;
+int       nproc;
+
+
 /*---(prototypes)-----------------------------------------------*/
 char      initialize    (cchar);
 char      terminate     (cchar*, cint);;
@@ -516,6 +527,9 @@ char      lock          (void);
 char      pulse         (void);
 char      watch         (void);
 char      prepare       (void);
+
+long      lastrun       (void);
+char      timestamp     (void);
 
 char      search        (cchar);
 char      assimilate    (cchar*);
@@ -528,7 +542,7 @@ char      context       (int, cchar*);
 char      parse         (char*, char *, int, int, char*);
 int       convert       (cchar*, cchar*, cint, cint);
 
-char      fast          (clong, cint);
+char      fast          (clong);
 char      dispatch      (cint);
 char      run           (tCFILE*, tCLINE*);
 char      check         (void);

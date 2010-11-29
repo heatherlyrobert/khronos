@@ -1,29 +1,28 @@
 /*====================--------[[ start-of-code ]]---------====================*/
-#include  "cron.h"
+
+/*===[[ SUMMARY ]]============================================================#
+
+ *   application   : chronos
+ *   module        : chronos_main
+ *   size          : less than 100 slocL
+ *
+ */
+/*===[[ SUMMARY ]]============================================================#
+
+ *   chronos_main is the entry point for chronos and is compilied separately
+ *   so that unit testing have be separately linked
+ *
+ */
+/*============================================================================*/
+
+
+#include  "chronos.h"
 
 #define   MIN         60
 
 /*====================------------------------------------====================*/
 /*===----                            driver                            ----===*/
 /*====================------------------------------------====================*/
-
-char        /* PURPOSE : display the current time and return the minute       */
-show_time     (void)
-{
-   FILE     *pulser;
-   long      now       = time(NULL);
-   tTIME    *curr      = localtime(&now);
-   char      msg[60];
-   strftime(msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", curr);
-   yLOG_info  ("time",   msg);
-   pulser = fopen(PULSER, "w");
-   if (pulser != NULL) {
-      strftime(msg, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
-      fprintf(pulser, "%s\n", msg);
-      fclose(pulser);
-   }
-   return curr->tm_min;
-}
 
 char        /* PURPOSE : reliably wait until the next crond trigger moment    */
 wait_minute   (void)
@@ -39,7 +38,7 @@ wait_minute   (void)
       inc   = MIN - (now % MIN) + 1;
       if (inc > MIN)         break;               /* solve SIGHUP after sleep */
       targ  = now + inc;
-      yLOG_value ("sleep (s)", inc);
+      if (my.silent == 'n') yLOG_value ("sleep (s)", inc);
       sleep(inc);
       now       = time(NULL);
       if (now >= targ)       break;               /* solve SIGHUP during sleep*/
@@ -56,6 +55,41 @@ curr_hours    (void)
    return curr;
 }
 
+char
+catchup       (void)
+{
+   yLOG_enter (__FUNCTION__);
+   /*---(locals)--------------------------------*/
+   long      curr      = 0;                       /* curr hour                */
+   int       min       = 0;                       /* curr minute              */
+   /*---(init)----------------------------------*/
+   my.silent = 'y';
+   /*---(main loop)-----------------------------*/
+   yLOG_note ("catchup specially flagged missed jobs");
+   min       = ((my.last_end / 60) % 60) + 1;     /* start right after last   */
+   yLOG_value ("first min", min);
+   /*> curr      = my.last_end - (my.last_end % (60 * 60));                           <*/
+   curr      = my.last_end;
+   while (curr < my.this_start) {
+      fast (curr);                                /* id jobs for this hour    */
+      /*---(cycle minutes)----------------------*/
+      while (min < 60 && curr <  my.this_start) {
+         /*> yLOG_value ("minute", min);                                              <*/
+         dispatch(min);
+         min      += 1;
+         curr     += 60;
+      }
+      if (curr >=  my.this_start) break;
+      min       = 0;
+   }
+   yLOG_value ("last min", min - 1);
+   /*---(reset)---------------------------------*/
+   my.silent = 'n';
+   /*---(complete)------------------------------*/
+   yLOG_exit  (__FUNCTION__);
+   return 0;
+}
+
 int
 main          (void)
 {
@@ -69,11 +103,14 @@ main          (void)
    daemonize();
    yLOG_break();
    prepare();
+   /*---(catchup)-------------------------------*/
+   yLOG_break();
+   catchup();
    /*---(main loop)-----------------------------*/
    yLOG_break();
    yLOG_enter("main_loop");
    /*---(get the date)--------------------------*/
-   min       = show_time();
+   min       = timestamp();
    wait_minute();
    curr      = curr_hours();
    while (1) {
@@ -82,11 +119,11 @@ main          (void)
       yLOG_note ("hourly break -- check crontabs and reset fast list");
       search('n');                                /* force update once an hour*/
       save      = curr;
-      fast (curr, 1);                             /* id jobs for next hour    */
+      fast (curr);                                /* id jobs for this hour    */
       /*---(cycle minutes)----------------------*/
       while (curr == save) {
          yLOG_break();
-         min       = show_time();
+         min       = timestamp();
          yLOG_value ("minute", min);
          search('?');                             /* update only if SIGHUP    */
          check();

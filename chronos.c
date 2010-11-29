@@ -1,46 +1,134 @@
 /*===========================[[ start-of-code ]]==============================*/
-#include      "cron.h"
+#include      "chronos.h"
 
 
-/*---(file linked list)--------*/
-tCFILE   *cronhead;
-tCFILE   *crontail;
-int       nfile  = 0;
-int       nentry = 0;
-
-/*---(fast path linked list)---*/
-tCLINE   *fasthead;
-tCLINE   *fasttail;
-int       nfast  = 0;
-
-/*---(processing linked list)--*/
-tCLINE   *prochead;
-tCLINE   *proctail;
-int       nproc  = 0;
+char     *args[20];
 
 
+
+/*====================------------------------------------====================*/
+/*===----                          utilities                           ----===*/
+/*====================------------------------------------====================*/
+static void      o___UTILITIES_______________o (void) {;}
+
+char               /* PURPOSE : write the current time to cronpulse ----------*/
+timestamp     (void)
+{
+   /*---(locals)--------------------------------*/
+   FILE     *pulser    = NULL;
+   long      now       = 0;
+   tTIME    *curr      = NULL;
+   /*---(set time)-------------------------------*/
+   now       = time(NULL);
+   curr      = localtime(&now);
+   strftime(my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
+   if (my.silent != 'y') {
+      /*---(open)--------------------------------*/
+      pulser = fopen(PULSER, "w");
+      if (pulser != NULL) {
+         fprintf(pulser, "%s\n", my.pulse_time);
+         fclose(pulser);
+      } else {
+         yLOG_warn  ("PULSER", "cronpulse file can not be openned");
+      }
+      yLOG_info  ("time",   my.pulse_time);
+   }
+   /*---(complete)-------------------------------*/
+   return curr->tm_min;
+}
+
+char               /* PURPOSE : break string into an argv[] structure --------*/
+str_parse          (char *a_cstring)
+{
+   /*---(defenses)-----------------------*/
+   if (a_cstring == NULL) return -1;
+   /*---(locals)-------------------------*/
+   int i, j, k;
+   int len = strlen(a_cstring);
+   int pos = 0;
+   /*---(clear parsed array)-------------*/
+   for (i = 0; i < 20; ++i) args[i] = NULL;
+   /*---(assign executable)--------------*/
+   args[0] = a_cstring;
+   /*---(arguments)----------------------*/
+   i    = 1;
+   pos  = 0;
+   while (pos < len) {
+      /*---(get though argument)---------*/
+      for (k = pos; k <= len; ++k) {
+         if (  a_cstring[k] != '\0' &&
+               a_cstring[k] != ' ' )     continue;
+         pos = k;
+         break;
+      }
+      if (pos + 1 >= len)              break;
+      /*---(get though whitespace)-------*/
+      for (k = pos; k < len; ++k) {
+         if (a_cstring[k] == ' ') {
+            a_cstring[k]  =  '\0';
+            continue;
+         }
+         pos = k;
+         break;
+      }
+      if (pos + 1 >= len)              break;
+      /*---(assign next argument)--------*/
+      args[i] = a_cstring + pos;
+      /*---(prepare for next loop)-------*/
+      ++i;
+      if (i >= 20) break;
+   }
+   /*---(complete)-------------------------*/
+   return 0;
+}
+
+char*              /* PURPOSE : clean whitespace from both sides of a string -*/
+str_trim           (char *a_cstring)
+{
+   /*---(defenses)-------------------------*/
+   if (a_cstring == NULL) return NULL;
+   /*---(locals)---------------------------*/
+   int i, j;
+   int len = 0;
+   /*---(leading whitespace)---------------*/
+   len = strlen(a_cstring);
+   for (i = 0; i <= len; ++i) {
+      if (a_cstring[0] != ' ') break;
+      for (j = 0; j <= len; ++j)
+         a_cstring[j] = a_cstring[j + 1];
+      --len;
+   }
+   /*---(trailing whitespace)--------------*/
+   len = strlen(a_cstring);
+   for (i = len - 1; i >= 0; --i) {
+      if (a_cstring[i] != ' ') break;
+      a_cstring[i] = '\0';
+   }
+   /*---(complete)-------------------------*/
+   return a_cstring;
+}
 
 
 /*====================------------------------------------====================*/
 /*===----                         housekeeping                         ----===*/
 /*====================------------------------------------====================*/
-static void      o___HOUSEKEEPING____________o (void) {;};
+static void      o___HOUSEKEEPING____________o (void) {;}
 
 char               /* PURPOSE : get the logging up and going -----------------*/
 initialize         (const char a_quiet)
 {
    /*---(defense)-------------------------------*/
    if (getuid() != 0) {
-      printf("crond can only be run by root\n");
+      printf("chronos can only be run by root\n");
       exit (-1);
    }
    if      (a_quiet == 0)  { my.quiet = 0; my.updates = 0; }
    else if (a_quiet == 1)  { my.quiet = 0; my.updates = 1; }
    else                    { my.quiet = 1; my.updates = 1; }
    /*---(begin)---------------------------------*/
-   my.logger = yLOG_begin("crond", my.quiet);
+   my.logger = yLOG_begin("chronos", my.quiet);
    if (my.logger < 1) {
-      printf("crond : can not start logger, FATAL\n");
+      printf("chronos : can not start logger, FATAL\n");
       exit(1);
    }
    yLOG_info  ("purpose",  "consistent, reliable time-based job scheduling");
@@ -51,6 +139,12 @@ initialize         (const char a_quiet)
    yLOG_enter (__FUNCTION__);
    my.uid = getuid();
    yLOG_value ("uid num", my.uid);
+   my.silent  = 'n';
+   /*---(variables)-----------------------------*/
+   nfile  = 0;
+   nentry = 0;
+   nfast  = 0;
+   nproc  = 0;
    /*---(complete)------------------------------*/
    yLOG_exit  (__FUNCTION__);
    return 0;
@@ -67,7 +161,7 @@ terminate          (const char *a_func, const int a_exit)
 }
 
 void               /* PURPOSE : handle signals -------------------------------*/
-communicate        (const int a_signal)
+communicate        (int a_signal)
 {
    switch (a_signal) {
    case  SIGHUP:
@@ -91,13 +185,14 @@ communicate        (const int a_signal)
 char               /* PURPOSE : setup signal handling ------------------------*/
 signals            (void)
 {
-   signal(SIGCHLD,  SIG_IGN);        /* ignore child          */
+   signal(SIGCHLD,  SIG_IGN);        /* ignore children       */
    signal(SIGTSTP,  SIG_IGN);        /* ignore tty signals    */
    signal(SIGTTOU,  SIG_IGN);        /* ignore tty signals    */
    signal(SIGTTIN,  SIG_IGN);        /* ignore tty signals    */
    signal(SIGHUP,   communicate);    /* hangup means refresh  */
    signal(SIGTERM,  communicate);    /* catch a kill          */
    signal(SIGSEGV,  communicate);    /* catch a segfault      */
+   /*---(complete)-----------------------*/
    return 0;
 }
 
@@ -242,41 +337,6 @@ lock          (void)
    return 0;
 }
 
-char        /* PURPOSE : update cronwatch interrun monitoring file     */
-watch         (void)
-{
-   if (my.updates) return 0;
-   FILE    *pulser;
-   FILE    *watcher;
-   char     buffer[55];
-   int      len;
-   /*---(get the last stop time)-----------------*/
-   pulser = fopen(PULSER, "r");
-   if (pulser != NULL) {
-      fgets(buffer, 50 , pulser);
-      fclose(pulser);
-      len    = strlen(buffer) - 1;
-      buffer[len] = '\0';
-      yLOG_info  ("last end", buffer);
-   }
-   /*---(write the last end time)----------------*/
-   watcher = fopen(WATCHER, "a");
-   fprintf(watcher, "%s   end\n", buffer);
-   /*---(get the date)---------------------------*/
-   time_t      time_date = time(NULL);
-   struct tm*  curr_time = localtime(&time_date);
-   /*---(format the time)------------------------*/
-   char  _time[50];
-   strftime(_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
-   yLOG_info  ("this beg", _time);
-   /*---(write the time)-------------------------*/
-   fprintf(watcher, "%s   BEG\n", _time);
-   fflush(watcher);
-   fclose(watcher);
-   /*---(complete)-------------------------------*/
-   return 0;
-}
-
 char        /* PURPOSE : final preparation for run                     */
 prepare       (void)
 {
@@ -286,15 +346,96 @@ prepare       (void)
     *> pulse();                                                                       <*/
    search('a');
    yLOG_value ("read in", nfile);
-   my.resync = 'n';
+   my.resync  = 'n';
+   /*---(complete)-------------------------------*/
    return 0;
 }
+
+
+
+/*====================------------------------------------====================*/
+/*===----                        cronpulse file                        ----===*/
+/*====================------------------------------------====================*/
+static void      o___CRONPULSE_______________o (void) {;};
+
+char               /* PURPOSE : update cronwatch interrun monitoring file     */
+watch              (void)
+{
+   if (my.updates) return 0;
+   /*---(locals)---------------------------------*/
+   FILE      *watcher;
+   int        len;
+   char       trash[50];
+   char       xtime[50];
+   struct tm *curr_time;
+   time_t     time_date;
+   /*---(get the last stop time)-----------------*/
+   lastrun();
+   watcher = fopen(WATCHER, "a");
+   /*---(write the last end time)----------------*/
+   snprintf(my.pulse_end  , 50, "%s   end", my.pulse_time);
+   if   (watcher != NULL) fprintf(watcher, "%s\n", my.pulse_end);
+   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
+   /*---(get a start time)--------------------*/
+   timestamp();
+   yLOG_info  ("this beg", my.pulse_time);
+   /*---(get missed time)---------------------*/
+   sscanf(my.pulse_time , "%s %ld", trash, &my.this_start);
+   my.fast_beg = my.this_start;
+   yLOG_value ("missed secs", my.this_start - my.last_end);
+   /*---(write the time)-------------------------*/
+   snprintf(my.pulse_begin, 50, "%s   BEGINNING", my.pulse_time);
+   if (watcher != NULL) {
+      fprintf(watcher, "%s\n", my.pulse_begin);
+      fclose(watcher);
+   }
+   /*---(complete)-------------------------------*/
+   return 0;
+}
+
+long               /* PURPOSE : read the last time from cronpulse ------------*/
+lastrun       (void)
+{
+   /*---(locals)--------------------------------*/
+   FILE     *pulser    = NULL;
+   long      xtime     = 0;
+   char      xbuf[55]  = "";
+   int       len       = 0;
+   char      trash[50] = "";
+   int       rc        = 0;
+   tTIME    *curr      = NULL;
+   /*---(default to now)-------------------------*/
+   my.last_end = time(NULL);
+   /*---(open)-----------------------------------*/
+   pulser = fopen(PULSER, "r");
+   if (pulser != NULL) {
+      /*---(get the last stop time)--------------*/
+      fgets(xbuf, 50 , pulser);
+      /*---(clean it up)-------------------------*/
+      len    = strlen(xbuf) - 1;
+      if (xbuf[len] == '\n') xbuf[len] = '\0';
+      /*---(pull out the epoch)------------------*/
+      rc = sscanf(xbuf, "%s %ld", trash, &xtime);
+      if (rc == 2 && xtime < my.last_end && xtime > 0)  my.last_end = xtime;
+      /*---(close)-------------------------------*/
+      fclose(pulser);
+   } else {
+      yLOG_warn  ("PULSER", "cronpulse file can not be openned");
+   }
+   /*---(save if off)----------------------------*/
+   curr  = localtime(&my.last_end);
+   strftime(my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
+   yLOG_info  ("last end", my.pulse_time);
+   /*---(complete)-------------------------------*/
+   return my.last_end;
+}
+
 
 
 /*====================------------------------------------====================*/
 /*===----                        crontab updates                       ----===*/
 /*====================------------------------------------====================*/
-static void      o___CRONTABS________________o (void) {;};
+static void      o___CRONTABS________________o (void) {;}
 
 char        /* PURPOSE : search for and process crontab updates               */
 search        (cchar a_scope)
@@ -357,8 +498,6 @@ search        (cchar a_scope)
    /*---(complete)------------------------------*/
    my.resync = 'n';
    yLOG_exit  (__FUNCTION__);
-   /*---(run fast)------------------------------*/
-   if (count > 0) fast (0, 0);
    /*---(complete)------------------------------*/
    return 0;
 }
@@ -733,10 +872,10 @@ context            (int a_recd, cchar *a_data)
    my.recovery = '-';
    my.priority = '-';
    my.alerting = '-';
-   if (strchr("-SMLBZ", a_data[71]) != NULL)     my.duration = a_data[71];
-   if (strchr("-qhtc",  a_data[73]) != NULL)     my.recovery = a_data[73];
-   if (strchr("-"    ,  a_data[75]) != NULL)     my.priority = a_data[75];
-   if (strchr("-"    ,  a_data[77]) != NULL)     my.alerting = a_data[75];
+   if (strchr("-tsmLX#" , a_data[71]) != NULL)     my.duration = a_data[71];
+   if (strchr("-x1B"    , a_data[73]) != NULL)     my.recovery = a_data[73];
+   if (strchr("-"       , a_data[75]) != NULL)     my.priority = a_data[75];
+   if (strchr("-"       , a_data[77]) != NULL)     my.alerting = a_data[75];
    strncpy(my.title, a_data + 48, 21);
    my.title[20] = '\0';
    for (i = 19; i >= 0; --i) {
@@ -880,12 +1019,12 @@ convert       (const char *a_field, const char *a_input, const int a_min, const 
 static void      o___EXECUTION_______________o (void) {;};
 
 char        /* PURPOSE : create list of jobs to run in a particular period    */
-fast          (
-      clong     a_start,                     /* time_t of starting hour       */
-      cint      a_duration)                  /* number of hours to consider   */
+fast          (clong a_start)                /* time_t of starting hour       */
 {
-   yLOG_enter (__FUNCTION__);
-   yLOG_note  ("determine jobs that will run in the next hour");
+   if (my.silent == 'n') {
+      yLOG_enter (__FUNCTION__);
+      yLOG_note  ("determine jobs that will run in the next hour");
+   }
    /*---(locals)---------------------------------*/
    int       chrs, cday, cmon, cdow;         /* simplifying temp variables    */
    char      msg[100];                       /* display string                */
@@ -893,7 +1032,6 @@ fast          (
    tCLINE   *x_line;                         /* current line                  */
    /*---(save time)------------------------------*/
    if (a_start    != 0)  my.fast_beg   = a_start;
-   if (a_duration != 0)  my.fast_dur   = a_duration;
    /*---(get the date)---------------------------*/
    tTIME    *curr_time = localtime(&my.fast_beg);
    /*---(format the time)------------------------*/
@@ -940,47 +1078,62 @@ fast          (
          ++nfast;
       }
    }
+   /*---(log results)---------------------------*/
+   if (my.silent  == 'n') {
+      yLOG_value ("count", nfast);
+      yLOG_exit  (__FUNCTION__);
+   }
    /*---(complete)------------------------------*/
-   yLOG_value ("count", nfast);
-   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
 char        /* PURPOSE : run through the fast list to find what should run    */
 dispatch      (cint a_min)
 {
-   yLOG_enter (__FUNCTION__);
+   if (my.silent == 'n') yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    int       njobs = 0;                      /* number of jobs ready to run   */
    int       ntest = 0;                      /* number of jobs ready to run   */
    tCLINE   *x_line;                         /* current line                  */
    char      msg[200];
    /*---(process all time periods)--------------*/
-   yLOG_value ("potential",  nfast);
+   if (my.silent == 'n') yLOG_value ("potential",  nfast);
    for (x_line = fasthead; x_line != NULL; x_line = x_line->fnext) {
+      if (my.silent == 'y') {
+         switch (x_line->recovery) {
+         case '-' : continue;  break;
+         case 'x' : continue;  break;
+         }
+      }
       ++ntest;
       snprintf(msg, 200, "%-16.16s,%3d", x_line->file->name, x_line->recd);
       if (x_line->min[a_min]  == 0) {
-         yLOG_senter ("not");
-         yLOG_snote(msg);
-         yLOG_snote  ("not sched for min");
-         yLOG_sexit  ();
+         if (my.silent == 'n') {
+            yLOG_senter ("not");
+            yLOG_snote(msg);
+            yLOG_snote  ("not sched for min");
+            yLOG_sexit  ();
+         }
          continue;
       }
       if (x_line->rpid        != 0) {
-         yLOG_senter ("not");
-         yLOG_snote(msg);
-         yLOG_snote  ("already running");
-         yLOG_sexit  ();
+         if (my.silent == 'n') {
+            yLOG_senter ("not");
+            yLOG_snote(msg);
+            yLOG_snote  ("already running");
+            yLOG_sexit  ();
+         }
          continue;
       }
       run (x_line->file, x_line);
       ++njobs;
    }
-   yLOG_value ("tested", ntest);
-   yLOG_value ("ran",    njobs);
+   if (my.silent == 'n') {
+      yLOG_value ("tested", ntest);
+      yLOG_value ("ran",    njobs);
+      yLOG_exit  (__FUNCTION__);
+   }
    /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
@@ -1080,17 +1233,30 @@ run        (tCFILE *a_file, tCLINE *a_line)
    if (rc <  0) {
       return (-3);
    }
+   /*---(try direct execution)------------------*/
+   fprintf(output, "execvp    : %.50s\n", a_line->cmd);
+   fprintf(output, "==========================================================================end===\n");
+   fflush (output);
+   fclose (output);
+   char    backup2[CMD];
+   strncpy(backup2, a_line->cmd, CMD);
+   str_parse (backup2);
+   rc = execvp(*args, args);
    /*---(close log)-----------------------------*/
+   envp[6][0] = '\0';
+   output = fopen(STUFF, "a");
+   fprintf(output, "FAILED execvp, fallback...\n");
    fprintf(output, "execl     : %.50s\n", a_line->cmd);
    fprintf(output, "==========================================================================end===\n");
    fflush (output);
    fclose (output);
-   /*> system("set > /home/dotsuu/z_gehye/environ.txt");                              <*/
-   /*---(execute)-------------------------------*/
-   envp[6][0] = '\0';
    rc = execl(SHELL, SHELL, "-c", a_line->cmd, NULL, NULL);
-   /*> rc = execle(SHELL, SHELL, "-c", a_line->cmd, NULL, envp);                      <*/
    /*---(this should never come back)-----------*/
+   output = fopen(STUFF, "a");
+   fprintf(output, "FAILED execl, just won't run\n");
+   fprintf(output, "==========================================================================end===\n");
+   fflush (output);
+   fclose (output);
    _exit (-3);    /* must use _exit to get out properly                       */
 }
 
@@ -1157,271 +1323,6 @@ check         (void)
    }
    yLOG_value ("after", nproc);
    yLOG_exit  (__FUNCTION__);
-   return 0;
-}
-
-
-
-/*====================------------------------------------====================*/
-/*===----                          dll support                         ----===*/
-/*====================------------------------------------====================*/
-static void      o___LINKED_LISTS____________o (void) {;};
-
-char        /* PURPOSE : add a cronfile to the file list                      */
-cronfile_add (tCFILE *a_file)
-{
-   /*---(initialize)------------------*/
-   a_file->head      = NULL;
-   a_file->tail      = NULL;
-   /*---(link into a_file dll)--------------------*/
-   a_file->next      = NULL;
-   a_file->prev      = NULL;
-   if (cronhead == NULL) {
-      cronhead       = a_file;
-      crontail       = a_file;
-   } else {
-      a_file->prev   = crontail;
-      crontail->next = a_file;
-      crontail       = a_file;
-   }
-   /*---(overall)---------------------*/
-   ++nfile;
-   a_file->nlines    = 0;
-   /*---(complete)--------------------*/
-   return 0;
-}
-
-char        /* PURPOSE : remove a cronfile from the file list                 */
-cronfile_del (tCFILE *a_file)
-{
-   if (a_file->nlines > 0) return -1;
-   /*---(prev)------------------------*/
-   if (a_file->prev  == NULL) cronhead           = a_file->next;
-   else                       a_file->prev->next = a_file->next;
-   /*---(next)------------------------*/
-   if (a_file->next  == NULL) crontail           = a_file->prev;
-   else                       a_file->next->prev = a_file->prev;
-   /*---(overall)---------------------*/
-   --nfile;
-   if (nfile < 0) nfile = 0;
-   free(a_file);
-   /*---(complete)--------------------*/
-   return 0;
-}
-
-char        /* PURPOSE : add a line to the cronfile list                      */
-cronline_add (tCFILE *a_file, tCLINE *a_line)
-{
-   /*---(initialize)------------------*/
-   a_line->file         = a_file;
-   a_line->rpid         = 0;
-   a_line->active       = 0;
-   a_line->deleted      = 'n';
-   strcpy(a_line->title, "");
-   a_line->duration     = '-';
-   a_line->recovery     = '-';
-   a_line->priority     = '-';
-   a_line->alerting     = '-';
-   /*---(null pointers)---------------*/
-   a_line->next         = NULL;
-   a_line->prev         = NULL;
-   /*---(null list)-------------------*/
-   if (a_file->head == NULL) {
-      a_file->head        = a_line;
-      a_file->tail        = a_line;
-   }
-   /*---(existing list)---------------*/
-   else {
-      a_line->prev        = a_file->tail;
-      a_file->tail->next  = a_line;
-      a_file->tail        = a_line;
-   }
-   /*---(other pointers)--------------*/
-   a_line->fnext        = NULL;
-   a_line->fprev        = NULL;
-   a_line->pnext        = NULL;
-   a_line->pprev        = NULL;
-   /*---(overall)---------------------*/
-   a_file->nlines += 1;
-   ++nentry;
-   /*---(complete)--------------------*/
-   return 0;
-}
-
-char        /* PURPOSE : remove a line from the cronfile list                 */
-cronline_del (tCLINE *a_line)
-{
-   if (a_line->deleted != 'y') return -1;
-   if (a_line->rpid    !=  0 ) return -2;
-   /*---(prev)------------------------*/
-   if (a_line->prev == NULL)   a_line->file->head = a_line->next;
-   else                        a_line->prev->next = a_line->next;
-   /*---(next)------------------------*/
-   if (a_line->next == NULL)   a_line->file->tail = a_line->prev;
-   else                        a_line->next->prev = a_line->prev;
-   /*---(fast count)------------------*/
-   if (a_line->active != 0) {
-      --nfast;
-      /*---(fast prev)-------------------*/
-      if (a_line->fprev == NULL)  fasthead             = a_line->fnext;
-      else                        a_line->fprev->fnext = a_line->fnext;
-      /*---(fast next)-------------------*/
-      if (a_line->fnext == NULL)  fasttail             = a_line->fprev;
-      else                        a_line->fnext->fprev = a_line->fprev;
-   }
-   /*---(overall)---------------------*/
-   a_line->file->nlines -= 1;
-   if (a_line->file->nlines <  0) a_line->file->nlines = 0;
-   free(a_line);
-   --nentry;
-   /*---(complete)--------------------*/
-   return 0;
-}
-
-char        /* PURPOSE : add a line to the running process list               */
-proclist_add (tCLINE *a_curr)
-{
-   /*---(initialize)------------------*/
-   a_curr->pnext      = NULL;
-   a_curr->pprev      = NULL;
-   /*---(null list)-------------------*/
-   if (prochead == NULL) {
-      prochead          = a_curr;
-      proctail          = a_curr;
-      nproc             = 1;
-   }
-   /*---(existing list)---------------*/
-   else {
-      proctail->pnext   = a_curr;
-      a_curr->pprev     = proctail;
-      proctail          = a_curr;
-      ++nproc;
-   }
-   /*---(complete)--------------------*/
-   return 0;
-}
-
-char        /* PURPOSE : remove a line from the running process list          */
-proclist_del (tCLINE *a_curr)
-{
-   /*---(prev)------------------------*/
-   if (a_curr->pprev == NULL)  prochead             = a_curr->pnext;
-   else                        a_curr->pprev->pnext = a_curr->pnext;
-   /*---(next)------------------------*/
-   if (a_curr->pnext == NULL)  proctail             = a_curr->pprev;
-   else                        a_curr->pnext->pprev = a_curr->pprev;
-   /*---(overall)---------------------*/
-   a_curr->rpid = 0;
-   --nproc;
-   if (nproc < 0) nproc = 0;
-   /*---(complete)--------------------*/
-   return 0;
-}
-
-
-
-/*====================------------------------------------====================*/
-/*===----                         unit testing                         ----===*/
-/*====================------------------------------------====================*/
-static void      o___UNITTEST________________o (void) {;};
-
-#define       LEN_TEXT  2000
-char          unit_answer [ LEN_TEXT ];
-
-char*
-unit_accessor(char *a_question, int a_num)
-{
-   if        (strncmp(a_question, "parsed", 20)      == 0) {
-      snprintf(unit_answer, LEN_TEXT, "parsed frequency : %.35s", my.parsed);
-   } else if (strncmp(a_question, "name", 20)        == 0) {
-      snprintf(unit_answer, LEN_TEXT, "crontab name     : %.35s", my.name);
-   } else if (strncmp(a_question, "user", 20)        == 0) {
-      snprintf(unit_answer, LEN_TEXT, "user name        : %.35s", my.user);
-   } else if (strncmp(a_question, "desc", 20)        == 0) {
-      snprintf(unit_answer, LEN_TEXT, "description      : %.35s", my.desc);
-   } else if (strncmp(a_question, "cron count", 20)  == 0) {
-      snprintf(unit_answer, LEN_TEXT, "cron counters    : %4df %5de", nfile, nentry);
-   } else if (strncmp(a_question, "counters", 20)    == 0) {
-      snprintf(unit_answer, LEN_TEXT, "counters         : %4d line, %4d fast, %4d proc", nentry, nfast, nproc);
-   } else if (strncmp(a_question, "file list", 20)   == 0) {
-      snprintf(unit_answer, LEN_TEXT, "cronfile list    : %3d %10p %10p", nfile, cronhead, crontail);
-   } else if (strncmp(a_question, "cron shape", 20)  == 0) {
-      char   xshape[40] = "(empty)";
-      shape(xshape);
-      snprintf(unit_answer, LEN_TEXT, "cron shape (%3d) : %s", nfile + nentry, xshape);
-   } else {
-      snprintf(unit_answer, LEN_TEXT, "unknown          : unit_accessor question not defined");
-   }
-   return unit_answer;
-}
-
-char        /* PURPOSE : specifically built list to aid unit testing          */
-shape         (char *a_shape)
-{
-   /*---(locals)---------------------------------*/
-   tCFILE   *file;                           /* current file                  */
-   tCLINE   *line;                           /* current line                  */
-   int       count = 0;
-   /*---(scan every file)--------------------*/
-   for (file = cronhead; file != NULL; file = file->next) {
-      a_shape[count++] = 'F';
-      a_shape[count  ] = '\0';
-      if (count >= 35) return 0;
-      /*---(scan every line)-----------------*/
-      for (line = file->head; line != NULL; line = line->next) {
-         a_shape[count++] = '_';
-         a_shape[count  ] = '\0';
-         if (count >= 35) return 0;
-      }
-   }
-   return 0;
-}
-
-char        /* PURPOSE : specifically built list to aid unit testing          */
-list_cron     (void)
-{
-   /*---(locals)---------------------------------*/
-   tCFILE   *file;                           /* current file                  */
-   tCLINE   *line;                           /* current line                  */
-   /*---(scan every file)--------------------*/
-   printf("\n      ---cron-list-----------------------------------\n");
-   for (file = cronhead; file != NULL; file = file->next) {
-      printf("      FILE (%c) %3d = %-20.20s :: %-40.40s\n",
-            file->retire, file->nlines, file->user, file->name);
-      /*---(scan every line)-----------------*/
-      for (line = file->head; line != NULL; line = line->next) {
-         printf("           line (%c) <<%.50s>>\n", line->deleted, line->cmd);
-      }
-   }
-   printf("      -----------------------------------------------\n");
-   return 0;
-}
-
-char        /* PURPOSE : specifically built list to aid unit testing          */
-list_fast     (void)
-{
-   /*---(locals)---------------------------------*/
-   tCLINE   *line;                           /* current line                  */
-   /*---(scan every file)--------------------*/
-   printf("\n      ---fast-list-----------------------------------\n");
-   for (line = fasthead; line != NULL; line = line->fnext) {
-      printf("      %-20.20s (%3d) %-40.40s\n", line->file->user, line->recd, line->file->name);
-   }
-   printf("      -----------------------------------------------\n");
-   return 0;
-}
-
-char        /* PURPOSE : specifically built list to aid unit testing          */
-list_proc     (void)
-{
-   /*---(locals)---------------------------------*/
-   tCLINE   *line;                           /* current line                  */
-   /*---(scan every file)--------------------*/
-   printf("\n      ---proc-list-----------------------------------\n");
-   for (line = prochead; line != NULL; line = line->pnext) {
-      printf("      (%6d) <<%.50s>>\n", line->rpid, line->cmd);
-   }
-   printf("      -----------------------------------------------\n");
    return 0;
 }
 

@@ -1,17 +1,258 @@
-#======  ===========================(purpose)============================= 
-PREP     include the prototype headers                                     
+#======  ===========================(purpose)============================== 
+PREP     include the prototype headers                                      
   incl   include crond header                   cron.h                    
 
 
 
 
-#======  ===========================(purpose)=============================  =========(method)========= 
-SCRP     crontab name validation                                            name()                     
+#======  ===========================(purpose)==============================  =========(method)========= 
+SCRP     verify cronpulse operations                                         lastrun, timestamp         
+# use the date command to create cronpulse files for any timestamp
+# $ date -d "2009-01-12 13:01:30" "+%y.%m.%d.%H.%M.%S   %s" > cronpulse.intrarun_last_check
 
-COND     prepare for run                                                   
-  exec   initialize the logger                  initialize                 2                                                        i_equal    0                                                       
+COND     initialize program                                                 
+  exec   initialize the logger (quiet mode)     initialize                 2                                                        i_equal    0                                                       
+  code   holder for broken-down time            struct tm *curr_time = NULL;                                                                                                                                  
+  code   holder for current time                long       xbase     = 0;                                                                                                                                     
+  code   holder for adjusted time               long       xtime     = 0;                                                                                                                                     
+  code   create a custom time string            char c_time[60];
+  code   create a custom expect string          char custom[2000];
+  code   create a file object                   FILE *fPULSER  = NULL;
 
-COND     put a simple name through                                         
+COND     write out the current time                                         
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (custom, 50, "%M", curr_time);
+  exec   write the cronpulse                    timestamp                                                                           c_iequal   custom                                                  
+  code   create a custom cronpulse string       strftime (c_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   create a custom expect string          sprintf  (custom, "cronpulse        : :%s:", c_time);
+  get    review the cell linked list            unit_accessor              "cronpulse",     0                                       c_round    custom                                                  
+
+COND     write over the file                                                
+  code   pause to get a different time          sleep(2);                                                                                                                                              
+  code   update time for sleep                  xbase    += 2;
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (custom, 50, "%M", curr_time);
+  exec   write the cronpulse                    timestamp                                                                           c_iequal   custom                                                  
+  code   create a custom cronpulse string       strftime (c_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   create a custom expect string          sprintf  (custom, "cronpulse        : :%s:", c_time);
+  get    review the cell linked list            unit_accessor              "cronpulse",     0                                       c_round    custom                                                  
+
+COND     clear out the file                                                 
+  code   clear existing cronpulse file          system("rm -f /var/log/yLOG.program_logging/cronpulse.intrarun_last_check");                                                                                 
+
+COND     write out the current time                                         
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (custom, 50, "%M", curr_time);
+  exec   write the cronpulse                    timestamp                                                                           c_iequal   custom                                                  
+  code   create a custom cronpulse string       strftime (c_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   create a custom expect string          sprintf  (custom, "cronpulse        : :%s:", c_time);
+  get    review the cell linked list            unit_accessor              "cronpulse",     0                                       c_round    custom                                                  
+
+COND     read the current time                                              
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     clear out the file                                                 
+  code   clear existing cronpulse file          system("rm -f /var/log/yLOG.program_logging/cronpulse.intrarun_last_check");                                                                                 
+
+COND     read a non-existant file                                           
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     write garbage to the pulser file                                   
+  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG.program_logging/cronpulse.intrarun_last_check", "w");
+  code   write garbage                          fprintf(fPULSER, "/var/log/yLOG.program_logging/cronpulse.intrarun_last_check");
+  code   close the file                         fclose(fPULSER);
+
+COND     read a garbage file                                                
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     write the current date to the pulser file                          
+  code   get the current time                   xbase     = time(NULL);
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (c_time, 55, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG.program_logging/cronpulse.intrarun_last_check", "w");
+  code   write garbage                          fprintf(fPULSER, "%s", c_time);
+  code   close the file                         fclose(fPULSER);
+
+COND     read a garbage file                                                
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     write a future date to the pulser file                             
+  code   get the current time                   xbase     = time(NULL) + 60 * 60;                                                                                                                                       
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   get the current time                   xbase     = time(NULL);
+  code   create a custom cronpulse string       strftime (c_time, 55, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG.program_logging/cronpulse.intrarun_last_check", "w");
+  code   write garbage                          fprintf(fPULSER, "%s", c_time);
+  code   close the file                         fclose(fPULSER);
+
+COND     read a garbage file                                                
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 01 :: garbage data                                       
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.01.* cronpulse.intrarun_last_check");
+  code   get the current time                   xbase     = time(NULL);
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 02 :: correct day in past                                
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.02.* cronpulse.intrarun_last_check");
+  code   create a custom expect string          sprintf  (custom, "%ld", 1286222400L);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 03 :: partial date                                       
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.03.* cronpulse.intrarun_last_check");
+  code   get the current time                   xbase     = time(NULL);
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 04 :: gigasecond day                                     
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.04.* cronpulse.intrarun_last_check");
+  code   create a custom expect string          sprintf  (custom, "%ld", 1000000000L);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 05 :: well into the future                               
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.05.* cronpulse.intrarun_last_check");
+  code   get the current time                   xbase     = time(NULL);
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 06 :: negative value                                     
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.06.* cronpulse.intrarun_last_check");
+  code   get the current time                   xbase     = time(NULL);
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     copy test 02 :: good one again                                     
+  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.02.* cronpulse.intrarun_last_check");
+  code   create a custom expect string          sprintf  (custom, "%ld", 1286222400L);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     make the yLOG directory inaccessable                               
+  code   get to the right directory             system("mv -f /var/log/yLOG.program_logging /var/log/yLOGGY");
+
+COND     write out the current time                                         
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (custom, 50, "%M", curr_time);
+  exec   write the cronpulse                    timestamp                                                                           c_iequal   custom                                                  
+  code   create a custom cronpulse string       strftime (c_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   create a custom expect string          sprintf  (custom, "cronpulse        : :%s:", c_time);
+  get    review the cell linked list            unit_accessor              "cronpulse",     0                                       c_round    custom                                                  
+
+COND     attempt to read a non-existant file                                
+  code   get the current time                   xbase     = time(NULL);
+  code   create a custom expect string          sprintf  (custom, "%ld", xbase);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     put the yLOG directory back                                        
+  code   get to the right directory             system("mv -f /var/log/yLOGGY /var/log/yLOG.program_logging");
+
+COND     do a good read again                                               
+  code   create a custom expect string          sprintf  (custom, "%ld", 1286222400L);
+  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
+
+
+#======  ===========================(purpose)==============================  =========(method)========= 
+SCRP     verify correct writes to cronwatch file                             watch                      
+
+COND     initialize program                                                 
+  exec   initialize the logger (quiet mode)     initialize                 2                                                        i_equal    0                                                       
+  code   holder for broken-down time            struct tm *curr_time = NULL;                                                                                                                                  
+  code   create a custom time string            char c_time[60];
+  code   create a custom expect string          char xbegin[50];
+  code   create a custom expect string          char xend  [50];
+  code   create a custom expect string          char record[2000];
+  code   create a custom expect string          char custom[2000];
+  code   create a file object                   FILE *fCONFIRM  = NULL;
+  code   set updates to true                    my.updates = 0;
+
+COND     clear out the watcher file                                         
+  code   clear existing cronwatch file          system("rm -f /var/log/yLOG.program_logging/cronwatch.interrun_monitoring");                                                                                 
+
+COND     clear out the pulser file                                          
+  code   clear existing cronpulse file          system("rm -f /var/log/yLOG.program_logging/cronpulse.intrarun_last_check");                                                                                 
+
+COND     activate the watcher                                               
+  exec   call the watcher                       watch                                                                               i_equal    0                                                       
+
+COND     test the cron ending line                                          
+  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -2 cronwatch.in* | head -1 > testing.txt");
+  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
+  code   get the top line                       fgets(record, 500, fCONFIRM);
+  code   close the file                         fclose(fCONFIRM);
+  code   clip off the newline                   record[strlen(record) - 1] = '\0';
+  code   create a custom expect string          sprintf  (custom, "cron ending      : :%s:", record);
+  get    review the beginning time              unit_accessor              "cronend",       0                                       c_round    custom                                                  
+
+COND     test the cron ending line                                          
+  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -1 cronwatch.in* > testing.txt");
+  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
+  code   get the top line                       fgets(record, 500, fCONFIRM);
+  code   close the file                         fclose(fCONFIRM);
+  code   clip off the newline                   record[strlen(record) - 1] = '\0';
+  code   create a custom expect string          sprintf  (custom, "cron beginning   : :%s:", record);
+  get    review the beginning time              unit_accessor              "cronbegin",     0                                       c_round    custom                                                  
+
+COND     wait two seconds and activate watcher                              
+  code   pause to get a different time          sleep(2);                                                                                                                                              
+  exec   call the watcher                       watch                                                                               i_equal    0                                                       
+
+COND     test the cron ending line                                          
+  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -2 cronwatch.in* | head -1 > testing.txt");
+  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
+  code   get the top line                       fgets(record, 500, fCONFIRM);
+  code   close the file                         fclose(fCONFIRM);
+  code   clip off the newline                   record[strlen(record) - 1] = '\0';
+  code   create a custom expect string          sprintf  (custom, "cron ending      : :%s:", record);
+  get    review the beginning time              unit_accessor              "cronend",       0                                       c_round    custom                                                  
+
+COND     test the cron ending line                                          
+  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -1 cronwatch.in* > testing.txt");
+  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
+  code   get the top line                       fgets(record, 500, fCONFIRM);
+  code   close the file                         fclose(fCONFIRM);
+  code   clip off the newline                   record[strlen(record) - 1] = '\0';
+  code   create a custom expect string          sprintf  (custom, "cron beginning   : :%s:", record);
+  get    review the beginning time              unit_accessor              "cronbegin",     0                                       c_round    custom                                                  
+
+COND     make the yLOG directory inaccessable                               
+  code   get to the right directory             system("mv -f /var/log/yLOG.program_logging /var/log/yLOGGY");
+
+COND     handle a missing yLOG directory                                    
+  code   pause to get a different time          sleep(2);                                                                                                                                              
+  exec   call the watcher                       watch                                                                               i_equal    0                                                       
+
+COND     put the yLOG directory back                                        
+  code   get to the right directory             system("mv -f /var/log/yLOGGY /var/log/yLOG.program_logging");
+
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
+
+
+
+#======  ===========================(purpose)==============================  =========(method)========= 
+SCRP     crontab name validation                                             name()                     
+
+COND     prepare for run                                                    
+  exec   initialize the logger (quiet mode)     initialize                 2                                                        i_equal    0                                                       
+
+COND     put a simple name through                                          
   exec   call the crontab name validation       name                       "root.crontab", '-'                                      i_equal    0                                                       
   get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : root                                 
   get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : crontab                              
@@ -113,6 +354,10 @@ COND     put a DEL version through with crontab switch                     
   get    review the user name                   unit_accessor              "user",          0                                       s_equal    user name        : root                                 
   get    review the description                 unit_accessor              "desc",          0                                       s_equal    description      : crontab                              
   get    review the crontab name                unit_accessor              "name",          0                                       s_equal    crontab name     : root.crontab.DEL                     
+
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
 
 
 
@@ -252,7 +497,7 @@ COND     prepare for parsing                                               
   code   create a cronfile pointer              tCFILE *the_1st  = NULL;                                                                                                                               
 
 COND     run fast on a empty list                                          
-  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   run fast                               fast                       1000000                                                  i_equal    0                                                       
   exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
   exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
   get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
@@ -274,7 +519,7 @@ COND     add the first file                                                
   exec   add a new file                         create                     "root.run_test",      "root",     &the_1st               i_equal    0                                                       
 
 COND     run fast on a lineless file                                       
-  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   run fast                               fast                       1000000                                                  i_equal    0                                                       
   exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
   exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
   get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    0 line,    0 fast,    0 proc      
@@ -302,7 +547,7 @@ COND     add a couple quick frequent jobs                                  
   exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  4) : F___                                 
 
 COND     run fast on it                                                    
-  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   run fast                               fast                       1000000                                                  i_equal    0                                                       
   exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
   exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
   get    review the counts                      unit_accessor              "counters",      0                                       s_equal    counters         :    3 line,    3 fast,    0 proc      
@@ -378,7 +623,7 @@ COND     add a line to the second                                          
   exec   evaluate cron shape                    unit_accessor              "cron shape",    0                                       s_equal    cron shape (  5) : F_F__                                
 
 COND     run fast on it                                                    
-  exec   run fast                               fast                       1000000     ,    1                                       i_equal    0                                                       
+  exec   run fast                               fast                       1000000                                                  i_equal    0                                                       
   exec   look at the fast list                  list_fast                                                                           i_equal    0                                                       
   exec   look at the proc list                  list_proc                                                                           i_equal    0                                                       
 
@@ -482,6 +727,10 @@ COND     parse a zero led value                                            
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ___1__________________________       
 
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
 
 
 
@@ -565,6 +814,10 @@ COND     parse a big list                                                  
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _1111111111____1_________1____       
 
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
 
 
 
@@ -643,6 +896,10 @@ COND     parse a a value and a step                                        
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    -15                                                     
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : ______________________________       
 
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
 
 
 
@@ -704,6 +961,10 @@ COND     parse a range with two same values                                
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1________________________       
 
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
 
 
 
@@ -746,6 +1007,10 @@ COND     parse a moderate range and middling step                          
   code   put the field value in the input       strcpy(the_input, "5-20/8");                                                                                                                            
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : _____1_______1________________       
+
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
 
 
 
@@ -790,6 +1055,10 @@ COND     larger range before the smaller                                   
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : __11______111_________________       
 
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
 
 
 
@@ -822,6 +1091,12 @@ COND     parse an all with step, and two ranges both with steps            
   code   put the field value in the input       strcpy(the_input, "*/5,2-10/2,20-28/3");                                                                                                                
   exec   call the parsing routine               parse                         the_input, the_output, 29, 0, "test"                  i_equal    0                                                       
   get    review the results                     unit_accessor              "parsed",        0                                       s_equal    parsed frequency : 1_1_111_1_1____1____1__1_11___       
+
+COND     purge the cron system                                             
+  exec   retire all files                       purge                                                                               i_equal    0                                                       
+  get    review the list                        unit_accessor              "file list",     0                                       s_equal    cronfile list    :   0      (nil)      (nil)            
+
+
 
 
 
