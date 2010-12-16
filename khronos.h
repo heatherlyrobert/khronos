@@ -362,8 +362,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.7c"
-#define VER_TXT   "done integrating crontab into khronos"
+#define VER_NUM   "0.7d"
+#define VER_TXT   "break unit testing accessor out into a separate file"
 
 
 /*---(headers)--------------------------------------------------*/
