@@ -16,7 +16,7 @@
 /*============================================================================*/
 
 
-#include  "khronos.h"
+#include   "khronos.h"
 
 #define   MIN         60
 
@@ -159,13 +159,13 @@ prog_urgent        (int argc, char *argv[])
       else if (strcmp(a, "@p"        ) == 0)    debug_top   = debug_proc  = 'y';
    }
    DEBUG_T {
-      printf("\n");
-      printf("khronos -- heatherly time-based job scheduling (crond/crontab)\n\n");
-      printf("prog_urgent()...\n");
-      printf("   args   = %c\n", debug_args);
-      printf("   proc   = %c\n", debug_proc);
-      printf("\n");
-   }
+   CHATTY   printf("\n");
+   CHATTY   printf("khronos -- heatherly time-based job scheduling (crond/crontab)\n\n");
+   CHATTY   printf("prog_urgent()...\n");
+   CHATTY   printf("   args   = %c\n", debug_args);
+   CHATTY   printf("   proc   = %c\n", debug_proc);
+   CHATTY   printf("\n");
+   CHATTY}
    /*---(complete)-----------------------*//*===fat=end===*/
    return 0;
 }
@@ -185,18 +185,18 @@ prog_whoami        (void)
    /*---(pull user name)-----------------*/
    x_pass    = getpwuid(my.uid);
    if (x_pass == NULL) {
-      printf("can not retreive your user information from the system\n");
+      CHATTY   printf("can not retreive your user information from the system\n");
       prog_term();
    }
    DEBUG_A  printf("   caller name  = <<%s>>\n",    x_pass->pw_name);
    /*---(check user name)----------------*/
    x_len      = strlen(x_pass->pw_name);
    if (x_len < 1) {
-      printf("your user name can not be empty\n");
+      CHATTY   printf("your user name can not be empty\n");
       prog_term();
    }
    if (x_len > 20) {
-      printf("user name is too long\n");
+      CHATTY   printf("user name is too long\n");
       prog_term();
    }
    strncpy(my.who, x_pass->pw_name, 20);
@@ -208,7 +208,7 @@ prog_whoami        (void)
    if (my.am_root != 'y') {
       rc = setuid(0);
       if (rc != 0) {
-         printf("could not gain root authority\n");
+         CHATTY   printf("could not gain root authority\n");
          prog_term();
       }
       DEBUG_A  printf("   successfully changed to root\n");
@@ -254,29 +254,29 @@ prog_args          (int argc, char *argv[])
       /*---(skip debugging)--------------*/
       if      (a[0] == '@')                     continue;
       /*---(usage/help)------------------*/
-      else if (strcmp(a, "-h"        ) == 0)    prog_usage();
-      else if (strcmp(a, "--help"    ) == 0)    prog_usage();
+      CHATTY   else if (strcmp(a, "-h"        ) == 0)    prog_usage();
+      CHATTY   else if (strcmp(a, "--help"    ) == 0)    prog_usage();
       /*---(lists)-----------------------*/
-      else if (strcmp(a, "-l"        ) == 0)    crontab_proc  (my.who, 'c');
-      else if (strcmp(a, "--list"    ) == 0)    crontab_proc  (my.who, 'l');
-      else if (strcmp(a, "--all"     ) == 0)    crontab_proc  ("ALL" , 'l');
-      else if (strcmp(a, "--here"    ) == 0)    crontab_local ('l');
+      CHATTY   else if (strcmp(a, "-l"        ) == 0)    crontab_proc  (my.who, 'c');
+      CHATTY   else if (strcmp(a, "--list"    ) == 0)    crontab_proc  (my.who, 'l');
+      CHATTY   else if (strcmp(a, "--all"     ) == 0)    crontab_proc  ("ALL" , 'l');
+      CHATTY   else if (strcmp(a, "--here"    ) == 0)    crontab_local ('l');
       /*---(installing)------------------*/
       else if (a[0] != '-'           )          crontab_inst  (a);
-      else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }
-      else if (strcmp(a, "--reload"  ) == 0)    crontab_local ('i');
+      CHATTY   else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }
+      CHATTY   else if (strcmp(a, "--reload"  ) == 0)    crontab_local ('i');
       /*---(removing)--------------------*/
       else if (strcmp(a, "-d"        ) == 0)  { TWOARG  crontab_del   (argv[++i]); }
       else if (strcmp(a, "-r"        ) == 0)  { TWOARG  crontab_del   (argv[++i]); }
-      else if (strcmp(a, "--purge"   ) == 0)    crontab_proc  (my.who, 'p');
-      else if (strcmp(a, "--cleanse" ) == 0)    crontab_proc  ("ALL" , 'p');
+      CHATTY   else if (strcmp(a, "--purge"   ) == 0)    crontab_proc  (my.who, 'p');
+      CHATTY   else if (strcmp(a, "--cleanse" ) == 0)    crontab_proc  ("ALL" , 'p');
       /*---(user switches)---------------*/
       else if (strcmp(a, "-u"        ) == 0)  { TWOARG  crontab_user  (argv[++i]); }
       else if (strcmp(a, "--user"    ) == 0)  { TWOARG  crontab_user  (argv[++i]); }
       /*---(warnings)--------------------*/
-      else if (strcmp(a, "-c"        ) == 0)    crontab_dir   ();
-      else if (strcmp(a, "-e"        ) == 0)    crontab_edit  ();
-      else if (strcmp(a, "-"         ) == 0)    crontab_stdin ();
+      CHATTY   else if (strcmp(a, "-c"        ) == 0)    crontab_dir   ();
+      CHATTY   else if (strcmp(a, "-e"        ) == 0)    crontab_edit  ();
+      CHATTY   else if (strcmp(a, "-"         ) == 0)    crontab_stdin ();
       /*---(unknown)---------------------*/
       else    printf("requested action not understood or incomplete\n");
    }
@@ -289,61 +289,61 @@ prog_args          (int argc, char *argv[])
    return 1;
 }
 
-char       /* PURPOSE : display usage help information -----------------------*/
-prog_usage         (void)
-{
-   printf("\n");
-   printf("usage: khronos [OPTION] [<FILE>]\n");
-   printf("\n");
-   printf("khronos is a fast, simplified, modernized, and technical version of the\n");
-   printf("classic posix-defined crond time-based process scheduler which combines\n");
-   printf("crond and crontab to allow deeper verification, verbosity, and traceability\n");
-   printf("\n");
-   printf("posix/standard crontab options implemented:\n");
-   printf("   <file>           install/replace a crontab file\n");
-   printf("   -l               list all your installed crontabs to stdout\n");
-   printf("   -d <desc>        delete one of your crontabs by name\n");
-   printf("   -r <desc>        delete one of your crontabs by name\n");
-   printf("   -u <user>        act as another user (root only)\n");
-   printf("\n");
-   printf("posix/standard crontab options rejected:\n");
-   printf("   - or null        install from stdin (no traceability, over-write risk)\n");
-   printf("   -e               edit your crontab (no traceability or backup)\n");
-   printf("   -c <dir>         change the crontab dir (no way, security risk)\n");
-   printf("\n");
-   printf("extended crontab options:\n");
-   printf("   --all            list all installed crontabs (root only)\n");
-   printf("   --list           list all your installed crontabs\n");
-   printf("   --here           list all local crontabs that could be installed\n");
-   printf("   --test <desc>    test a crontab file for formatting correctness\n");
-   printf("   --system <desc>  install system crontab (root only)\n");
-   printf("   --purge          delete all your installed crontabs\n");
-   printf("   --cleanse        delete all installed crontabs (root only)\n");
-   printf("   --reload         delete all then install your crontabs\n");
-   printf("   --help, -h       print usage information\n");
-   printf("\n");
-   printf("extended crond options rejected:\n");
-   printf("   -n               foreground operation (using logging instead)\n");
-   printf("   -x <option>      debugging options (using @ urgents instead)\n");
-   printf("   -p               allows weaker security on crontabs (no, no)\n");
-   printf("   -m <script>      special email handling (not useful anyway)\n");
-   printf("\n");
-   printf("heatherly debugging \"urgents\"\n");
-   printf("   @a               verbosely traces argument parsing\n");
-   printf("   @p               verbosely traces interactive/crontab logic\n");
-   printf("\n");
-   printf("changes to crontab file naming rules\n");
-   printf("   - must be formatted as \"crontab.<description>\"\n");
-   printf("   - our version allows multiple crontabs per user (different descritions)\n");
-   printf("   - description is '.' plus 1 to 50 characters\n");
-   printf("   - valid characters in the description are [A-Za-z0-9_] only\n");
-   printf("   - if you have only one crontab, likely just call it \"crontab.base\"\n");
-   printf("   - options above only require <desc> part of crontab name\n");
-   printf("\n");
-   printf("NOTE : all arguments will be processed in the order supplied\n");
-   printf("\n");
-   exit (0);
-}
+CHATTY   char       /* PURPOSE : display usage help information -----------------------*/
+CHATTY   prog_usage         (void)
+CHATTY   {
+CHATTY      printf("\n");
+CHATTY      printf("usage: khronos [OPTION] [<FILE>]\n");
+CHATTY      printf("\n");
+CHATTY      printf("khronos is a fast, simplified, modernized, and technical version of the\n");
+CHATTY      printf("classic posix-defined crond time-based process scheduler which combines\n");
+CHATTY      printf("crond and crontab to allow deeper verification, verbosity, and traceability\n");
+CHATTY      printf("\n");
+CHATTY      printf("posix/standard crontab options implemented:\n");
+CHATTY      printf("   <file>           install/replace a crontab file\n");
+CHATTY      printf("   -l               list all your installed crontabs to stdout\n");
+CHATTY      printf("   -d <desc>        delete one of your crontabs by name\n");
+CHATTY      printf("   -r <desc>        delete one of your crontabs by name\n");
+CHATTY      printf("   -u <user>        act as another user (root only)\n");
+CHATTY      printf("\n");
+CHATTY      printf("posix/standard crontab options rejected:\n");
+CHATTY      printf("   - or null        install from stdin (no traceability, over-write risk)\n");
+CHATTY      printf("   -e               edit your crontab (no traceability or backup)\n");
+CHATTY      printf("   -c <dir>         change the crontab dir (no way, security risk)\n");
+CHATTY      printf("\n");
+CHATTY      printf("extended crontab options:\n");
+CHATTY      printf("   --all            list all installed crontabs (root only)\n");
+CHATTY      printf("   --list           list all your installed crontabs\n");
+CHATTY      printf("   --here           list all local crontabs that could be installed\n");
+CHATTY      printf("   --test <desc>    test a crontab file for formatting correctness\n");
+CHATTY      printf("   --system <desc>  install system crontab (root only)\n");
+CHATTY      printf("   --purge          delete all your installed crontabs\n");
+CHATTY      printf("   --cleanse        delete all installed crontabs (root only)\n");
+CHATTY      printf("   --reload         delete all then install your crontabs\n");
+CHATTY      printf("   --help, -h       print usage information\n");
+CHATTY      printf("\n");
+CHATTY      printf("extended crond options rejected:\n");
+CHATTY      printf("   -n               foreground operation (using logging instead)\n");
+CHATTY      printf("   -x <option>      debugging options (using @ urgents instead)\n");
+CHATTY      printf("   -p               allows weaker security on crontabs (no, no)\n");
+CHATTY      printf("   -m <script>      special email handling (not useful anyway)\n");
+CHATTY      printf("\n");
+CHATTY      printf("heatherly debugging \"urgents\"\n");
+CHATTY      printf("   @a               verbosely traces argument parsing\n");
+CHATTY      printf("   @p               verbosely traces interactive/crontab logic\n");
+CHATTY      printf("\n");
+CHATTY      printf("changes to crontab file naming rules\n");
+CHATTY      printf("   - must be formatted as \"crontab.<description>\"\n");
+CHATTY      printf("   - our version allows multiple crontabs per user (different descritions)\n");
+CHATTY      printf("   - description is '.' plus 1 to 50 characters\n");
+CHATTY      printf("   - valid characters in the description are [A-Za-z0-9_] only\n");
+CHATTY      printf("   - if you have only one crontab, likely just call it \"crontab.base\"\n");
+CHATTY      printf("   - options above only require <desc> part of crontab name\n");
+CHATTY      printf("\n");
+CHATTY      printf("NOTE : all arguments will be processed in the order supplied\n");
+CHATTY      printf("\n");
+CHATTY      exit (0);
+CHATTY   }
 
 char
 prog_term          (void)

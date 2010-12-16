@@ -377,10 +377,11 @@
 #ifndef YCHRONOS
 #define YCHRONOS loaded
 
+#define   CHATTY
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.7e"
-#define VER_TXT   "adding code to strip verbosity and chattiness"
+#define VER_NUM   "0.7f"
+#define VER_TXT   "create the lean.awk script to cut talkiness and features"
 
 
 /*---(headers)--------------------------------------------------*/
@@ -445,7 +446,6 @@ extern    char      debug_proc;
 extern    char      testing;
 extern    int       failed;
 
-#define   CHATTY           \/\/
 #define   EXTRA
 
 

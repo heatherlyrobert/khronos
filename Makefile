@@ -2,6 +2,7 @@
 
 #*---(current variables)--------------*#
 BASE    = khronos
+MICRO   = ukhronos
 DIR     = /home/system/p_gvskav/khronos.heatherly_cron_daemon
 
 #*---(standard variables)-------------*#
@@ -22,6 +23,13 @@ tcc                : ${BASE}.h ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BAS
 	mv ${BASE}_unit.code ${BASE}_unit.c
 	tcc -o   ${BASE}_unit    ${BASE}_unit.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}_test.c      ${LIBS} -lyUNIT -lyVAR
 
+lean               : 
+	./lean.awk ${BASE}.h       > ${MICRO}.h
+	./lean.awk ${BASE}.c       > ${MICRO}.c
+	./lean.awk ${BASE}_main.c  > ${MICRO}_main.c
+	./lean.awk ${BASE}_list.c  > ${MICRO}_list.c
+	./lean.awk ${BASE}_tab.c   > ${MICRO}_tab.c
+	tcc -o     ${MICRO}         ${MICRO}_main.c ${MICRO}_list.c ${MICRO}_tab.c ${MICRO}.c
 
 
 #*---(MAIN)---------------------------*#

@@ -1,5 +1,5 @@
 /*===========================[[ start-of-code ]]==============================*/
-#include      "khronos.h"
+#include   "khronos.h"
 
 
 struct cACCESSOR my;
@@ -128,7 +128,7 @@ initialize         (const char a_quiet)
 {
    /*---(defense)------------------------*/
    if (getuid() != 0) {
-      printf("FATAL : khronos can only be daemonized by root\n");
+      CHATTY   printf("FATAL : khronos can only be daemonized by root\n");
       exit (-1);
    }
    /*---(set noisiness)------------------*//*===fat=beg===*/
