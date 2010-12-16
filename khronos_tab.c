@@ -71,11 +71,11 @@ crontab_proc       (cchar *a_user, cchar a_action)
    int             rc        = 0;
    char            x_file[NAME] = "";
    /*---(defense)-------------------------------*/
-   DEBUG_P  printf("crontab_list()...\n");
+   DEBUG_P  printf("crontab_proc()...\n");
    if (strcmp(a_user, "ALL") == 0 && my.am_root != 'y') {
       DEBUG_P  printf("   ");
       printf("must be root to use the \"--all\" option");
-      prog_term();
+      return -1;
    }
    /*---(format user names)---------------------*/
    DEBUG_P  printf("   user = %s\n", a_user);
@@ -86,7 +86,7 @@ crontab_proc       (cchar *a_user, cchar a_action)
    if (dir == NULL) {
       DEBUG_P  printf("   ");
       printf("can not open crontab directory\n");
-      prog_term();
+      return -2;
    }
    DEBUG_P  printf("   openned directory successfully\n");
    /*> printf("--crontabs-------------------------\n", a_user);                       <*/
@@ -105,9 +105,13 @@ crontab_proc       (cchar *a_user, cchar a_action)
          ++count;
       }
    }
+   DEBUG_P  printf("back to crontab_proc()...\n");
+   DEBUG_P  printf("   processed %d installed crontabs\n", count);
    /*> printf("---%03d found-----------------------\n", count);                       <*/
    closedir(dir);
+   DEBUG_P  printf("   closing directory\n");
    /*---(complete)------------------------------*/
+   DEBUG_P  printf("   done\n\n");
    return 0;
 }
 
@@ -341,6 +345,7 @@ crontab_test       (cchar *a_source)
    /*---(begin)---------------------------------*/
    DEBUG_P  printf("crontab_test()...\n");
    testing = 'y';
+   failed  = 0;
    /*---(set source directory)------------------*/
    if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/system/c_quani/crontabs/", my.who);
    else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);

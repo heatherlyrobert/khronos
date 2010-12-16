@@ -5,7 +5,13 @@
 struct cACCESSOR my;
 char     *args[20];
 char   version;
+int    failed;
 
+char      debug_top    = 'n';
+char      debug_args   = 'n';
+char      debug_input  = 'n';
+char      debug_proc   = 'n';
+char      testing      = 'n';
 
 
 /*====================------------------------------------====================*/
@@ -13,33 +19,34 @@ char   version;
 /*====================------------------------------------====================*/
 static void      o___UTILITIES_______________o (void) {;}
 
-char               /* PURPOSE : write the current time to cronpulse ----------*/
-timestamp     (void)
+char       /*lf--: PURPOSE : write the current time to cronpulse -------------*/
+timestamp          (void)
 {
-   /*---(locals)--------------------------------*/
+   /*---(locals)-------------------------*/
    FILE     *pulser    = NULL;
    long      now       = 0;
    tTIME    *curr      = NULL;
-   /*---(set time)-------------------------------*/
+   /*---(set time)-----------------------*/
    now       = time(NULL);
    curr      = localtime(&now);
-   strftime(my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
-   if (my.silent != 'y') {
-      /*---(open)--------------------------------*/
-      pulser = fopen(PULSER, "w");
-      if (pulser != NULL) {
-         fprintf(pulser, "%s\n", my.pulse_time);
-         fclose(pulser);
-      } else {
-         yLOG_warn  ("PULSER", "cronpulse file can not be openned");
-      }
-      yLOG_info  ("time",   my.pulse_time);
-   }
-   /*---(complete)-------------------------------*/
+   /*---(log to pulser)------------------*//*===fat=beg===*/
+   CHATTY   strftime(my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
+   CHATTY   if (my.silent != 'y') {
+   CHATTY      /*---(open)------------------------*/
+   CHATTY      pulser = fopen(PULSER, "w");
+   CHATTY      if (pulser != NULL) {
+   CHATTY         fprintf(pulser, "%s\n", my.pulse_time);
+   CHATTY         fclose(pulser);
+   CHATTY      } else {
+   CHATTY         yLOG_warn  ("PULSER", "cronpulse file can not be openned");
+   CHATTY      }
+   CHATTY      yLOG_info  ("time",   my.pulse_time);
+   CHATTY   }
+   /*---(complete)-----------------------*//*===fat=end===*/
    return curr->tm_min;
 }
 
-char               /* PURPOSE : break string into an argv[] structure --------*/
+char       /*l---: PURPOSE : break string into an argv[] structure -----------*/
 str_parse          (char *a_cstring)
 {
    /*---(defenses)-----------------------*/
@@ -84,7 +91,7 @@ str_parse          (char *a_cstring)
    return 0;
 }
 
-char*              /* PURPOSE : clean whitespace from both sides of a string -*/
+char*      /*l---: PURPOSE : clean whitespace from both sides of a string ----*/
 str_trim           (char *a_cstring)
 {
    /*---(defenses)-------------------------*/
@@ -116,79 +123,86 @@ str_trim           (char *a_cstring)
 /*====================------------------------------------====================*/
 static void      o___HOUSEKEEPING____________o (void) {;}
 
-char               /* PURPOSE : get the logging up and going -----------------*/
+char       /*lf--: PURPOSE : get the logging up and going --------------------*/
 initialize         (const char a_quiet)
 {
-   /*---(defense)-------------------------------*/
+   /*---(defense)------------------------*/
    if (getuid() != 0) {
       printf("FATAL : khronos can only be daemonized by root\n");
       exit (-1);
    }
-   if      (a_quiet == 0)  { my.quiet = 0; my.updates = 0; }
-   else if (a_quiet == 1)  { my.quiet = 0; my.updates = 1; }
-   else                    { my.quiet = 1; my.updates = 1; }
-   /*---(begin)---------------------------------*/
-   my.logger = yLOG_begin("khronos", my.quiet);
-   if (my.logger < 1) {
-      printf("khronos : can not start logger, FATAL\n");
-      exit(1);
-   }
-   yLOG_info  ("purpose",  "consistent, reliable time-based job scheduling");
-   yLOG_info  ("ver_num",  VER_NUM);
-   yLOG_info  ("ver_txt",  VER_TXT);
-   yLOG_info  ("cli args", "none");
-   /*---(init)----------------------------------*/
-   yLOG_enter (__FUNCTION__);
+   /*---(set noisiness)------------------*//*===fat=beg===*/
+   CHATTY   if      (a_quiet == 0)  { my.quiet = 0; my.updates = 0; }
+   CHATTY   else if (a_quiet == 1)  { my.quiet = 0; my.updates = 1; }
+   CHATTY   else                    { my.quiet = 1; my.updates = 1; }
+   /*---(begin)--------------------------*/
+   CHATTY   my.logger = yLOG_begin("khronos", my.quiet);
+   CHATTY   if (my.logger < 1) {
+   CHATTY      printf("khronos : can not start logger, FATAL\n");
+   CHATTY      exit(1);
+   CHATTY   }
+   CHATTY   yLOG_info  ("purpose",  "consistent, reliable time-based job scheduling");
+   CHATTY   yLOG_info  ("ver_num",  VER_NUM);
+   CHATTY   yLOG_info  ("ver_txt",  VER_TXT);
+   CHATTY   yLOG_info  ("cli args", "none");
+   /*---(init)---------------------------*//*===fat=end===*/
+   CHATTY   yLOG_enter (__FUNCTION__);
    my.uid = getuid();
-   yLOG_value ("uid num", my.uid);
+   CHATTY   yLOG_value ("uid num", my.uid);
    my.silent  = 'n';
-   /*---(variables)-----------------------------*/
+   /*---(variables)----------------------*/
    nfile  = 0;
    nentry = 0;
    nfast  = 0;
    nproc  = 0;
-   /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
+   /*---(end)----------------------------*/
+   CHATTY   yLOG_exit  (__FUNCTION__);
+   /*---(complete)-----------------------*/
    return 0;
 }
 
-char               /* PURPOSE : exit on termintation/signal ------------------*/
+char       /*lf--: PURPOSE : exit on termintation/signal ---------------------*/
 terminate          (const char *a_func, const int a_exit)
 {
-   if (strncmp(a_func, "", 1) != 0) yLOG_exit  (a_func);
-   /*---(complete)------------------------------*/
-   yLOG_end   ();
+   /*---(log)----------------------------*//*===fat=beg===*/
+   CHATTY   if (strncmp(a_func, "", 1) != 0) yLOG_exit  (a_func);
+   CHATTY   yLOG_end   ();
+   /*---(check for harsh exit)-----------*//*===fat=end===*/
    if (a_exit > 0) exit(a_exit);
+   /*---(complete)-----------------------*/
    return 0;
 }
 
-void               /* PURPOSE : handle signals -------------------------------*/
+void       /*----: PURPOSE : handle signals ----------------------------------*/
 communicate        (int a_signal)
 {
+   /*---(catch)--------------------------*/
    switch (a_signal) {
    case  SIGHUP:
-      yLOG_info  ("SIGNAL", "SIGHUP MEANS REFRESH CRONTABS BEFORE NEXT RUN");
+      CHATTY   yLOG_info  ("SIGNAL", "SIGHUP MEANS REFRESH CRONTABS BEFORE NEXT RUN");
       my.resync = '-';
       break;
    case  SIGTERM:
-      yLOG_info  ("SIGNAL", "SIGTERM means terminate daemon");
-      watch_end();
+      CHATTY   yLOG_info  ("SIGNAL", "SIGTERM means terminate daemon");
+      CHATTY   watch_end();
       terminate("EXITING", 99);
       break;
    case  SIGSEGV:
-      yLOG_info  ("SIGNAL", "SIGSEGV means daemon blew up");
-      watch_end();
+      CHATTY   yLOG_info  ("SIGNAL", "SIGSEGV means daemon blew up");
+      CHATTY   watch_end();
       terminate("EXITING", 99);
       break;
    }
-   signals();    /* must reset signals after use         */
-   /*---(complete)------------------------------*/
+   /*---(reset)--------------------------*/
+   signals();
+   /*---(complete)-----------------------*/
    return;
 }
 
-char               /* PURPOSE : setup signal handling ------------------------*/
+char       /*l---: PURPOSE : setup signal handling ---------------------------*/
 signals            (void)
 {
+   /*---(set)----------------------------*/
    signal(SIGCHLD,  SIG_IGN);        /* ignore children       */
    signal(SIGTSTP,  SIG_IGN);        /* ignore tty signals    */
    signal(SIGTTOU,  SIG_IGN);        /* ignore tty signals    */
@@ -203,47 +217,47 @@ signals            (void)
 char               /* PURPOSE : daemonize the program ------------------------*/
 daemonize          (void)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    int       i    = 0;                       /* loop iterator                 */
    int       fd   = 0;                       /* file descriptor               */
    int      status  = 0;
    /*---(fork off and die)----------------------*/
-   yLOG_info("foad", "fork off and die");
+   CHATTY   yLOG_info("foad", "fork off and die");
    my.pid = fork();
    if (my.pid < 0) {         /* error               */
-      yLOG_info  ("fork",   "creation of child FAILED");
+      CHATTY   yLOG_info  ("fork",   "creation of child FAILED");
       terminate(__FUNCTION__, 1);
    }
    if (my.pid > 0) {         /* parent process      */
-      yLOG_info  ("PARENT", "exiting parent");
+      CHATTY   yLOG_info  ("PARENT", "exiting parent");
       exit(0);
    }
    wait4(my.pid, &status, 0, NULL);
    /*---(fix the umask)-------------------------*/
-   yLOG_info  ("umask",  "reset the default file permissions");
+   CHATTY   yLOG_info  ("umask",  "reset the default file permissions");
    umask(0);
    /*---(close off all descriptors)-------------*/
-   yLOG_info  ("fds",    "close all inherited file descriptors");
+   CHATTY   yLOG_info  ("fds",    "close all inherited file descriptors");
    for (i = 0; i < 256; ++i) {
-      if (i == my.logger) continue;
+      CHATTY   if (i == my.logger) continue;
       close(i);
    }
    /*---(tie std fds to the bitbucket)----------*/
-   yLOG_info  ("std fds",   "redirect stdin, stdout, and stderr to /dev/null");
+   CHATTY   yLOG_info  ("std fds",   "redirect stdin, stdout, and stderr to /dev/null");
    fd = open("/dev/null", O_RDWR);
    if (fd < 0) {
-      yLOG_info  ("fds",    "creation of safe fd FAILED");
+      CHATTY   yLOG_info  ("fds",    "creation of safe fd FAILED");
       terminate(__FUNCTION__, 2);
    }
    dup2(fd, 0);
    dup2(fd, 1);
    dup2(fd, 2);
    /*---(obtain a new process group)------------*/
-   yLOG_info  ("session", "create a new process/session");
+   CHATTY   yLOG_info  ("session", "create a new process/session");
    my.sid = setsid();
    if (my.sid < 0) {
-      yLOG_info  ("sid",    "creation FAILED");
+      CHATTY   yLOG_info  ("sid",    "creation FAILED");
       terminate(__FUNCTION__, 3);
    }
    /*---(check security on crontabs)------------*/
@@ -251,43 +265,43 @@ daemonize          (void)
    int       rc = 0;
    rc = lstat(CRONTABS, &s);
    if  (rc < 0) {
-      yLOG_info  ("crondir", "directory does not exist");
+      CHATTY   yLOG_info  ("crondir", "directory does not exist");
       terminate(__FUNCTION__, 6);
    }
    if  (!S_ISDIR(s.st_mode))  {
-      yLOG_info  ("crondir", "not a directory");
+      CHATTY   yLOG_info  ("crondir", "not a directory");
       terminate(__FUNCTION__, 6);
    }
    if  (s.st_uid  != 0)  {
-      yLOG_info  ("crondir", "directory not owned by root");
+      CHATTY   yLOG_info  ("crondir", "directory not owned by root");
       terminate(__FUNCTION__, 6);
    }
    if  (s.st_gid  != 0)  {
-      yLOG_info  ("crondir", "directory group is not root");
+      CHATTY   yLOG_info  ("crondir", "directory group is not root");
       terminate(__FUNCTION__, 6);
    }
    if  ((s.st_mode & 00777) != 00700)  {
-      yLOG_info  ("crondir", "directory permissions not 0700");
+      CHATTY   yLOG_info  ("crondir", "directory permissions not 0700");
       terminate(__FUNCTION__, 6);
    }
-   yLOG_info  ("crondir", "directory owned by root:root and 0700");
+   CHATTY   yLOG_info  ("crondir", "directory owned by root:root and 0700");
    /*---(change to safe location)---------------*/
-   yLOG_info  ("location", "change current dir to a safe place");
+   CHATTY   yLOG_info  ("location", "change current dir to a safe place");
    if (chdir(CRONTABS) < 0) {
-      yLOG_info  ("cd",    "change directory FAILED");
+      CHATTY   yLOG_info  ("cd",    "change directory FAILED");
       terminate(__FUNCTION__, 4);
    }
    /*---(record process info)-------------------*/
    my.pid  = getpid();
    my.ppid = getppid();
-   yLOG_value ("new pid",  my.pid);
-   yLOG_value ("new ppid", my.ppid);
+   CHATTY   yLOG_value ("new pid",  my.pid);
+   CHATTY   yLOG_value ("new ppid", my.ppid);
    if (my.ppid != 1) {
       /*---(fork off and die)----------------------*/
-      yLOG_info("foad", "fork off and die again");
+      CHATTY   yLOG_info("foad", "fork off and die again");
       my.pid = fork();
       if (my.pid < 0) {         /* error               */
-         yLOG_info  ("fork",   "creation of child FAILED");
+         CHATTY   yLOG_info  ("fork",   "creation of child FAILED");
          terminate(__FUNCTION__, 1);
       }
       if (my.pid > 0) {         /* parent process      */
@@ -295,22 +309,22 @@ daemonize          (void)
       }
       my.pid  = getpid();
       my.ppid = getppid();
-      yLOG_value ("and pid",  my.pid);
-      yLOG_value ("and ppid", my.ppid);
+      CHATTY   yLOG_value ("and pid",  my.pid);
+      CHATTY   yLOG_value ("and ppid", my.ppid);
       if (my.ppid != 1) {
-         yLOG_info  ("ppid",  "not owned by init, FAILED");
+         CHATTY   yLOG_info  ("ppid",  "not owned by init, FAILED");
          terminate(__FUNCTION__, 5);
       }
    }
-   yLOG_info  ("ppid",  "owned by init, success");
+   CHATTY   yLOG_info  ("ppid",  "owned by init, success");
    /*---(signals)-------------------------------*/
-   yLOG_info  ("signals",  "setup signal handlers");
+   CHATTY   yLOG_info  ("signals",  "setup signal handlers");
    signals();
    /*---(run file)------------------------------*/
-   yLOG_info  ("lockfile", "test for single crond instance");
+   CHATTY   yLOG_info  ("lockfile", "test for single crond instance");
    lock();
    /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
@@ -321,7 +335,7 @@ lock          (void)
    struct flock lk;
    my.locker = open(LOCKFILE, O_RDWR | O_CREAT, 0644);
    if (my.locker < 0) {
-      yLOG_info  ("FAILURE", "crond already running (can not open file)");
+      CHATTY   yLOG_info  ("FAILURE", "crond already running (can not open file)");
       terminate("FAILURE", 7);
    }
    lk.l_type   = F_WRLCK;           /* exclusive lock            */
@@ -330,10 +344,10 @@ lock          (void)
    lk.l_len    = 0L;                /* whole file                */
    rc = fcntl(my.locker, F_SETLK, &lk);    /* non-blocking              */
    if (rc != 0) {
-      yLOG_info  ("FAILURE", "crond already running (can not lock file)");
+      CHATTY   yLOG_info  ("FAILURE", "crond already running (can not lock file)");
       terminate("FAILURE", 8);
    }
-   yLOG_info  ("lock",     "write final pid to /var/run/crond.pid");
+   CHATTY   yLOG_info  ("lock",     "write final pid to /var/run/crond.pid");
    char _msg[50];
    snprintf(_msg, 50, "%d\n", my.pid);
    write(my.locker, _msg, strlen(_msg));
@@ -344,10 +358,10 @@ lock          (void)
 char        /* PURPOSE : final preparation for run                     */
 prepare       (void)
 {
-   yLOG_info("watcher", "update watcher to /var/log/yLOG/cronwatch");
-   watch_beg();
+   CHATTY   yLOG_info("watcher", "update watcher to /var/log/yLOG/cronwatch");
+   CHATTY   watch_beg();
    search('a');
-   yLOG_value ("read in", nfile);
+   CHATTY   yLOG_value ("read in", nfile);
    my.resync  = 'n';
    /*---(complete)-------------------------------*/
    return 0;
@@ -365,17 +379,17 @@ watch_end          (void)
 {
    if (my.updates) return 0;
    /*---(locals)---------------------------------*/
-   FILE      *watcher;
+   CHATTY   FILE      *watcher;
    /*---(get the last stop time)-----------------*/
-   watcher = fopen(WATCHER, "a");
+   CHATTY   watcher = fopen(WATCHER, "a");
    /*---(write the last end time)----------------*/
-   timestamp();
-   snprintf(my.pulse_end  , 50, "%s   end", my.pulse_time);
-   if   (watcher != NULL) {
-      fprintf(watcher, "%s\n", my.pulse_end);
-      fclose(watcher);
-   }
-   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
+   CHATTY   timestamp();
+   CHATTY   snprintf(my.pulse_end  , 50, "%s   end", my.pulse_time);
+   CHATTY   if   (watcher != NULL) {
+   CHATTY      fprintf(watcher, "%s\n", my.pulse_end);
+   CHATTY      fclose(watcher);
+   CHATTY   }
+   CHATTY   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
    /*---(complete)-------------------------------*/
    return 0;
 }
@@ -385,29 +399,29 @@ watch_beg          (void)
 {
    if (my.updates) return 0;
    /*---(locals)---------------------------------*/
-   FILE      *watcher;
-   int        len;
-   char       trash[50];
-   char       xtime[50];
-   struct tm *curr_time;
-   time_t     time_date;
+   CHATTY   FILE      *watcher;
+   CHATTY   int        len;
+   CHATTY   char       trash[50];
+   CHATTY   char       xtime[50];
+   CHATTY   struct tm *curr_time;
+   CHATTY   time_t     time_date;
    /*---(get the last stop time)-----------------*/
    /*> lastrun();                                                                     <*/
-   watcher = fopen(WATCHER, "a");
+   CHATTY   watcher = fopen(WATCHER, "a");
    /*---(get a start time)--------------------*/
-   timestamp();
-   yLOG_info  ("this beg", my.pulse_time);
+   CHATTY   timestamp();
+   CHATTY   yLOG_info  ("this beg", my.pulse_time);
    /*---(get missed time)---------------------*/
    /*> sscanf(my.pulse_time , "%s %ld", trash, &my.this_start);                       <* 
     *> my.fast_beg = my.this_start;                                                   <* 
     *> yLOG_value ("missed secs", my.this_start - my.last_end);                       <*/
    /*---(write the time)-------------------------*/
    snprintf(my.pulse_begin, 50, "%s   BEGINNING", my.pulse_time);
-   if (watcher != NULL) {
-      fprintf(watcher, "%s\n", my.pulse_begin);
-      fclose(watcher);
-   }
-   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
+   CHATTY   if (watcher != NULL) {
+   CHATTY      fprintf(watcher, "%s\n", my.pulse_begin);
+   CHATTY      fclose(watcher);
+   CHATTY   }
+   CHATTY   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
    /*---(complete)-------------------------------*/
    return 0;
 }
@@ -469,15 +483,44 @@ lastrun       (void)
       if (rc == 2 && xtime < my.last_end && xtime > 0)  my.last_end = xtime;
       /*---(close)-------------------------------*/
       fclose(watcher);
-   } else {
-      yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
+   CHATTY   } else {
+   CHATTY      yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
    }
    /*---(save if off)----------------------------*/
    curr  = localtime(&my.last_end);
    strftime(my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
-   yLOG_info  ("last end", my.pulse_time);
+   CHATTY   yLOG_info  ("last end", my.pulse_time);
    /*---(complete)-------------------------------*/
    return my.last_end;
+}
+
+char       /* PURPOSE : generate a current status file -----------------------*/
+status             (void)
+{
+   /*---(locals)---------------------------------*/
+   tCFILE   *file;                           /* current file                  */
+   tCLINE   *line;                           /* current line                  */
+   FILE     *status    = NULL;
+   /*---(open)-----------------------------------*/
+   status  = fopen(STATUS, "w");
+   if (status  != NULL) {
+      fprintf(status, "khronos status reporting\n");
+      fprintf(status, "updated : %ld\n", (long) time(NULL));
+      fprintf(status, "\n");
+      /*---(scan every file)--------------------*/
+      for (file = cronhead; file != NULL; file = file->next) {
+         fprintf(status, "FILE (%c) %3d = %-20.20s :: %-40.40s\n",
+               file->retire, file->nlines, file->user, file->name);
+         /*---(scan every line)-----------------*/
+         for (line = file->head; line != NULL; line = line->next) {
+            fprintf(status, "   %3d : %-20.20s : r=%3d, t=%10ld, a=%d, f=%3d, p=%6d : %s\n", line->recd, line->title, line->attempts, line->lasttime, line->active, line->failures, line->rpid, line->cmd);
+         }
+         fprintf(status, "\n");
+      }
+      /*---(close)-------------------------------*/
+      fclose(status);
+   }
+   return 0;
 }
 
 
@@ -491,7 +534,7 @@ char        /* PURPOSE : search for and process crontab updates               */
 search        (cchar a_scope)
 {
    if (a_scope == '?' && my.resync == 'n')  return -1;
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    tDIRENT  *den;
    DIR      *dir;
@@ -503,13 +546,13 @@ search        (cchar a_scope)
    /*---(open dir)------------------------------*/
    dir = opendir(CRONTABS);
    if (dir == NULL) {
-      yLOG_info("crondir", "FATAL, not found");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_info("crondir", "FATAL, not found");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return 0;
    }
    /*---(report scope)--------------------------*/
-   if (my.resync == 'a') yLOG_info("scope", "clear and load all files");
-   else                  yLOG_info("scope", "look only for updated files");
+   CHATTY   if (my.resync == 'a') yLOG_info("scope", "clear and load all files");
+   CHATTY   else                  yLOG_info("scope", "look only for updated files");
    /*---(loop through files)--------------------*/
    while ((den = readdir(dir)) != NULL) {
       /*---(defense)----------------------------*/
@@ -522,13 +565,13 @@ search        (cchar a_scope)
       strncpy(my.action, "", 5);
       if (len > 7) {
          if (strncmp(x_file + len - 3, "DEL", 5) == 0) {
-            yLOG_info ("DEL",   x_file);
+            CHATTY   yLOG_info ("DEL",   x_file);
             x_file[len - 4] = '\0';
             strncpy(my.action, "DEL", 5);
             assimilate(x_file);
          }
          if (strncmp(x_file + len - 3, "NEW", 5) == 0) {
-            yLOG_info ("NEW",   x_file);
+            CHATTY   yLOG_info ("NEW",   x_file);
             x_file[len - 4] = '\0';
             rename(den->d_name, x_file);
             strncpy(my.action, "NEW", 5);
@@ -542,12 +585,12 @@ search        (cchar a_scope)
       assimilate(x_file);
    }
    closedir(dir);
-   yLOG_value ("count",  count);
+   CHATTY   yLOG_value ("count",  count);
    /*---(delete)--------------------------------*/
    system("rm -f *.DEL");
    /*---(complete)------------------------------*/
    my.resync = 'n';
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    /*---(complete)------------------------------*/
    return 0;
 }
@@ -555,7 +598,7 @@ search        (cchar a_scope)
 char        /* PURPOSE : validate a single crontab name and process it        */
 assimilate    (cchar *a_name)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    char      rc   = 0;                            /* simple return code       */
    FILE     *f    = NULL;                         /* crontab file decriptor   */
@@ -564,8 +607,8 @@ assimilate    (cchar *a_name)
    rc      = name (a_name, '-');                  /* vaildate name            */
    if (rc <  0) {
       TEST  printf("   crontab is misnamed\n");
-      yLOG_warn  ("name",    "file name is not valid");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("name",    "file name is not valid");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -1;
    }
    TEST  printf("   name is good = <<%s>>\n", a_name);
@@ -575,31 +618,31 @@ assimilate    (cchar *a_name)
    rc = lstat(a_name, &s);
    if  (rc < 0) {
       TEST  printf("   crontab could not be found\n");
-      yLOG_info  ("FAILED",  "crontab file does not exist");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_info  ("FAILED",  "crontab file does not exist");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -2;
    }
    TEST  printf("   crontab found\n");
    if  (!S_ISREG(s.st_mode))  {
       TEST  printf("   crontab is not a regular file\n");
-      yLOG_info  ("FAILED",  "crontab is not a regular file");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_info  ("FAILED",  "crontab is not a regular file");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -2;
    }
    TEST  printf("   crontab is a normal file\n");
-   yLOG_info  ("file stat", "crontab is a normal file");
+   CHATTY   yLOG_info  ("file stat", "crontab is a normal file");
    /*---(elimintate exiting copy)---------------*/
    rc      = retire (my.name);
    if (strncmp(my.action, "DEL", 5) == 0) {
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return 0;
    }
    /*---(process new one)-----------------------*/
    f = fopen(a_name, "r");
    if (f == NULL) {
       TEST  printf("   crontab could not be openned\n");
-      yLOG_info  ("FAILED",  "can not open the file");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_info  ("FAILED",  "can not open the file");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -2;
    }
    TEST  printf("   crontab openned successfully\n");
@@ -608,7 +651,7 @@ assimilate    (cchar *a_name)
    if (rc >= 0) rc = inventory (curr, f);
    /*---(complete)------------------------------*/
    fclose(f);
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return rc;
 }
 
@@ -616,8 +659,8 @@ char        /* PURPOSE : validate the crontab name                            */
 name          (cchar *a_name, cchar a_loc)
 {
    if (a_name == NULL) return -1;
-   yLOG_enter (__FUNCTION__);
-   yLOG_info  ("CRONTAB",   a_name);
+   CHATTY   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_info  ("CRONTAB",   a_name);
    /*---(locals)--------------------------------*/
    char     *p;                                   /* pointer  for strtok      */
    int       len;                                 /* string's length          */
@@ -626,54 +669,54 @@ name          (cchar *a_name, cchar a_loc)
    char      x_name[NAME];        /* name of the current crontab               */
    /*---(defense)-------------------------------*/
    if (a_name[0] == '.') {
-      yLOG_warn  ("name",  "can not process hidden crontab names");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("name",  "can not process hidden crontab names");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -8;
    }
    len = strlen(a_name);
    if (len >= NAME) {
-      yLOG_warn  ("name",  "crontab name too long to be processed");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("name",  "crontab name too long to be processed");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -1;
    }
    strncpy(x_name, a_name, NAME);
    /*---(get user name)-------------------------*/
    p = strtok(x_name, ".");
    if (p == NULL) {
-      yLOG_warn  ("user",  "crontab file does not have a user name");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("user",  "crontab file does not have a user name");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -2;
    }
    len = strlen(p);
    if (len >= USER) {
-      yLOG_warn  ("user",  "user name too long to be processed");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("user",  "user name too long to be processed");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -3;
    }
    for (i = 0; i < len; ++i) {
       if (strchr(legal, p[i]) != NULL) continue;
-      yLOG_warn  ("user",  "user name has illegal characters");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("user",  "user name has illegal characters");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -4;
    }
    strncpy(my.user, p, USER);
    /*---(get crontab description)---------------*/
    p = strtok(NULL,   ".");
    if (p == NULL) {
-      yLOG_warn  ("desc",  "crontab file does not have a description");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("desc",  "crontab file does not have a description");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -5;
    }
    len = strlen(p);
    if (len >= DESC) {
-      yLOG_warn  ("desc",  "decription too long to be processed");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("desc",  "decription too long to be processed");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -9;
    }
    for (i = 0; i < len; ++i) {
       if (strchr(legal, p[i]) != NULL) continue;
-      yLOG_warn  ("desc",  "crontab description has illegal characters");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("desc",  "crontab description has illegal characters");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -6;
    }
    strncpy(my.desc, p, DESC);
@@ -681,28 +724,28 @@ name          (cchar *a_name, cchar a_loc)
    p = strtok(NULL,   ".");
    if (a_loc == 'c') {
       if (p != NULL && strncmp(p, "NEW", 4) != 0 && strncmp(p, "DEL", 4) != 0) {
-         yLOG_info  ("name",  "crontab name is illegally suffixed");
-         yLOG_exit  (__FUNCTION__);
+         CHATTY   yLOG_info  ("name",  "crontab name is illegally suffixed");
+         CHATTY   yLOG_exit  (__FUNCTION__);
          return -7;
       }
    } else {
       if (p != NULL) {
-         yLOG_info  ("name",  "crontab name is illegally suffixed");
-         yLOG_exit  (__FUNCTION__);
+         CHATTY   yLOG_info  ("name",  "crontab name is illegally suffixed");
+         CHATTY   yLOG_exit  (__FUNCTION__);
          return -8;
       }
    }
    /*---(complete)------------------------------*/
    strncpy(my.name, a_name, NAME);
-   yLOG_info  ("success", "crontab name is legal");
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_info  ("success", "crontab name is legal");
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
 char
 retire        (cchar *a_name)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    tCFILE   *file;
    tCLINE   *line;
@@ -710,7 +753,7 @@ retire        (cchar *a_name)
    int       found = 0;
    /*---(process)-------------------------------*/
    for (file = cronhead; file != NULL; file = file->next) {
-      yLOG_info ("compare", file->name);
+      CHATTY   yLOG_info ("compare", file->name);
       /*---(defense)-------------------------*/
       if (file->retire   == 'y')                  continue; /* already retired*/
       if (strncmp(a_name, file->name, NAME) != 0) continue; /* name wrong     */
@@ -725,13 +768,13 @@ retire        (cchar *a_name)
          /*---(running lines)-------------------*/
          if (line->rpid != 0) {
             /*> printf("   active job, mark\n");                                      <*/
-            yLOG_bullet (line->recd, "running, but marking for deletion");
+            CHATTY   yLOG_bullet (line->recd, "running, but marking for deletion");
             line = line->next;
          }
          /*---(non-running line)----------------*/
          else {
             /*> printf("   inactive job, delete\n");                                  <*/
-            yLOG_bullet (line->recd, "freeing now");
+            CHATTY   yLOG_bullet (line->recd, "freeing now");
             cronline_del (line);
             line = file->head;
          }
@@ -748,13 +791,13 @@ retire        (cchar *a_name)
    }
    /*---(summarize)-----------------------------*/
    if (found == 0) {
-      yLOG_info  ("crontab",  "existing not found, continuing");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_info  ("crontab",  "existing not found, continuing");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -1;
    }
-   yLOG_info  ("crontab",  "found and retired existing crontab");
+   CHATTY   yLOG_info  ("crontab",  "found and retired existing crontab");
    /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return  0;
 }
 
@@ -778,35 +821,35 @@ purge         (void)
 char
 create        (cchar *a_name, cchar *a_user, tCFILE **a_curr)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    tPASSWD  *pass;
    tCFILE   *file = NULL;
    /*---(create the space)----------------------*/
    file          = malloc(sizeof(tCFILE));
-   yLOG_point ("malloc",     file);
+   CHATTY   yLOG_point ("malloc",     file);
    if (file == NULL) {
       TEST  printf("   malloc could not create space\n");
-      yLOG_warn  ("cronfile",  "malloc could not create space");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_warn  ("cronfile",  "malloc could not create space");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -2;
    }
    TEST  printf("   file space malloc'd\n");
    /*---(base data)-----------------------------*/
    strncpy(file->name, a_name, NAME);
    strncpy(file->user, a_user, USER);
-   yLOG_info ("user is", file->user);
+   CHATTY   yLOG_info ("user is", file->user);
    /*---(get uid)-------------------------------*/
    pass = getpwnam(a_user);                       /* get password entry       */
    if (pass == NULL) {
-      TEST  printf("   user not found = <<%c>>\n", a_user);
-      yLOG_warn  ("user",  "user name not a valid account on the system");
-      yLOG_exit  (__FUNCTION__);
+      TEST  printf("   user not found = <<%s>>\n", a_user);
+      CHATTY   yLOG_warn  ("user",  "user name not a valid account on the system");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return -1;
    }
    file->uid       = pass->pw_uid;
    TEST  printf("   user uid = %d\n", file->uid);
-   yLOG_value ("UID",   file->uid);
+   CHATTY   yLOG_value ("UID",   file->uid);
    /*---(initialize the rest)-------------------*/
    file->retire    = 'n';
    /*---(link into file dll)--------------------*/
@@ -816,14 +859,14 @@ create        (cchar *a_name, cchar *a_user, tCFILE **a_curr)
    (*a_curr) = file;
    /*---(complete)------------------------------*/
    TEST  printf("   done\n\n");
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
 char
 inventory     (tCFILE *a_cfile, FILE *a_source)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    char      buffer[LINE];
    char      backup[LINE];
@@ -834,7 +877,7 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
    int       rc;
    tCLINE   *cline;
    /*---(run input lines)-----------------------*/
-   yLOG_point ("cfile",    a_cfile);
+   CHATTY   yLOG_point ("cfile",    a_cfile);
    while (1) {
       /*> printf("good to go ONE\n");                                                 <*/
       /*> printf("a_source = %p\n", a_source);                                        <*/
@@ -865,16 +908,16 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       xdow = strtok(NULL  , " ");
       xtmp = strtok(NULL  , " ");
       xcmd = backup + (xtmp - buffer);
-      yLOG_break();
+      CHATTY   yLOG_break();
       /*---(create a line)----------------------*/
       cline = malloc(sizeof(tCLINE));
       if (cline == NULL) {
          TEST  printf("couldn't malloc\n\n");
-         yLOG_info  ("malloc", "failed");
-         yLOG_exit  (__FUNCTION__);
+         CHATTY   yLOG_info  ("malloc", "failed");
+         CHATTY   yLOG_exit  (__FUNCTION__);
          return -1;
       }
-      yLOG_info  ("malloc", "good to go");
+      CHATTY   yLOG_info  ("malloc", "good to go");
       /*---(link into line dll)-----------------*/
       cronline_add (a_cfile, cline);
       /*---(fill in master data)----------------*/
@@ -885,11 +928,11 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
          cline->recovery = my.recovery;
          cline->priority = my.priority;
          cline->alerting = my.alerting;
-         yLOG_delim ("title",    cline->title);
-         yLOG_char  ("duration", cline->duration);
-         yLOG_char  ("recovery", cline->recovery);
-         yLOG_char  ("priority", cline->priority);
-         yLOG_char  ("alerting", cline->alerting);
+         CHATTY   yLOG_delim ("title",    cline->title);
+         CHATTY   yLOG_char  ("duration", cline->duration);
+         CHATTY   yLOG_char  ("recovery", cline->recovery);
+         CHATTY   yLOG_char  ("priority", cline->priority);
+         CHATTY   yLOG_char  ("alerting", cline->alerting);
       }
       /*---(parse)------------------------------*/
       rc = 0;
@@ -900,18 +943,18 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       if (rc == 0)  rc = parse (xdow, cline->dow,  6, 0, "weekdays");
       if (rc != 0) {
          TEST  printf("couldn't parse\n\n");
-         yLOG_error ("parsing" , "line failed and is deleted");
+         CHATTY   yLOG_error ("parsing" , "line failed and is deleted");
          free(cline);
          continue;
       }
       /*---(final data)-------------------------*/
-      yLOG_info ("cmd",  xcmd);
+      CHATTY   yLOG_info ("cmd",  xcmd);
       strncpy(cline->cmd, xcmd, CMD);
       TEST  printf("   command    : <<%-.65s>>\n", xcmd);
       TEST  printf("   GOOD TO GO\n\n");
    }
    /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return  0;
 }
 
@@ -1041,7 +1084,7 @@ parse         (char *a_input, char *a_array, int a_max, int a_off, char *a_name)
       else                 my.parsed[i] = '_';
    }
    my.parsed[a_max + 1] = '\0';
-   yLOG_info (a_name,   my.parsed);
+   CHATTY   yLOG_info (a_name,   my.parsed);
    TEST  printf ("   %-10.10s : %-60.60s\n", a_name, my.parsed);
    /*---(complete)------------------------------*/
    return  0;
@@ -1056,36 +1099,44 @@ convert       (const char *a_field, const char *a_input, const int a_min, const 
    if (a_input == NULL) return -1;
    len   = strlen(a_input);
    if (len > 2) {
-      yLOG_info ("focus",    a_field);
-      yLOG_info ("issue",    "value too long");
-      yLOG_info ("input",    a_input);
-      yLOG_info ("FAILED",   "whole line was rejected");
+      TEST  printf("   %s (%s) were tool long (>2 digits)\n", a_field, a_input);
+      ++failed;
+      CHATTY   yLOG_info ("focus",    a_field);
+      CHATTY   yLOG_info ("issue",    "value too long");
+      CHATTY   yLOG_info ("input",    a_input);
+      CHATTY   yLOG_info ("FAILED",   "whole line was rejected");
       return -2;
    }
    for (i = 0; i < len; ++i) {
       if (!isdigit(a_input[i])) {
-         yLOG_info ("focus",    a_field);
-         yLOG_info ("issue",    "value contains non-numeric values");
-         yLOG_info ("input",    a_input);
-         yLOG_info ("FAILED",   "whole line was rejected");
+         TEST  printf("   %s (%s) contains non numeric characters\n", a_field, a_input);
+         ++failed;
+         CHATTY   yLOG_info ("focus",    a_field);
+         CHATTY   yLOG_info ("issue",    "value contains non-numeric values");
+         CHATTY   yLOG_info ("input",    a_input);
+         CHATTY   yLOG_info ("FAILED",   "whole line was rejected");
          return -3;
       }
    }
    value = atoi(a_input);
    if (value < a_min) {
-      yLOG_info ("focus",    a_field);
-      yLOG_info ("issue",    "value is less than 1");
-      yLOG_info ("input",    a_input);
-      yLOG_value("value",    value);
-      yLOG_info ("FAILED",   "whole line was rejected");
+      TEST  printf("   %s (%s) is less than min of %d\n", a_field, a_input, a_min);
+      ++failed;
+      CHATTY   yLOG_info ("focus",    a_field);
+      CHATTY   yLOG_info ("issue",    "value is less than 1");
+      CHATTY   yLOG_info ("input",    a_input);
+      CHATTY   yLOG_value("value",    value);
+      CHATTY   yLOG_info ("FAILED",   "whole line was rejected");
       return -4;
    }
    if (value > a_max) {
-      yLOG_info ("focus",    a_field);
-      yLOG_info ("issue",    "value is tool large");
-      yLOG_info ("input",    a_input);
-      yLOG_value("value",    value);
-      yLOG_info ("FAILED",   "whole line was rejected");
+      TEST  printf("   %s (%s) is greater than max of %d\n", a_field, a_input, a_max);
+      ++failed;
+      CHATTY   yLOG_info ("focus",    a_field);
+      CHATTY   yLOG_info ("issue",    "value is tool large");
+      CHATTY   yLOG_info ("input",    a_input);
+      CHATTY   yLOG_value("value",    value);
+      CHATTY   yLOG_info ("FAILED",   "whole line was rejected");
       return -5;
    }
    return value;
@@ -1102,8 +1153,8 @@ char        /* PURPOSE : create list of jobs to run in a particular period    */
 fast          (clong a_start)                /* time_t of starting hour       */
 {
    if (my.silent == 'n') {
-      yLOG_enter (__FUNCTION__);
-      yLOG_note  ("determine jobs that will run in the next hour");
+      CHATTY   yLOG_enter (__FUNCTION__);
+      CHATTY   yLOG_note  ("determine jobs that will run in the next hour");
    }
    /*---(locals)---------------------------------*/
    int       chrs, cday, cmon, cdow;         /* simplifying temp variables    */
@@ -1116,7 +1167,7 @@ fast          (clong a_start)                /* time_t of starting hour       */
    tTIME    *curr_time = localtime(&my.fast_beg);
    /*---(format the time)------------------------*/
    strftime(msg, 50, "---- %Hh %dd %mm  %ww", curr_time);
-   yLOG_info ("fast for", msg);
+   CHATTY   yLOG_info ("fast for", msg);
    /*---(work out the current time)----------*/
    chrs = curr_time->tm_hour;
    cday = curr_time->tm_mday;
@@ -1145,7 +1196,7 @@ fast          (clong a_start)                /* time_t of starting hour       */
          snprintf(msg, 100, "%3d) %2dh %2dd %2dm %2dw %.30s (%d)", nfast,
                x_line->hrs[chrs], x_line->day[cday], x_line->mon[cmon],
                x_line->dow[cdow], x_file->name,      x_line->recd);
-         yLOG_info  ("add",     msg);
+         CHATTY   yLOG_info  ("add",     msg);
          /*---(hook them up)--------------------*/
          if (nfast == 0) {
             fasthead        = x_line;
@@ -1159,10 +1210,10 @@ fast          (clong a_start)                /* time_t of starting hour       */
       }
    }
    /*---(log results)---------------------------*/
-   if (my.silent  == 'n') {
-      yLOG_value ("count", nfast);
-      yLOG_exit  (__FUNCTION__);
-   }
+   CHATTY   if (my.silent  == 'n') {
+      CHATTY   yLOG_value ("count", nfast);
+      CHATTY   yLOG_exit  (__FUNCTION__);
+   CHATTY   }
    /*---(complete)------------------------------*/
    return 0;
 }
@@ -1170,14 +1221,14 @@ fast          (clong a_start)                /* time_t of starting hour       */
 char        /* PURPOSE : run through the fast list to find what should run    */
 dispatch      (cint a_min)
 {
-   if (my.silent == 'n') yLOG_enter (__FUNCTION__);
+   CHATTY   if (my.silent == 'n') yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    int       njobs = 0;                      /* number of jobs ready to run   */
    int       ntest = 0;                      /* number of jobs ready to run   */
    tCLINE   *x_line;                         /* current line                  */
    char      msg[200];
    /*---(process all time periods)--------------*/
-   if (my.silent == 'n') yLOG_value ("potential",  nfast);
+   CHATTY   if (my.silent == 'n') yLOG_value ("potential",  nfast);
    for (x_line = fasthead; x_line != NULL; x_line = x_line->fnext) {
       if (my.silent == 'y') {
          switch (x_line->recovery) {
@@ -1189,19 +1240,19 @@ dispatch      (cint a_min)
       snprintf(msg, 200, "%-16.16s,%3d", x_line->file->name, x_line->recd);
       if (x_line->min[a_min]  == 0) {
          if (my.silent == 'n') {
-            yLOG_senter ("not");
-            yLOG_snote(msg);
-            yLOG_snote  ("not sched for min");
-            yLOG_sexit  ();
+            CHATTY   yLOG_senter ("not");
+            CHATTY   yLOG_snote(msg);
+            CHATTY   yLOG_snote  ("not sched for min");
+            CHATTY   yLOG_sexit  ();
          }
          continue;
       }
       if (x_line->rpid        != 0) {
          if (my.silent == 'n') {
-            yLOG_senter ("not");
-            yLOG_snote(msg);
-            yLOG_snote  ("already running");
-            yLOG_sexit  ();
+            CHATTY   yLOG_senter ("not");
+            CHATTY   yLOG_snote(msg);
+            CHATTY   yLOG_snote  ("already running");
+            CHATTY   yLOG_sexit  ();
          }
          continue;
       }
@@ -1209,9 +1260,9 @@ dispatch      (cint a_min)
       ++njobs;
    }
    if (my.silent == 'n') {
-      yLOG_value ("tested", ntest);
-      yLOG_value ("ran",    njobs);
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_value ("tested", ntest);
+      CHATTY   yLOG_value ("ran",    njobs);
+      CHATTY   yLOG_exit  (__FUNCTION__);
    }
    /*---(complete)------------------------------*/
    return 0;
@@ -1220,7 +1271,7 @@ dispatch      (cint a_min)
 char
 run        (tCFILE *a_file, tCLINE *a_line)
 {
-   yLOG_senter ("RUN");
+   CHATTY   yLOG_senter ("RUN");
    /*---(locals)--------------------------------*/
    int       rc        = 0;                       /* simple return code       */
    int       rpid      = 0;                       /* child pid for execution  */
@@ -1234,22 +1285,24 @@ run        (tCFILE *a_file, tCLINE *a_line)
    a_line->rpid   = 0;
    /*---(fork off to execute)-------------------*/
    snprintf(msg, 200, "%-16.16s,%3d", a_line->file->name, a_line->recd);
-   yLOG_snote(msg);
-   yLOG_snote("fork");
+   CHATTY   yLOG_snote(msg);
+   CHATTY   yLOG_snote("fork");
    rpid = fork();
    if (rpid < 0) {                        /* error                            */
-      yLOG_snote ("FAILURE");
-      yLOG_sexit ();
+      CHATTY   yLOG_snote ("FAILURE");
+      CHATTY   yLOG_sexit ();
       return -1;
    }
    if (rpid > 0) {
-      yLOG_svalue ("pid", rpid);
+      CHATTY   yLOG_svalue ("pid", rpid);
       /*---(link into proc dll)-----------------*/
       a_line->rpid       = rpid;
+      a_line->lasttime = time(NULL);
+      ++a_line->attempts;
       proclist_add (a_line);
       /*---(log and exit)-----------------------*/
-      yLOG_snote  ("SUCCESS");
-      yLOG_sexit  ();
+      CHATTY   yLOG_snote  ("SUCCESS");
+      CHATTY   yLOG_sexit  ();
       return 0;              /* parent moves on to next task     */
    }
    output = fopen(STUFF, "a");
@@ -1343,11 +1396,11 @@ run        (tCFILE *a_file, tCLINE *a_line)
 char        /* PURPOSE : verify status of running jobs and mark completions   */
 check         (void)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(defense)-------------------------------*/
    if (nproc == 0) {
-      yLOG_note  ("no currently running jobs");
-      yLOG_exit  (__FUNCTION__);
+      CHATTY   yLOG_note  ("no currently running jobs");
+      CHATTY   yLOG_exit  (__FUNCTION__);
       return 0;
    }
    /*---(locals)--------------------------------*/
@@ -1358,7 +1411,7 @@ check         (void)
    int       x_status  = 0;                       /* the line's job status    */
    char      msg[200];
    /*---(prepare)-------------------------------*/
-   yLOG_value ("before", nproc);
+   CHATTY   yLOG_value ("before", nproc);
    x_line    = prochead;
    /*---(loop)----------------------------------*/
    while (x_line != NULL) {
@@ -1366,43 +1419,51 @@ check         (void)
       x_pnext   = x_line->pnext;
       x_file    = x_line->file;
       /*---(output header)----------------------*/
-      yLOG_senter("chk");
+      CHATTY   yLOG_senter("chk");
       snprintf(msg, 200, "%-15.15s,%3d", x_line->file->name, x_line->recd);
-      yLOG_snote (msg);
-      yLOG_sint  (x_line->rpid);
+      CHATTY   yLOG_snote (msg);
+      CHATTY   yLOG_sint  (x_line->rpid);
       /*---(check status)-----------------------*/
       rc = wait4(x_line->rpid, &x_status, WNOHANG, NULL);
       /*---(handle running line)----------------*/
       if (rc ==  0) {
-         yLOG_snote ("still running");
+         CHATTY   yLOG_snote ("still running");
       }
       /*---(handle completed line)--------------*/
       else {
+         x_line->lastexit = -1;
          /*---(log status code)-----------------*/
          if (WIFEXITED(x_status)) {
-            yLOG_snote ("exited");
-            if      (WEXITSTATUS(x_status) == 0) yLOG_snote ("normal");
-            else if (WEXITSTATUS(x_status) >  0) yLOG_snote ("positive");
-            else                                 yLOG_snote ("FAILURE");
+            x_line->lastexit = WEXITSTATUS(x_status);
+            CHATTY   yLOG_snote ("exited");
+            if      (WEXITSTATUS(x_status) == 0) {
+               CHATTY   yLOG_snote ("normal");
+            } else if (WEXITSTATUS(x_status) >  0) {
+               CHATTY   yLOG_snote ("positive");
+            } else {
+               ++x_line->failures;
+               CHATTY   yLOG_snote ("FAILURE");
+            }
          } else {
-            yLOG_snote ("TERMINATED");
+            ++x_line->failures;
+            CHATTY   yLOG_snote ("TERMINATED");
          }
          /*---(clear from proc list)------------*/
-         yLOG_snote ("clearing");
+         CHATTY   yLOG_snote ("clearing");
          proclist_del (x_line);
          /*---(clear from proc list)------------*/
          if (x_line->deleted == 'y') {
-            yLOG_snote ("deleted");
+            CHATTY   yLOG_snote ("deleted");
             cronline_del (x_line);
             if (x_file->nlines == 0) cronfile_del (x_file);
          }
       }
-      yLOG_sexit();
+      CHATTY   yLOG_sexit();
       x_line = x_pnext;
       if (x_line == NULL)    break;
    }
-   yLOG_value ("after", nproc);
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_value ("after", nproc);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 

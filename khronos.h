@@ -24,7 +24,7 @@
 
  *   khronos is a fast, simplified, modernized, and technical version of the
  *   classic posix-defined crond time-based process scheduler which combines
- *   crond and crontab to allow deeper verification and traceablity.
+ *   crond and crontab to allow deeper verification, verbosity, and traceablity.
  *
  */
 /*===[[ PURPOSE ]]=============================================================*
@@ -45,11 +45,17 @@
  *   everything seems to be trending towards the closely coupled, gui-focused,
  *   kitchen-sink mentality that then tends to display well but never gets used.
  *
+ *   the one thing the advancements, since the original, truly improved were the
+ *   algorithms.  the original cron apparently could not scale to a large
+ *   number of users, not that helpful for them.  in our case, we won't have a
+ *   ton of different users, but we will have tons of jobs running -- we want
+ *   the better algorithms to make up for the primitiveness of our coding ;)
+ *
  *   khronos will attempt to implement the original simplicity, clarity, and
  *   power with updated algorithms, automated testing, strong logging and
  *   monitoring, stronger security, and a few added recovery/notification
- *   features.  we will maintain backward compatibility while focusing on an
- *   automation-intensive, power-user environment for our own personal use.
+ *   features.  we will maintain much backward compatibility while focusing on
+ *   an automation-intensive, power-user environment for our own personal use.
  *
  *   "do one thing and do it well (securely) and focus on technical power users"
  *
@@ -60,9 +66,11 @@
  *      - strict glibc/ansi-c so it can be ported to and compilied on anything
  *      - fast and efficient because we want to enable tons of automation
  *      - solid logging and status updates so you never have to guess
+ *      - ablilty to be very, very verbose in interactive use also (tracing)
  *      - clean, clear code so we can maintain it after long absences
  *      - fullsome unit testing and regression testing suite
  *      - eliminate known and potential security gaps and hacking vectors
+ *      - ability to test/verify crontabs before installation
  *
  *   khronos will not provide...
  *      - automatic email -- everyone ultimately hates it (security risk)
@@ -71,6 +79,15 @@
  *      - run-time configuration (no, its only for us, we can update code)
  *      - names for days and months, just use the numbers and like it ;)
  *      - special symbols for easly expressible things (@hourly, @weekly)
+ *
+ *   khronos will break backward compatiblilty in the following areas...
+ *      - crontabs will be stored in /var/spool/crontabs (not a big deal)
+ *      - crontab names will allow for many files per user (like dcron)
+ *      - crontabs will only be pulled from ~/c_quani/crontabs (std for us)
+ *      - will not allow -c option as it is a security nightmare (no way)
+ *      - will not allow -e option as it is a traceablilty nightmare (no loss)
+ *      - will not allow - option as it is even worse thatn -e (who cares)
+ *      - no mail at all (we will use other features to do it right)
  *
  *   on a large scale, khronos will not provide the other parts of batch work...
  *      - dependency-based scheduling (like init systems provide)
@@ -82,7 +99,7 @@
  *   down and rebuilding can really teach -- even if its more basic in the end.
  *
  *   as luck would have it, dcron (dillon's cron) is a wonderfully straight
- *   forward and clean implementation that we can build on.  it is licenced
+ *   forward and clean implementation that we can learn from.  it is licenced
  *   under the gnu gpl and so is perfect as our base.  so, we study dcron...
  *
  *   so, as always, there are many stable, accepted, existing programs and
@@ -362,8 +379,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.7d"
-#define VER_TXT   "break unit testing accessor out into a separate file"
+#define VER_NUM   "0.7e"
+#define VER_TXT   "adding code to strip verbosity and chattiness"
 
 
 /*---(headers)--------------------------------------------------*/
@@ -393,9 +410,10 @@
 #define    PULSER        "/var/log/yLOG/cronpulse.intrarun_last_check"
 #define    STUFF         "/var/log/yLOG/cronextra.execution_feedback"
 #define    WATCHER       "/var/log/yLOG.historical/cronwatch.interrun_monitoring"
+#define    STATUS        "/var/log/yLOG/khronos.status_reporting"
 
 /*---(work files and directories)-------------------------------*/
-#define    CRONTABS      "/var/spool/cron/crontabs"
+#define    CRONTABS      "/var/spool/crontabs"
 #define    PATH          "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
 #define    SHELL         "/bin/dash"
 
@@ -425,6 +443,10 @@ extern    char      debug_args;
 extern    char      debug_input;
 extern    char      debug_proc;
 extern    char      testing;
+extern    int       failed;
+
+#define   CHATTY           \/\/
+#define   EXTRA
 
 
 
@@ -499,22 +521,32 @@ struct cCFILE {      /* SLL, singly linked-list of crontab files              */
 };
 
 struct cCLINE {
+   /*---(link to file)-------------------*/
    tCFILE   *file;           /* link back up to the parent                    */
    int       recd;           /* crontab record number                         */
    char      cmd[CMD];       /* shell command                                 */
+   /*---(run)----------------------------*/
    char      active;         /* line is on the fast list                      */
    char      deleted;        /* line should be retired, but is running        */
    int       rpid;           /* running=pid, ready=0                          */
+   /*---(schedule masks)-----------------*/
    char      min[60];        /* bools : launch on minute 0-59                 */
    char      hrs[24];        /* bools : launch on hour   0-23                 */
    char      day[32];        /* bools : launch on day    1-31                 */
    char      mon[12];        /* bools : launch on month  0-11                 */
    char      dow[7];         /* bools : launch on day of week 0-6, beg sun    */
+   /*---(context)------------------------*/
    char      title[DESC];    /* user assigned title of current cron line      */
    char      duration;       /* -=<m, S=<5m,  M=<20m,  L=<60m,  B=>60m        */
    char      recovery;       /* -=no, q=+15m, h=+1hr,  t=+2hr,  c=cumm        */
    char      priority;       /* -=normal                                      */
    char      alerting;       /* -=none                                        */
+   /*---(historical)---------------------*/
+   int       attempts;       /* number of times it has been launched          */
+   int       failures;       /* number of times it has not ended well         */
+   long      lasttime;       /* timestamp of last run                         */
+   char      lastexit;       /* return code of last run                       */
+   /*---(linked lists)-------------------*/
    tCLINE   *next;           /* next line in line's doubly linked list        */
    tCLINE   *prev;           /* next line in line's doubly linked list        */
    tCLINE   *fnext;          /* next line in the fast path linked list        */
@@ -560,6 +592,7 @@ char      signals       (void);
 char      daemonize     (void);
 char      lock          (void);
 char      pulse         (void);
+char      status        (void);
 char      watch_beg     (void);
 char      watch_end     (void);
 char      prepare       (void);

@@ -2,31 +2,30 @@
 
 #*---(current variables)--------------*#
 BASE    = khronos
-FRONT   = crontab
 DIR     = /home/system/p_gvskav/khronos.heatherly_cron_daemon
 
 #*---(standard variables)-------------*#
-#COMP    = gcc -c -std=gnu89 -g -pg -Wall -Wextra
 COMP    = tcc -c -g -Wall
 INC     = 
-#LINK    = gcc
 LINK    = tcc
 LIBS    = -L/usr/local/libs -lyLOG
-LIBS_S  = 
 COPY    = cp -f
 CLEAN   = rm -f
 ECHO    = @echo
 
 
 tcc                : ${BASE}.h ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}.unit
+	# application
 	tcc -o   ${BASE}         ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c      ${LIBS}
-#	uUNIT    ${BASE}
-#	mv ${BASE}_unit.code ${BASE}_unit.c
-#	tcc -o   ${BASE}_unit    ${BASE}_unit.c ${BASE}_test.c ${BASE}_tab.c ${BASE}_list.c ${BASE}.c      ${LIBS} -lyUNIT -lyVAR
-#	tcc -o   ${FRONT}        ${FRONT}.c     ${BASE}_list.c ${BASE}.c                     ${LIBS}
+	# unit testing
+	uUNIT    ${BASE}
+	mv ${BASE}_unit.code ${BASE}_unit.c
+	tcc -o   ${BASE}_unit    ${BASE}_unit.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}_test.c      ${LIBS} -lyUNIT -lyVAR
+
+
 
 #*---(MAIN)---------------------------*#
-#all                : ${BASE} ${FRONT} ${BASE}_unit
+#all                : ${BASE} ${BASE}_unit
 
 
 #*---(executables)--------------------*#
@@ -35,9 +34,6 @@ tcc                : ${BASE}.h ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BAS
 
 #${BASE}_unit     : ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}.o 
 #	${LINK}  -o ${BASE}_unit    ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}.o ${LIBS} -lyUNIT -lyVAR 
-
-#${FRONT}         : ${FRONT}.o ${BASE}_list.o
-#	${LINK}  -o ${FRONT}        ${FRONT}.o ${BASE}_list.o   ${BASE}.o   ${LIBS}
 
 
 #*---(objects)------------------------*#
@@ -53,8 +49,6 @@ tcc                : ${BASE}.h ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BAS
 #${BASE}_test.o   : ${BASE}.h ${BASE}_test.c
 #	${COMP}  ${BASE}_test.c
 
-#${FRONT}.o       : ${BASE}.h ${FRONT}.c
-#	${COMP}  ${FRONT}.c ${INC}
 
 #${BASE}_unit.o   : ${BASE}.unit
 #	uUNIT    ${BASE}
@@ -70,13 +64,11 @@ clean              :
 	${CLEAN} *~
 	${CLEAN} temp*
 	${CLEAN} ${BASE}
-	${CLEAN} ${FRONT}
 	${CLEAN} ${BASE}_unit
 	${CLEAN} ${BASE}_unit.c
 
 remove             :
 	${CLEAN} /usr/sbin/${BASE}
-	${CLEAN} /usr/bin/${FRONT}
 
 
 bigclean           :
@@ -84,12 +76,19 @@ bigclean           :
 
 install            : ${BASE}
 	${ECHO}  installing in b_nvdo
+	# application
 	cp -f    ${BASE}    /usr/bin/
 	chown    root:root  /usr/bin/${BASE}
 	chmod    0711       /usr/bin/${BASE}
 	chmod    +s         /usr/bin/${BASE}
 	sha1sum  ${BASE}
+	# call graph
 	~/b_nvdo/call_graph
+	# documentation
+	rm -f       /usr/share/man/man1/${BASE}.1.bz2
+	cp -f       ${BASE}.1    /usr/share/man/man1/
+	bzip2       /usr/share/man/man1/${BASE}.1
+	chmod 0644  /usr/share/man/man1/${BASE}.1.bz2
 
 gotesting          : 
 	#mount --bind /bin     ${DIR}/unit_root/bin

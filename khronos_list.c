@@ -97,14 +97,20 @@ cronline_add (tCFILE *a_file, tCLINE *a_line)
 {
    /*---(initialize)------------------*/
    a_line->file         = a_file;
-   a_line->rpid         = 0;
-   a_line->active       = 0;
+   a_line->rpid         =  0;
+   a_line->active       =  0;
    a_line->deleted      = 'n';
+   /*---(context fields)--------------*/
    a_line->title[0]     = '\0';
    a_line->duration     = '-';
    a_line->recovery     = '-';
    a_line->priority     = '-';
    a_line->alerting     = '-';
+   /*---(history fields)--------------*/
+   a_line->attempts     =  0;
+   a_line->failures     =  0;
+   a_line->lasttime     = -1;
+   a_line->lastexit     = -1;
    /*---(null pointers)---------------*/
    a_line->next         = NULL;
    a_line->prev         = NULL;

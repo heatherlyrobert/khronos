@@ -20,11 +20,6 @@
 
 #define   MIN         60
 
-char      debug_top    = 'n';
-char      debug_args   = 'n';
-char      debug_input  = 'n';
-char      debug_proc   = 'n';
-char      testing      = 'n';
 
 /*====================------------------------------------====================*/
 /*===----                            driver                            ----===*/
@@ -44,7 +39,7 @@ wait_minute   (void)
       inc   = MIN - (now % MIN) + 1;
       if (inc > MIN)         break;               /* solve SIGHUP after sleep */
       targ  = now + inc;
-      if (my.silent == 'n') yLOG_value ("sleep (s)", inc);
+      CHATTY   if (my.silent == 'n') yLOG_value ("sleep (s)", inc);
       sleep(inc);
       now       = time(NULL);
       if (now >= targ)       break;               /* solve SIGHUP during sleep*/
@@ -64,16 +59,16 @@ curr_hours    (void)
 char
 catchup       (void)
 {
-   yLOG_enter (__FUNCTION__);
+   CHATTY   yLOG_enter (__FUNCTION__);
    /*---(locals)--------------------------------*/
    long      curr      = 0;                       /* curr hour                */
    int       min       = 0;                       /* curr minute              */
    /*---(init)----------------------------------*/
    my.silent = 'y';
    /*---(main loop)-----------------------------*/
-   yLOG_note ("catchup specially flagged missed jobs");
+   CHATTY   yLOG_note ("catchup specially flagged missed jobs");
    min       = ((my.last_end / 60) % 60) + 1;     /* start right after last   */
-   yLOG_value ("first min", min);
+   CHATTY   yLOG_value ("first min", min);
    /*> curr      = my.last_end - (my.last_end % (60 * 60));                           <*/
    curr      = my.last_end;
    while (curr < my.this_start) {
@@ -88,11 +83,11 @@ catchup       (void)
       if (curr >=  my.this_start) break;
       min       = 0;
    }
-   yLOG_value ("last min", min - 1);
+   CHATTY   yLOG_value ("last min", min - 1);
    /*---(reset)---------------------------------*/
    my.silent = 'n';
    /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
+   CHATTY   yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
@@ -111,39 +106,40 @@ main (int argc, char *argv[])
    if (rc == 1)  return 0;
    rc = initialize(0);
    rc = daemonize();
-   yLOG_break();
+   CHATTY   yLOG_break();
    rc = prepare();
    /*---(catchup)-------------------------------*/
-   yLOG_break();
+   CHATTY   yLOG_break();
    catchup();
    /*---(main loop)-----------------------------*/
-   yLOG_break();
-   yLOG_enter("main_loop");
+   CHATTY   yLOG_break();
+   CHATTY   yLOG_enter("main_loop");
    /*---(get the date)--------------------------*/
    min       = timestamp();
    wait_minute();
    curr      = curr_hours();
    while (1) {
-      yLOG_break();
-      yLOG_sync ();
-      yLOG_note ("hourly break -- check crontabs and reset fast list");
+      CHATTY   yLOG_break();
+      CHATTY   yLOG_sync ();
+      CHATTY   yLOG_note ("hourly break -- check crontabs and reset fast list");
       search('n');                                /* force update once an hour*/
       save      = curr;
       fast (curr);                                /* id jobs for this hour    */
       /*---(cycle minutes)----------------------*/
       while (curr == save) {
-         yLOG_break();
+         CHATTY   yLOG_break();
          min       = timestamp();
-         yLOG_value ("minute", min);
+         CHATTY   yLOG_value ("minute", min);
          search('?');                             /* update only if SIGHUP    */
          check();
          dispatch(min);
+         status();
          wait_minute();
          curr      = curr_hours();
       }
    }
-   yLOG_exit("main_loop");
-   yLOG_break();
+   CHATTY   yLOG_exit("main_loop");
+   CHATTY   yLOG_break();
    /*---(complete)------------------------------*/
    terminate("", 0);
    return 0;
@@ -152,7 +148,7 @@ main (int argc, char *argv[])
 char       /* PURPOSE : process the urgent command line arguments ------------*/
 prog_urgent        (int argc, char *argv[])
 {
-   /*---(locals)-------------------------*/
+   /*---(locals)-------------------------*//*===fat=beg===*/
    char     *a         = NULL;         /* current argument                    */
    int       i         = 0;            /* loop iterator -- arguments          */
    int       len       = 0;            /* argument length                     */
@@ -170,7 +166,7 @@ prog_urgent        (int argc, char *argv[])
       printf("   proc   = %c\n", debug_proc);
       printf("\n");
    }
-   /*---(complete)------------------------------*/
+   /*---(complete)-----------------------*//*===fat=end===*/
    return 0;
 }
 
@@ -246,7 +242,7 @@ prog_args          (int argc, char *argv[])
    }
    /*---(no logger)-----------------------------*/
    DEBUG_A  printf("   start a null logger\n");
-   my.logger = yLOG_begin("khronos", 2);
+   CHATTY   my.logger = yLOG_begin("khronos", 2);
    /*---(program name)--------------------------*/
    strncpy(my.prog, argv[0], USER);
    DEBUG_A  printf("   prog name = <<%s>>\n\n", my.prog);
@@ -301,7 +297,7 @@ prog_usage         (void)
    printf("\n");
    printf("khronos is a fast, simplified, modernized, and technical version of the\n");
    printf("classic posix-defined crond time-based process scheduler which combines\n");
-   printf("crond and crontab to allow deeper verification and traceability\n");
+   printf("crond and crontab to allow deeper verification, verbosity, and traceability\n");
    printf("\n");
    printf("posix/standard crontab options implemented:\n");
    printf("   <file>           install/replace a crontab file\n");
