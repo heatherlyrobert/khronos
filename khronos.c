@@ -1,8 +1,10 @@
 /*===========================[[ start-of-code ]]==============================*/
-#include      "chronos.h"
+#include      "khronos.h"
 
 
+struct cACCESSOR my;
 char     *args[20];
+char   version;
 
 
 
@@ -119,16 +121,16 @@ initialize         (const char a_quiet)
 {
    /*---(defense)-------------------------------*/
    if (getuid() != 0) {
-      printf("chronos can only be run by root\n");
+      printf("FATAL : khronos can only be daemonized by root\n");
       exit (-1);
    }
    if      (a_quiet == 0)  { my.quiet = 0; my.updates = 0; }
    else if (a_quiet == 1)  { my.quiet = 0; my.updates = 1; }
    else                    { my.quiet = 1; my.updates = 1; }
    /*---(begin)---------------------------------*/
-   my.logger = yLOG_begin("chronos", my.quiet);
+   my.logger = yLOG_begin("khronos", my.quiet);
    if (my.logger < 1) {
-      printf("chronos : can not start logger, FATAL\n");
+      printf("khronos : can not start logger, FATAL\n");
       exit(1);
    }
    yLOG_info  ("purpose",  "consistent, reliable time-based job scheduling");
@@ -170,10 +172,12 @@ communicate        (int a_signal)
       break;
    case  SIGTERM:
       yLOG_info  ("SIGNAL", "SIGTERM means terminate daemon");
+      watch_end();
       terminate("EXITING", 99);
       break;
    case  SIGSEGV:
       yLOG_info  ("SIGNAL", "SIGSEGV means daemon blew up");
+      watch_end();
       terminate("EXITING", 99);
       break;
    }
@@ -341,9 +345,7 @@ char        /* PURPOSE : final preparation for run                     */
 prepare       (void)
 {
    yLOG_info("watcher", "update watcher to /var/log/yLOG/cronwatch");
-   watch();
-   /*> yLOG_info("pulser",  "start pulsing to /var/log/yLOG/cronpulse");              <* 
-    *> pulse();                                                                       <*/
+   watch_beg();
    search('a');
    yLOG_value ("read in", nfile);
    my.resync  = 'n';
@@ -359,7 +361,27 @@ prepare       (void)
 static void      o___CRONPULSE_______________o (void) {;};
 
 char               /* PURPOSE : update cronwatch interrun monitoring file     */
-watch              (void)
+watch_end          (void)
+{
+   if (my.updates) return 0;
+   /*---(locals)---------------------------------*/
+   FILE      *watcher;
+   /*---(get the last stop time)-----------------*/
+   watcher = fopen(WATCHER, "a");
+   /*---(write the last end time)----------------*/
+   timestamp();
+   snprintf(my.pulse_end  , 50, "%s   end", my.pulse_time);
+   if   (watcher != NULL) {
+      fprintf(watcher, "%s\n", my.pulse_end);
+      fclose(watcher);
+   }
+   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
+   /*---(complete)-------------------------------*/
+   return 0;
+}
+
+char               /* PURPOSE : update cronwatch interrun monitoring file     */
+watch_beg          (void)
 {
    if (my.updates) return 0;
    /*---(locals)---------------------------------*/
@@ -370,34 +392,62 @@ watch              (void)
    struct tm *curr_time;
    time_t     time_date;
    /*---(get the last stop time)-----------------*/
-   lastrun();
+   /*> lastrun();                                                                     <*/
    watcher = fopen(WATCHER, "a");
-   /*---(write the last end time)----------------*/
-   snprintf(my.pulse_end  , 50, "%s   end", my.pulse_time);
-   if   (watcher != NULL) fprintf(watcher, "%s\n", my.pulse_end);
-   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
    /*---(get a start time)--------------------*/
    timestamp();
    yLOG_info  ("this beg", my.pulse_time);
    /*---(get missed time)---------------------*/
-   sscanf(my.pulse_time , "%s %ld", trash, &my.this_start);
-   my.fast_beg = my.this_start;
-   yLOG_value ("missed secs", my.this_start - my.last_end);
+   /*> sscanf(my.pulse_time , "%s %ld", trash, &my.this_start);                       <* 
+    *> my.fast_beg = my.this_start;                                                   <* 
+    *> yLOG_value ("missed secs", my.this_start - my.last_end);                       <*/
    /*---(write the time)-------------------------*/
    snprintf(my.pulse_begin, 50, "%s   BEGINNING", my.pulse_time);
    if (watcher != NULL) {
       fprintf(watcher, "%s\n", my.pulse_begin);
       fclose(watcher);
    }
+   else yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
    /*---(complete)-------------------------------*/
    return 0;
+}
+
+long               /* PURPOSE : read the last time from cronpulse ------------*/
+pulse_last    (void)
+{
+   /*---(locals)--------------------------------*/
+   FILE     *pulser    = NULL;
+   long      xtime     = 0;
+   long      final     = 0;
+   char      xbuf[55]  = "";
+   int       len       = 0;
+   char      trash[50] = "";
+   int       rc        = 0;
+   /*---(default to now)-------------------------*/
+   final = time(NULL);
+   /*---(open)-----------------------------------*/
+   pulser  = fopen(PULSER, "r");
+   if (pulser  != NULL) {
+      /*---(get the last stop time)--------------*/
+      fgets(xbuf, 50 , pulser);
+      /*---(clean it up)-------------------------*/
+      len    = strlen(xbuf) - 1;
+      if (xbuf[len] == '\n') xbuf[len] = '\0';
+      /*---(pull out the epoch)------------------*/
+      rc = sscanf(xbuf, "%s %ld", trash, &xtime);
+      if (rc == 2 && final > xtime && xtime > 0)  final = xtime;
+      /*---(close)-------------------------------*/
+      fclose(pulser);
+   }
+   /*---(complete)-------------------------------*/
+   return final;
 }
 
 long               /* PURPOSE : read the last time from cronpulse ------------*/
 lastrun       (void)
 {
    /*---(locals)--------------------------------*/
-   FILE     *pulser    = NULL;
+   FILE     *watcher   = NULL;
    long      xtime     = 0;
    char      xbuf[55]  = "";
    int       len       = 0;
@@ -407,10 +457,10 @@ lastrun       (void)
    /*---(default to now)-------------------------*/
    my.last_end = time(NULL);
    /*---(open)-----------------------------------*/
-   pulser = fopen(PULSER, "r");
-   if (pulser != NULL) {
+   watcher = fopen(WATCHER, "r");
+   if (watcher != NULL) {
       /*---(get the last stop time)--------------*/
-      fgets(xbuf, 50 , pulser);
+      fgets(xbuf, 50 , watcher);
       /*---(clean it up)-------------------------*/
       len    = strlen(xbuf) - 1;
       if (xbuf[len] == '\n') xbuf[len] = '\0';
@@ -418,9 +468,9 @@ lastrun       (void)
       rc = sscanf(xbuf, "%s %ld", trash, &xtime);
       if (rc == 2 && xtime < my.last_end && xtime > 0)  my.last_end = xtime;
       /*---(close)-------------------------------*/
-      fclose(pulser);
+      fclose(watcher);
    } else {
-      yLOG_warn  ("PULSER", "cronpulse file can not be openned");
+      yLOG_warn  ("WATCHER", "cronwatch file can not be openned");
    }
    /*---(save if off)----------------------------*/
    curr  = localtime(&my.last_end);
@@ -513,23 +563,30 @@ assimilate    (cchar *a_name)
    /*---(check file name)-----------------------*/
    rc      = name (a_name, '-');                  /* vaildate name            */
    if (rc <  0) {
+      TEST  printf("   crontab is misnamed\n");
       yLOG_warn  ("name",    "file name is not valid");
       yLOG_exit  (__FUNCTION__);
       return -1;
    }
+   TEST  printf("   name is good = <<%s>>\n", a_name);
+   TEST  strcpy(my.user, my.who);
    /*---(check on crontab file)-----------------*/
    struct    stat s;
    rc = lstat(a_name, &s);
    if  (rc < 0) {
+      TEST  printf("   crontab could not be found\n");
       yLOG_info  ("FAILED",  "crontab file does not exist");
       yLOG_exit  (__FUNCTION__);
       return -2;
    }
+   TEST  printf("   crontab found\n");
    if  (!S_ISREG(s.st_mode))  {
+      TEST  printf("   crontab is not a regular file\n");
       yLOG_info  ("FAILED",  "crontab is not a regular file");
       yLOG_exit  (__FUNCTION__);
       return -2;
    }
+   TEST  printf("   crontab is a normal file\n");
    yLOG_info  ("file stat", "crontab is a normal file");
    /*---(elimintate exiting copy)---------------*/
    rc      = retire (my.name);
@@ -540,10 +597,13 @@ assimilate    (cchar *a_name)
    /*---(process new one)-----------------------*/
    f = fopen(a_name, "r");
    if (f == NULL) {
+      TEST  printf("   crontab could not be openned\n");
       yLOG_info  ("FAILED",  "can not open the file");
       yLOG_exit  (__FUNCTION__);
       return -2;
    }
+   TEST  printf("   crontab openned successfully\n");
+   /*> TEST  return 0;                                                                <*/
    rc = create (my.name, my.user, &curr);
    if (rc >= 0) rc = inventory (curr, f);
    /*---(complete)------------------------------*/
@@ -555,6 +615,7 @@ assimilate    (cchar *a_name)
 char        /* PURPOSE : validate the crontab name                            */
 name          (cchar *a_name, cchar a_loc)
 {
+   if (a_name == NULL) return -1;
    yLOG_enter (__FUNCTION__);
    yLOG_info  ("CRONTAB",   a_name);
    /*---(locals)--------------------------------*/
@@ -725,10 +786,12 @@ create        (cchar *a_name, cchar *a_user, tCFILE **a_curr)
    file          = malloc(sizeof(tCFILE));
    yLOG_point ("malloc",     file);
    if (file == NULL) {
+      TEST  printf("   malloc could not create space\n");
       yLOG_warn  ("cronfile",  "malloc could not create space");
       yLOG_exit  (__FUNCTION__);
       return -2;
    }
+   TEST  printf("   file space malloc'd\n");
    /*---(base data)-----------------------------*/
    strncpy(file->name, a_name, NAME);
    strncpy(file->user, a_user, USER);
@@ -736,19 +799,23 @@ create        (cchar *a_name, cchar *a_user, tCFILE **a_curr)
    /*---(get uid)-------------------------------*/
    pass = getpwnam(a_user);                       /* get password entry       */
    if (pass == NULL) {
+      TEST  printf("   user not found = <<%c>>\n", a_user);
       yLOG_warn  ("user",  "user name not a valid account on the system");
       yLOG_exit  (__FUNCTION__);
       return -1;
    }
    file->uid       = pass->pw_uid;
+   TEST  printf("   user uid = %d\n", file->uid);
    yLOG_value ("UID",   file->uid);
    /*---(initialize the rest)-------------------*/
    file->retire    = 'n';
    /*---(link into file dll)--------------------*/
    cronfile_add (file);
+   TEST  printf("   added to file linked list\n");
    /*---(finalize)------------------------------*/
    (*a_curr) = file;
    /*---(complete)------------------------------*/
+   TEST  printf("   done\n\n");
    yLOG_exit  (__FUNCTION__);
    return 0;
 }
@@ -769,9 +836,13 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
    /*---(run input lines)-----------------------*/
    yLOG_point ("cfile",    a_cfile);
    while (1) {
+      /*> printf("good to go ONE\n");                                                 <*/
+      /*> printf("a_source = %p\n", a_source);                                        <*/
       /*---(get the line)-----------------------*/
       fgets(buffer, LINE - 5, a_source);
+      /*> printf("good to go ONE POINT FIVE\n");                                      <*/
       if (feof(a_source))    break;
+      /*> printf("good to go TWO\n");                                                 <*/
       len = strlen(buffer) - 1;
       buffer[len] = '\0';
       ++recds;
@@ -780,8 +851,12 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
          context (recds, buffer);
          continue;
       }
+      /*> printf("good to go THREE\n");                                               <*/
       if (len       <  10 )  continue;
+      /*> printf("good to go FOUR\n");                                                <*/
       /*---(read)-------------------------------*/
+      TEST  printf("inventory line (%2d)...\n", recds);
+      TEST  printf("   input recd : <<%-.65s>>\n", buffer);
       strncpy(backup, buffer, LINE);
       xmin = strtok(buffer, " ");
       xhrs = strtok(NULL  , " ");
@@ -794,6 +869,7 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       /*---(create a line)----------------------*/
       cline = malloc(sizeof(tCLINE));
       if (cline == NULL) {
+         TEST  printf("couldn't malloc\n\n");
          yLOG_info  ("malloc", "failed");
          yLOG_exit  (__FUNCTION__);
          return -1;
@@ -823,6 +899,7 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       if (rc == 0)  rc = parse (xmon, cline->mon, 12, 0, "months");
       if (rc == 0)  rc = parse (xdow, cline->dow,  6, 0, "weekdays");
       if (rc != 0) {
+         TEST  printf("couldn't parse\n\n");
          yLOG_error ("parsing" , "line failed and is deleted");
          free(cline);
          continue;
@@ -830,6 +907,8 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       /*---(final data)-------------------------*/
       yLOG_info ("cmd",  xcmd);
       strncpy(cline->cmd, xcmd, CMD);
+      TEST  printf("   command    : <<%-.65s>>\n", xcmd);
+      TEST  printf("   GOOD TO GO\n\n");
    }
    /*---(complete)------------------------------*/
    yLOG_exit  (__FUNCTION__);
@@ -963,6 +1042,7 @@ parse         (char *a_input, char *a_array, int a_max, int a_off, char *a_name)
    }
    my.parsed[a_max + 1] = '\0';
    yLOG_info (a_name,   my.parsed);
+   TEST  printf ("   %-10.10s : %-60.60s\n", a_name, my.parsed);
    /*---(complete)------------------------------*/
    return  0;
 }

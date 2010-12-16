@@ -1,12 +1,12 @@
 #======  ===========================(purpose)============================== 
 PREP     include the prototype headers                                      
-  incl   include crond header                   cron.h                    
+  incl   include crond header                   khronos.h                 
 
 
 
 
 #======  ===========================(purpose)==============================  =========(method)========= 
-SCRP     verify cronpulse operations                                         lastrun, timestamp         
+SCRP     verify cronpulse operations                                         timestamp,pulse_last       
 # use the date command to create cronpulse files for any timestamp
 # $ date -d "2009-01-12 13:01:30" "+%y.%m.%d.%H.%M.%S   %s" > cronpulse.intrarun_last_check
 
@@ -39,7 +39,7 @@ COND     write over the file                                                
   get    review the cell linked list            unit_accessor              "cronpulse",     0                                       c_round    custom                                                  
 
 COND     clear out the file                                                 
-  code   clear existing cronpulse file          system("rm -f /var/log/yLOG.program_logging/cronpulse.intrarun_last_check");                                                                                 
+  code   clear existing cronpulse file          system("rm -f /var/log/yLOG/cronpulse.intrarun_last_check");                                                                                 
 
 COND     write out the current time                                         
   code   get the current time                   xbase     = time(NULL);                                                                                                                                       
@@ -52,92 +52,92 @@ COND     write out the current time                                         
 
 COND     read the current time                                              
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     clear out the file                                                 
-  code   clear existing cronpulse file          system("rm -f /var/log/yLOG.program_logging/cronpulse.intrarun_last_check");                                                                                 
+  code   clear existing cronpulse file          system("rm -f /var/log/yLOG/cronpulse.intrarun_last_check");                                                                                 
 
 COND     read a non-existant file                                           
   code   get the current time                   xbase     = time(NULL);                                                                                                                                       
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     write garbage to the pulser file                                   
-  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG.program_logging/cronpulse.intrarun_last_check", "w");
-  code   write garbage                          fprintf(fPULSER, "/var/log/yLOG.program_logging/cronpulse.intrarun_last_check");
+  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG/cronpulse.intrarun_last_check", "w");
+  code   write garbage                          fprintf(fPULSER, "/var/log/yLOG/cronpulse.intrarun_last_check");
   code   close the file                         fclose(fPULSER);
 
 COND     read a garbage file                                                
   code   get the current time                   xbase     = time(NULL);                                                                                                                                       
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     write the current date to the pulser file                          
   code   get the current time                   xbase     = time(NULL);
   code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
   code   create a custom cronpulse string       strftime (c_time, 55, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
-  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG.program_logging/cronpulse.intrarun_last_check", "w");
+  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG/cronpulse.intrarun_last_check", "w");
   code   write garbage                          fprintf(fPULSER, "%s", c_time);
   code   close the file                         fclose(fPULSER);
 
 COND     read a garbage file                                                
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     write a future date to the pulser file                             
   code   get the current time                   xbase     = time(NULL) + 60 * 60;                                                                                                                                       
   code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
   code   get the current time                   xbase     = time(NULL);
   code   create a custom cronpulse string       strftime (c_time, 55, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
-  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG.program_logging/cronpulse.intrarun_last_check", "w");
+  code   open the cronpulse file                fPULSER = fopen("/var/log/yLOG/cronpulse.intrarun_last_check", "w");
   code   write garbage                          fprintf(fPULSER, "%s", c_time);
   code   close the file                         fclose(fPULSER);
 
 COND     read a garbage file                                                
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 01 :: garbage data                                       
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.01.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.01.* cronpulse.intrarun_last_check");
   code   get the current time                   xbase     = time(NULL);
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 02 :: correct day in past                                
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.02.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.02.* cronpulse.intrarun_last_check");
   code   create a custom expect string          sprintf  (custom, "%ld", 1286222400L);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 03 :: partial date                                       
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.03.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.03.* cronpulse.intrarun_last_check");
   code   get the current time                   xbase     = time(NULL);
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 04 :: gigasecond day                                     
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.04.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.04.* cronpulse.intrarun_last_check");
   code   create a custom expect string          sprintf  (custom, "%ld", 1000000000L);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 05 :: well into the future                               
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.05.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.05.* cronpulse.intrarun_last_check");
   code   get the current time                   xbase     = time(NULL);
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 06 :: negative value                                     
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.06.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.06.* cronpulse.intrarun_last_check");
   code   get the current time                   xbase     = time(NULL);
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     copy test 02 :: good one again                                     
-  code   get to the right directory             system("cd /var/log/yLOG.program_logging; cp -f cronpulse.test.02.* cronpulse.intrarun_last_check");
+  code   get to the right directory             system("cd /var/log/yLOG; cp -f cronpulse.test.02.* cronpulse.intrarun_last_check");
   code   create a custom expect string          sprintf  (custom, "%ld", 1286222400L);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     make the yLOG directory inaccessable                               
-  code   get to the right directory             system("mv -f /var/log/yLOG.program_logging /var/log/yLOGGY");
+  code   get to the right directory             system("mv -f /var/log/yLOG /var/log/yLOGGY");
 
 COND     write out the current time                                         
   code   get the current time                   xbase     = time(NULL);                                                                                                                                       
@@ -151,14 +151,14 @@ COND     write out the current time                                         
 COND     attempt to read a non-existant file                                
   code   get the current time                   xbase     = time(NULL);
   code   create a custom expect string          sprintf  (custom, "%ld", xbase);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     put the yLOG directory back                                        
-  code   get to the right directory             system("mv -f /var/log/yLOGGY /var/log/yLOG.program_logging");
+  code   get to the right directory             system("mv -f /var/log/yLOGGY /var/log/yLOG");
 
 COND     do a good read again                                               
   code   create a custom expect string          sprintf  (custom, "%ld", 1286222400L);
-  exec   read the cronpulse                     lastrun                                                                             c_iequal   custom                                                  
+  exec   read the cronpulse                     pulse_last                                                                          c_iequal   custom                                                  
 
 COND     purge the cron system                                             
   exec   retire all files                       purge                                                                               i_equal    0                                                       
@@ -167,12 +167,13 @@ COND     purge the cron system                                             
 
 
 #======  ===========================(purpose)==============================  =========(method)========= 
-SCRP     verify correct writes to cronwatch file                             watch                      
+SCRP     verify correct writes to cronwatch file                             watch_beg,watch_end        
 
 COND     initialize program                                                 
   exec   initialize the logger (quiet mode)     initialize                 2                                                        i_equal    0                                                       
   code   holder for broken-down time            struct tm *curr_time = NULL;                                                                                                                                  
   code   create a custom time string            char c_time[60];
+  code   holder for current time                long       xbase     = 0;                                                                                                                                     
   code   create a custom expect string          char xbegin[50];
   code   create a custom expect string          char xend  [50];
   code   create a custom expect string          char record[2000];
@@ -181,63 +182,40 @@ COND     initialize program                                                 
   code   set updates to true                    my.updates = 0;
 
 COND     clear out the watcher file                                         
-  code   clear existing cronwatch file          system("rm -f /var/log/yLOG.program_logging/cronwatch.interrun_monitoring");                                                                                 
-
-COND     clear out the pulser file                                          
-  code   clear existing cronpulse file          system("rm -f /var/log/yLOG.program_logging/cronpulse.intrarun_last_check");                                                                                 
+  code   clear existing cronwatch file          system("rm -f /var/log/yLOG.historical/cronwatch.interrun_monitoring");                                                                                 
 
 COND     activate the watcher                                               
-  exec   call the watcher                       watch                                                                               i_equal    0                                                       
+  exec   call the watcher                       watch_beg                                                                           i_equal    0                                                       
 
-COND     test the cron ending line                                          
-  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -2 cronwatch.in* | head -1 > testing.txt");
-  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
-  code   get the top line                       fgets(record, 500, fCONFIRM);
-  code   close the file                         fclose(fCONFIRM);
-  code   clip off the newline                   record[strlen(record) - 1] = '\0';
-  code   create a custom expect string          sprintf  (custom, "cron ending      : :%s:", record);
-  get    review the beginning time              unit_accessor              "cronend",       0                                       c_round    custom                                                  
-
-COND     test the cron ending line                                          
-  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -1 cronwatch.in* > testing.txt");
-  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
-  code   get the top line                       fgets(record, 500, fCONFIRM);
-  code   close the file                         fclose(fCONFIRM);
-  code   clip off the newline                   record[strlen(record) - 1] = '\0';
-  code   create a custom expect string          sprintf  (custom, "cron beginning   : :%s:", record);
+COND     test the cron beginning line                                       
+  code   get the cron ending line               system("cd /var/log/yLOG.historical; tail -1 cronwatch.in* > testing.txt");
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (c_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   create a custom expect string          sprintf  (custom, "cron beginning   : :%s   BEGINNING:", c_time);
   get    review the beginning time              unit_accessor              "cronbegin",     0                                       c_round    custom                                                  
 
 COND     wait two seconds and activate watcher                              
   code   pause to get a different time          sleep(2);                                                                                                                                              
-  exec   call the watcher                       watch                                                                               i_equal    0                                                       
+  exec   call the watcher                       watch_end                                                                           i_equal    0                                                       
 
 COND     test the cron ending line                                          
-  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -2 cronwatch.in* | head -1 > testing.txt");
-  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
-  code   get the top line                       fgets(record, 500, fCONFIRM);
-  code   close the file                         fclose(fCONFIRM);
-  code   clip off the newline                   record[strlen(record) - 1] = '\0';
-  code   create a custom expect string          sprintf  (custom, "cron ending      : :%s:", record);
-  get    review the beginning time              unit_accessor              "cronend",       0                                       c_round    custom                                                  
-
-COND     test the cron ending line                                          
-  code   get the cron ending line               system("cd /var/log/yLOG.program_logging; tail -1 cronwatch.in* > testing.txt");
-  code   open the cronpulse file                fCONFIRM = fopen("/var/log/yLOG.program_logging/testing.txt", "r");
-  code   get the top line                       fgets(record, 500, fCONFIRM);
-  code   close the file                         fclose(fCONFIRM);
-  code   clip off the newline                   record[strlen(record) - 1] = '\0';
-  code   create a custom expect string          sprintf  (custom, "cron beginning   : :%s:", record);
-  get    review the beginning time              unit_accessor              "cronbegin",     0                                       c_round    custom                                                  
+  code   get the cron ending line               system("cd /var/log/yLOG; tail -1 cronwatch.in* > testing.txt");
+  code   get the current time                   xbase     = time(NULL);                                                                                                                                       
+  code   make a broken down time                curr_time = localtime(&xbase);                                                                                                                                
+  code   create a custom cronpulse string       strftime (c_time, 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr_time);
+  code   create a custom expect string          sprintf  (custom, "cron ending      : :%s   end:", c_time);
+  get    review the ending time                 unit_accessor              "cronend",       0                                       c_round    custom                                                  
 
 COND     make the yLOG directory inaccessable                               
-  code   get to the right directory             system("mv -f /var/log/yLOG.program_logging /var/log/yLOGGY");
+  code   get to the right directory             system("mv -f /var/log/yLOG.historical /var/log/yLOGGY");
 
 COND     handle a missing yLOG directory                                    
   code   pause to get a different time          sleep(2);                                                                                                                                              
-  exec   call the watcher                       watch                                                                               i_equal    0                                                       
+  exec   call the watcher                       watch_beg                                                                           i_equal    0                                                       
 
 COND     put the yLOG directory back                                        
-  code   get to the right directory             system("mv -f /var/log/yLOGGY /var/log/yLOG.program_logging");
+  code   get to the right directory             system("mv -f /var/log/yLOGGY /var/log/yLOG.historical");
 
 COND     purge the cron system                                             
   exec   retire all files                       purge                                                                               i_equal    0                                                       
@@ -450,6 +428,7 @@ COND     add another entry                                                 
 
 COND     add a line to the second                                          
   load   add a basic line to stdin              * * * * * /bin/true > /dev/null                                                                                                                           
+  code   check on yUNIT_stdin                    printf("yUNIT_stdin = %p\n", yUNIT_stdin);
   exec   add a new line                         inventory                  the_2nd,              yUNIT_stdin                        i_equal    0                                                       
   get    review the list                        unit_accessor              "file list",     0                                       s_not      cronfile list    :   0      (nil)      (nil)            
   get    review the counts                      unit_accessor              "cron count",    0                                       s_equal    cron counters    :    2f     1e                         

@@ -1,5 +1,5 @@
 /*====================--------[[ start-of-code ]]---------====================*/
-#include  "chronos.h"
+#include  "khronos.h"
 
 
 
@@ -221,6 +221,7 @@ crontab_init (void)
    int       rc        = 0;
    /*---(user name)-----------------------------*/
    uid       = getuid();
+   printf("uid  = %d\n", uid);
    x_pass    = getpwuid(uid);
    if (x_pass == NULL) {
       printf("can not retreive user information from the system\n");
@@ -239,8 +240,12 @@ crontab_init (void)
    /*---(check for root user)--------------*/
    am_root = 'n';
    if (uid == (int) geteuid())   am_root = 'y';
+   printf("euid = %d\n", uid);
    /*---(change uid/permissions)-----------*/
    rc = setuid(0);
+   printf("change to root\n");
+   printf("uid  = %d\n", getuid());
+   printf("euid = %d\n", geteuid());
    if (rc != 0) {
       printf("could not get root authority\n");
       return -4;

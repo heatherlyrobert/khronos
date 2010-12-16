@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE="/home/system/p_gvskav/crond.heatherly_cron_daemon"
+BASE="/home/system/p_gvskav/khronos.heatherly_cron_daemon"
 
 function  my_mount {
    #---(name mountpoint)----------------------------#

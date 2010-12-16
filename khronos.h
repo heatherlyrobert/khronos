@@ -4,7 +4,7 @@
 
  *   focus         : (SA) system_admin
  *   niche         : (ts) scheduler
- *   application   : chronos
+ *   application   : khronos           (primeval god of time, HP)
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
  *   base_system   : gnu/linux  (because it's powerful, universal, and hackable)
@@ -17,13 +17,14 @@
  *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
  *   end goal      : loosely coupled, strict interface, maintainable, portable
  *
- *   as always, keep the code small but defend tightly and log like crazy
+ *   as always, keep the code simple while defending and logging like crazy
  * 
  */
 /*===[[ SUMMARY ]]=============================================================*
 
- *   chronos is a fast, light, modern, technical, and simplified version of the
- *   classic posix-defined crond time-based process scheduler.
+ *   khronos is a fast, simplified, modernized, and technical version of the
+ *   classic posix-defined crond time-based process scheduler which combines
+ *   crond and crontab to allow deeper verification and traceablity.
  *
  */
 /*===[[ PURPOSE ]]=============================================================*
@@ -44,7 +45,7 @@
  *   everything seems to be trending towards the closely coupled, gui-focused,
  *   kitchen-sink mentality that then tends to display well but never gets used.
  *
- *   chronos will attempt to implement the original simplicity, clarity, and
+ *   khronos will attempt to implement the original simplicity, clarity, and
  *   power with updated algorithms, automated testing, strong logging and
  *   monitoring, stronger security, and a few added recovery/notification
  *   features.  we will maintain backward compatibility while focusing on an
@@ -52,7 +53,7 @@
  *
  *   "do one thing and do it well (securely) and focus on technical power users"
  *
- *   chronos will provide...
+ *   khronos will provide...
  *      - near posix compatibility so it can do the full job on core features
  *      - backwards compatible with existing crontab formats (great design)
  *      - additional, specific job recovery features (don't break compatibility)
@@ -63,7 +64,7 @@
  *      - fullsome unit testing and regression testing suite
  *      - eliminate known and potential security gaps and hacking vectors
  *
- *   chronos will not provide...
+ *   khronos will not provide...
  *      - automatic email -- everyone ultimately hates it (security risk)
  *      - alternate shells (we're gonna run pure posix dash)
  *      - extended shell variables (gonna have a spartan shell environment)
@@ -71,7 +72,7 @@
  *      - names for days and months, just use the numbers and like it ;)
  *      - special symbols for easly expressible things (@hourly, @weekly)
  *
- *   on a large scale, chronos will not provide the other parts of batch work...
+ *   on a large scale, khronos will not provide the other parts of batch work...
  *      - dependency-based scheduling (like init systems provide)
  *      - event-based launches like @reboot (daemons can and should do this)
  *      - resource-based changes to schedules, such as system load or avail
@@ -82,7 +83,7 @@
  *
  *   as luck would have it, dcron (dillon's cron) is a wonderfully straight
  *   forward and clean implementation that we can build on.  it is licenced
- *   under the gnu gpl and so is perfect as our base.  so, we fork dcron...
+ *   under the gnu gpl and so is perfect as our base.  so, we study dcron...
  *
  *   so, as always, there are many stable, accepted, existing programs and
  *   utilities written by better programmers which are likely superior in
@@ -169,7 +170,7 @@
  *   components should function like quick little filters and wrappers rather
  *   than applications...
  *
- *   chronos     : continuously running job launching daemon
+ *   khronos     : continuously running job launching daemon
  *      - pure dispatcher with overly strong monitoring and logging
  *      - attempt to build in as few exceptions and mutations as possiible
  *
@@ -361,8 +362,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.6b"
-#define VER_TXT   "added direct execvp execution for speed and control"
+#define VER_NUM   "0.7c"
+#define VER_TXT   "done integrating crontab into khronos"
 
 
 /*---(headers)--------------------------------------------------*/
@@ -391,7 +392,7 @@
 #define    LOCKFILE      "/var/run/crond.pid"
 #define    PULSER        "/var/log/yLOG/cronpulse.intrarun_last_check"
 #define    STUFF         "/var/log/yLOG/cronextra.execution_feedback"
-#define    WATCHER       "/var/log/yLOG/cronwatch.interrun_monitoring"
+#define    WATCHER       "/var/log/yLOG.historical/cronwatch.interrun_monitoring"
 
 /*---(work files and directories)-------------------------------*/
 #define    CRONTABS      "/var/spool/cron/crontabs"
@@ -406,6 +407,25 @@
 #define    CMD            500     /* max command len  */
 
 #define    HOUR          3600     /* seconds per hour */
+
+extern     char       version;
+#define    DAEMON        if (version == 'd')
+#define    INTERACTIVE   if (version == 'i')
+
+
+
+/*---(debugging)-------------------------*/
+#define   DEBUG_T    if (debug_top   == 'y')
+#define   DEBUG_A    if (debug_args  == 'y')
+#define   DEBUG_I    if (debug_input == 'y')
+#define   DEBUG_P    if (debug_proc  == 'y')
+#define   TEST       if (testing     == 'y')
+extern    char      debug_top;
+extern    char      debug_args;
+extern    char      debug_input;
+extern    char      debug_proc;
+extern    char      testing;
+
 
 
 /*---(convienence typedefs)-------------------------------------*/
@@ -436,10 +456,13 @@ struct cACCESSOR
    char      pulse_begin[50];    /* start of this cron run as string          */
    char      pulse_end  [50];    /* ending of last cron run as string         */
    /*---(idenfiers)------------*/
-   int       uid;                /* user of person who launches crond         */
-   int       pid;                /* process id of crond                       */
-   int       ppid;               /* parent process id of crond                */
-   int       sid;                /* session id of crond                       */
+   char      prog[USER];         /* program name called                       */
+   int       uid;                /* user udi of person who called khronos     */
+   char      who[USER];          /* user name of person who launched khronos  */
+   char      am_root;            /* marked if actually called by root         */
+   int       pid;                /* process id of khronos                     */
+   int       ppid;               /* parent process id of khronos              */
+   int       sid;                /* session id of khronos                     */
    /*---(working variables)----*/
    char      parsed[LEN];        /* representation of the results of parsing  */
    char      name[NAME];         /* name of the current crontab               */
@@ -459,7 +482,8 @@ struct cACCESSOR
    /*---(trigger)--------------*/
    char      resync;             /* update crontabs : n=not, -=marked, a=all  */
    char      silent;             /* y=log runs, n=no logging                  */
-} my;
+};
+extern    struct cACCESSOR my;
 
 
 struct cCFILE {      /* SLL, singly linked-list of crontab files              */
@@ -501,23 +525,34 @@ struct cCLINE {
 
 
 /*---(file linked list)--------*/
-tCFILE   *cronhead;
-tCFILE   *crontail;
-int       nfile;
-int       nentry;
+extern    tCFILE   *cronhead;
+extern    tCFILE   *crontail;
+extern    int       nfile;
+extern    int       nentry;
 
 /*---(fast path linked list)---*/
-tCLINE   *fasthead;
-tCLINE   *fasttail;
-int       nfast;
+extern    tCLINE   *fasthead;
+extern    tCLINE   *fasttail;
+extern    int       nfast;
 
 /*---(processing linked list)--*/
-tCLINE   *prochead;
-tCLINE   *proctail;
-int       nproc;
+extern    tCLINE   *prochead;
+extern    tCLINE   *proctail;
+extern    int       nproc;
 
 
 /*---(prototypes)-----------------------------------------------*/
+
+int       main               (int argc, char *argv[]);
+char      prog_urgent        (int argc, char *argv[]);
+char      prog_whoami        (void);
+char      prog_args          (int argc, char *argv[]);
+char      prog_usage         (void);
+char      prog_begin         (void);
+char      prog_term          (void);
+char      prog_end           (void);
+
+
 char      initialize    (cchar);
 char      terminate     (cchar*, cint);;
 void      communicate   (cint);
@@ -525,9 +560,11 @@ char      signals       (void);
 char      daemonize     (void);
 char      lock          (void);
 char      pulse         (void);
-char      watch         (void);
+char      watch_beg     (void);
+char      watch_end     (void);
 char      prepare       (void);
 
+long      pulse_last    (void);
 long      lastrun       (void);
 char      timestamp     (void);
 
@@ -561,6 +598,24 @@ char      list_cron     (void);
 char      list_fast     (void);
 char      list_proc     (void);
 
+
+
+char      crontab_proc    (cchar*, cchar);
+char      crontab_local   (cchar);
+char      crontab_verify  (cchar*, char);
+
+char      crontab_inst    (cchar*);
+char      crontab_del     (cchar*);
+char      crontab_test    (cchar*);
+char      crontab_cat     (cchar*);
+
+char      crontab_help    (void);
+char      crontab_user    (cchar*);
+char      crontab_hup     (void);
+
+char      crontab_stdin   (void);
+char      crontab_edit    (void);
+char      crontab_dir     (void);
 
 #endif
 /*=============================[[ end-of-code ]]==============================*/

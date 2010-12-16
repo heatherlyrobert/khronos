@@ -2,21 +2,38 @@
 
 /*===[[ SUMMARY ]]============================================================#
 
- *   application   : chronos
- *   module        : chronos_list
+ *   application   : khronos
+ *   module        : khronos_list
  *   size          : less than 100 slocL
  *
  */
 /*===[[ SUMMARY ]]============================================================#
 
- *   chronos_list is the linked list support functions to manage the data
+ *   khronos_list is the linked list support functions to manage the data
  *   associated with crontab files, lines, and running processes
  *
  */
 /*============================================================================*/
 
 
-#include  "chronos.h"
+#include  "khronos.h"
+
+
+/*---(file linked list)--------*/
+tCFILE   *cronhead;
+tCFILE   *crontail;
+int       nfile;
+int       nentry;
+
+/*---(fast path linked list)---*/
+tCLINE   *fasthead;
+tCLINE   *fasttail;
+int       nfast;
+
+/*---(processing linked list)--*/
+tCLINE   *prochead;
+tCLINE   *proctail;
+int       nproc;
 
 
 
