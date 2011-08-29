@@ -3,21 +3,22 @@
 /*===[[ HEADER ]]=============================================================#
 
  *   focus         : (SA) system_admin
- *   niche         : (ts) scheduler
- *   application   : khronos           (primeval god of time, HP)
+ *   niche         : (js) job_scheduler
+ *   application   : khronos           (primeval god of time [not cronos] HP)
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
- *   base_system   : gnu/linux  (because it's powerful, universal, and hackable)
- *   lang_name     : gnu/ansi-c (because it's right, just, best, and universal)
- *   dependencies  : yLOG only
- *   size          : small (less than 2,000 slocL)
+ *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
+ *   lang_name     : gnu/ansi-c  (right, just, best, standard, and everlasting)
+ *   dependencies  : yLOG, ySCHED
+ *   size          : moderate   (less than 5,000 slocL)
  * 
  *   author        : the_heatherlys
  *   created       : 2010-05
  *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
  *   end goal      : loosely coupled, strict interface, maintainable, portable
  *
- *   as always, keep the code simple while defending and logging like crazy
+ *   simplicity is prerequisite for reliability and security, but logging
+ *   and unit testing can not be neglected
  * 
  */
 /*===[[ SUMMARY ]]=============================================================*
@@ -37,18 +38,19 @@
  *   brian kernighan nailed it in the original (1979) by focusing on a real and
  *   definite need by folks that understood automation on low power systems.  he
  *   coupled it with an elegant, expressive, and terse scheduling grammar built
- *   by computer science folks and kept it simple and robust.  bloody brilliant.
+ *   by computer scientists and kept it simple and robust.  hugely brilliant.
  *
  *   but, there are now many implementations of crond screaming out for use,
  *   each of which comes with its own set of creeping featurism, cruft, and
  *   accessibility "improvements."  they all just tend to piss me off as
  *   everything seems to be trending towards the closely coupled, gui-focused,
  *   kitchen-sink mentality that then tends to display well but never gets used.
+ *   i don't care if its easy for an idiot to use -- they don't use it anyway ;)
  *
  *   the one thing the advancements, since the original, truly improved were the
  *   algorithms.  the original cron apparently could not scale to a large
- *   number of users, not that helpful for them.  in our case, we won't have a
- *   ton of different users, but we will have tons of jobs running -- we want
+ *   number of users, so not that helpful for them.  in our case, we won't have
+ *   a ton of different users, but we will have tons of jobs running -- we want
  *   the better algorithms to make up for the primitiveness of our coding ;)
  *
  *   khronos will attempt to implement the original simplicity, clarity, and
@@ -60,33 +62,43 @@
  *   "do one thing and do it well (securely) and focus on technical power users"
  *
  *   khronos will provide...
- *      - near posix compatibility so it can do the full job on core features
- *      - backwards compatible with existing crontab formats (great design)
- *      - additional, specific job recovery features (don't break compatibility)
  *      - strict glibc/ansi-c so it can be ported to and compilied on anything
  *      - fast and efficient because we want to enable tons of automation
- *      - solid logging and status updates so you never have to guess
- *      - ablilty to be very, very verbose in interactive use also (tracing)
+ *      - additional, specific job monitoring and recovery features
+ *      - solid, verbose logging and status updates so you never have to guess
+ *      - near posix compatibility so it can do the full job on core features
  *      - clean, clear code so we can maintain it after long absences
  *      - fullsome unit testing and regression testing suite
  *      - eliminate known and potential security gaps and hacking vectors
- *      - ability to test/verify crontabs before installation
+ *      - ability to test/verify crontabs before actual installation
+ *
+ *   khronos' crontab format will be...
+ *      - utilize the elegant core scheduling grammar as the original design
+ *      - will be 98% backward compatible on the first five fields
+ *      - but will use "and" to combine day of month/week (cleaner and stronger)
+ *      - add a week field (6) for week-of-year (alternating, etc)
+ *      - add a duration field (7) to allow khronos to know max run time
+ *      - will not add a year column, continues to work as a rolling 12-months
+ *      - add a short title field (8) for human-readable status reporting
+ *      - add a five-character field (9) to indicate job characteristics
+ *      - the command/script field remains last and is now in the tenth position
+ *      - add shortcuts for days of week, weekends, etc to increase readability
  *
  *   khronos will not provide...
  *      - automatic email -- everyone ultimately hates it (security risk)
  *      - alternate shells (we're gonna run pure posix dash)
  *      - extended shell variables (gonna have a spartan shell environment)
  *      - run-time configuration (no, its only for us, we can update code)
- *      - names for days and months, just use the numbers and like it ;)
- *      - special symbols for easly expressible things (@hourly, @weekly)
+ *      - special symbols for easily expressible things (@hourly, @weekly)
  *
  *   khronos will break backward compatiblilty in the following areas...
+ *      - crontabs format will be expanded by four fields
  *      - crontabs will be stored in /var/spool/crontabs (not a big deal)
  *      - crontab names will allow for many files per user (like dcron)
  *      - crontabs will only be pulled from ~/c_quani/crontabs (std for us)
  *      - will not allow -c option as it is a security nightmare (no way)
  *      - will not allow -e option as it is a traceablilty nightmare (no loss)
- *      - will not allow - option as it is even worse thatn -e (who cares)
+ *      - will not allow - option as it is even worse than -e (who cares)
  *      - no mail at all (we will use other features to do it right)
  *
  *   on a large scale, khronos will not provide the other parts of batch work...
@@ -122,9 +134,10 @@
  *
  *    sys-process/vixie-cron (57k)
  *       - "standard" cron system for linux distributions (vixie = paul vixie)
+ *       - stable and reliable
  *
  *    sys-process/anacron (23k)
- *       - supplements cron to deal with inconsistent uptime, like laptops
+ *       - supplements cron to deal with variable uptime, like laptops
  *       - is run daily and looks for jobs for that day or that haven't run yet
  *       - helps with housekeeping, but doesn't schedule tighter than days
  *       - INTERESTING IDEA, we'll see about some features
@@ -178,38 +191,6 @@
  *      - but, also makes it easy for jobs sneaking in and circumventing review
  *      - this appears to be a "dumification" feature to me (with security risk)
  *      - REJECTED
- *
- */
-/*===[[ COMPONENTS ]]==========================================================*
-
- *   we should never attempt to put all our desired capabilities into one tool
- *   as that only ever leads to tragedy and scope creep.  also, many of these
- *   components should function like quick little filters and wrappers rather
- *   than applications...
- *
- *   khronos     : continuously running job launching daemon
- *      - pure dispatcher with overly strong monitoring and logging
- *      - attempt to build in as few exceptions and mutations as possiible
- *
- *   crontab     : job list submission, review, and validation tool
- *      - simple tool to validate crontab files and place them in the spool
- *      - no need to build it in as it should be runable any time
- *
- *   cronpulse   : heartbeat to verify that the system is currently running
- *      - simple job to place the current datetime stamp in a file/shared mem
- *      - no need to build it in as it can just be scheduled like anything else
- *
- *   _log        : job start/stop logger specifically adapted to cron
- *      - simple wrapper to centrally log job start/stop for monitoring
- *      - no need to build it in as it can just be implemented as a wrapper
- *
- *   cronmon     : on-line monitoring tool
- *      - simple tool to see the status of jobs and what"s coming
- *      - no need to build it in as it is ad-hoc and not always desired
- *
- *   cronline    : graphical timeline of cron jobs and statuses
- *      - simple tool to place jobs on a visual timeline
- *      - no need to build it in as it is ad-hoc and not always desired
  *
  */
 /*===[[ SISO : STRICT IN, STRICT OUT ]]========================================*
@@ -273,7 +254,7 @@
  *      - it is too easy to lose the original crontab entries if you can edit
  *        them with "-e" so eliminate that option
  *      - we have seen several options for triggering a reread of the crontab
- *        files in the spool directory
+ *        files in the spool directory...
  *      1 dcron saves a file called "cron.update" with a list of users that
  *        have updated their cron files (could lose the file)
  *      2 many crons change the date on the crontab directory to trigger a
@@ -286,12 +267,14 @@
  *        into file names and so we won't do it
  *      - we will suffix crontab files with ".NEW" for ones to be read and then
  *        ".DEL" for files that should be purged and then deleted
+ *      - then, khronos will only respond to a SIGHUP or a restart to read the
+ *        files for updates (looking only at .NEW and .DEL)
  *
  *   potential speed improvements...
  *      - what if crontab created a linked list of only the jobs that could run
- *        in the next 24 hours so that the searching is not by file/line, but
+ *        in the next hour so that the searching is not by file/line, but
  *        directly with the linked list
- *      - that list could then be refreshed every 24 hours to prepare for the
+ *      - that list could then be refreshed every hour to prepare for the
  *        next period
  *      - the list could really cover any period so its just a trade off of
  *        frequency of update to the speed of the test cycle
@@ -374,37 +357,37 @@
 
 
 /*===[[ HEADER GUARD ]]=======================================================*/
-#ifndef YCHRONOS
-#define YCHRONOS loaded
-
-#define   CHATTY
+#ifndef YKHRONOS_hguard
+#define YKHRONOS_hguard loaded
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "0.7f"
-#define VER_TXT   "create the lean.awk script to cut talkiness and features"
+#define VER_NUM   "1.0b"
+#define VER_TXT   "reports library versions and compiliers"
 
 
 /*---(headers)--------------------------------------------------*/
-#include <yLOG.h>
+#include  <yLOG.h>
+#include  <ySCHED.h>
 
-#include <sys/unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-#include <sys/resource.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
-#include <time.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <pwd.h>            /* getpwuid() to look up uid's and get names      */
-#include <grp.h>
-#include <err.h>
-#include <ctype.h>
+#include  <sys/unistd.h>
+#include  <sys/types.h>
+#include  <sys/stat.h>
+#include  <sys/ioctl.h>
+#include  <sys/wait.h>
+#include  <sys/resource.h>
+#include  <stdio.h>
+#include  <stdlib.h>
+#include  <stdarg.h>
+#include  <string.h>
+#include  <errno.h>
+#define   _XOPEN_SOURCE
+#include  <time.h>
+#include  <dirent.h>
+#include  <fcntl.h>
+#include  <pwd.h>            /* getpwuid() to look up uid's and get names      */
+#include  <grp.h>
+#include  <err.h>
+#include  <ctype.h>
 
 /*---(communcation files)---------------------------------------*/
 #define    LOCKFILE      "/var/run/crond.pid"
@@ -452,6 +435,7 @@ extern    int       failed;
 
 /*---(convienence typedefs)-------------------------------------*/
 typedef const int        cint;
+typedef unsigned int     uint;
 typedef const long       clong;
 typedef const char       cchar;
 
@@ -495,7 +479,6 @@ struct cACCESSOR
    /*---(context info)---------*/
    int       for_line;           /* line which uses context (next one)        */
    char      title[DESC];        /* title of current cron line                */
-   char      duration;           /* -=?, t<m, s<5m, m<20m, L<1h, X<2h, #>2h   */
    char      recovery;           /* -=?, x=no, 1=once, B=batch                */
    char      priority;           /* -=normal                                  */
    char      alerting;           /* -=none                                    */
@@ -530,14 +513,9 @@ struct cCLINE {
    char      deleted;        /* line should be retired, but is running        */
    int       rpid;           /* running=pid, ready=0                          */
    /*---(schedule masks)-----------------*/
-   char      min[60];        /* bools : launch on minute 0-59                 */
-   char      hrs[24];        /* bools : launch on hour   0-23                 */
-   char      day[32];        /* bools : launch on day    1-31                 */
-   char      mon[12];        /* bools : launch on month  0-11                 */
-   char      dow[7];         /* bools : launch on day of week 0-6, beg sun    */
+   tSCHED    sched;
    /*---(context)------------------------*/
    char      title[DESC];    /* user assigned title of current cron line      */
-   char      duration;       /* -=<m, S=<5m,  M=<20m,  L=<60m,  B=>60m        */
    char      recovery;       /* -=no, q=+15m, h=+1hr,  t=+2hr,  c=cumm        */
    char      priority;       /* -=normal                                      */
    char      alerting;       /* -=none                                        */

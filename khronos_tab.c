@@ -8,112 +8,112 @@
 /*====================------------------------------------====================*/
 static void      o___DIRECTORIES_____________o (void) {;}
 
-CHATTY   char        /* PURPOSE : process local crontab directory ---------------------*/
-CHATTY   crontab_local (cchar a_action)
-CHATTY   {
-CHATTY      /*---(locals)--------------------------------*/
-CHATTY      char            dir_name[300] = "";
-CHATTY      tDIRENT        *den;
-CHATTY      DIR            *dir;
-CHATTY      int             count     = 0;
-CHATTY      int             rc = 0;
-CHATTY      /*---(locals)--------------------------------*/
-CHATTY      DEBUG_P  printf("crontab_local()...\n");
-CHATTY      /*---(create dir name)-----------------------*/
-CHATTY      if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/system/c_quani/crontabs/", my.who);
-CHATTY      else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
-CHATTY      DEBUG_P  printf("   dir name = %s\n", dir_name);
-CHATTY      /*---(move to crontab  dir)------------------*/
-CHATTY      if (chdir(dir_name) < 0) {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("could not move to user crontab directory\n");
-CHATTY         return -1;
-CHATTY      }
-CHATTY      DEBUG_P  printf("   successfully changed to directory\n");
-CHATTY      /*---(open dir)------------------------------*/
-CHATTY      dir = opendir(".");
-CHATTY      if (dir == NULL) {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("can not open local directory\n");
-CHATTY         return -2;
-CHATTY      }
-CHATTY      DEBUG_P  printf("   openned directory\n");
-CHATTY      /*> printf("--crontabs-------------------------\n", a_user);                       <*/
-CHATTY      DEBUG_P  printf("   processing records\n\n");
-CHATTY      while ((den = readdir(dir)) != NULL) {
-CHATTY         rc = name (den->d_name, '-');
-CHATTY         if (strcmp(my.user, "crontab") != 0) continue;
-CHATTY         if (rc == 0) {
-CHATTY            /*> DEBUG_P  printf("   found <<%s>>\n", den->d_name);                       <*/
-CHATTY            if      (a_action == 'i') crontab_inst  (my.desc);
-CHATTY            else if (a_action == 'l') printf("crontab.%s\n", my.desc);
-CHATTY            ++count;
-CHATTY         }
-CHATTY      }
-CHATTY      DEBUG_P  printf("back to crontab_local()...\n");
-CHATTY      DEBUG_P  printf("   processed %d local crontabs\n", count);
-CHATTY      /*> printf("---%03d found-----------------------\n", count);                       <*/
-CHATTY      closedir(dir);
-CHATTY      DEBUG_P  printf("   closing directory\n");
-CHATTY      /*---(complete)------------------------------*/
-CHATTY      DEBUG_P  printf("   done\n\n");
-CHATTY      return 0;
-CHATTY   }
+char        /* PURPOSE : process local crontab directory ---------------------*/
+crontab_local (cchar a_action)
+{
+   /*---(locals)--------------------------------*/
+   char            dir_name[300] = "";
+   tDIRENT        *den;
+   DIR            *dir;
+   int             count     = 0;
+   int             rc = 0;
+   /*---(locals)--------------------------------*/
+   DEBUG_P  printf("crontab_local()...\n");
+   /*---(create dir name)-----------------------*/
+   if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
+   else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
+   DEBUG_P  printf("   dir name = %s\n", dir_name);
+   /*---(move to crontab  dir)------------------*/
+   if (chdir(dir_name) < 0) {
+      DEBUG_P  printf("   ");
+      printf("could not move to user crontab directory\n");
+      return -1;
+   }
+   DEBUG_P  printf("   successfully changed to directory\n");
+   /*---(open dir)------------------------------*/
+   dir = opendir(".");
+   if (dir == NULL) {
+      DEBUG_P  printf("   ");
+      printf("can not open local directory\n");
+      return -2;
+   }
+   DEBUG_P  printf("   openned directory\n");
+   /*> printf("--crontabs-------------------------\n", a_user);                       <*/
+   DEBUG_P  printf("   processing records\n\n");
+   while ((den = readdir(dir)) != NULL) {
+      rc = name (den->d_name, '-');
+      if (strcmp(my.user, "crontab") != 0) continue;
+      if (rc == 0) {
+         /*> DEBUG_P  printf("   found <<%s>>\n", den->d_name);                       <*/
+         if      (a_action == 'i') crontab_inst  (my.desc);
+         else if (a_action == 'l') printf("crontab.%s\n", my.desc);
+         ++count;
+      }
+   }
+   DEBUG_P  printf("back to crontab_local()...\n");
+   DEBUG_P  printf("   processed %d local crontabs\n", count);
+   /*> printf("---%03d found-----------------------\n", count);                       <*/
+   closedir(dir);
+   DEBUG_P  printf("   closing directory\n");
+   /*---(complete)------------------------------*/
+   DEBUG_P  printf("   done\n\n");
+   return 0;
+}
 
-CHATTY   char        /* PURPOSE : process updates to main crontable directory ---------*/
-CHATTY   crontab_proc       (cchar *a_user, cchar a_action)
-CHATTY   {
-CHATTY      /*---(locals)--------------------------------*/
-CHATTY      tDIRENT        *den;
-CHATTY      DIR            *dir;
-CHATTY      char            x_user[25] = "";
-CHATTY      int             count     = 0;
-CHATTY      int             rc        = 0;
-CHATTY      char            x_file[NAME] = "";
-CHATTY      /*---(defense)-------------------------------*/
-CHATTY      DEBUG_P  printf("crontab_proc()...\n");
-CHATTY      if (strcmp(a_user, "ALL") == 0 && my.am_root != 'y') {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("must be root to use the \"--all\" option");
-CHATTY         return -1;
-CHATTY      }
-CHATTY      /*---(format user names)---------------------*/
-CHATTY      DEBUG_P  printf("   user = %s\n", a_user);
-CHATTY      snprintf(x_user, 22, "%s.",  a_user);
-CHATTY      /*---(open dir)------------------------------*/
-CHATTY      DEBUG_P  printf("   dir  = %s\n", CRONTABS);
-CHATTY      dir = opendir(CRONTABS);
-CHATTY      if (dir == NULL) {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("can not open crontab directory\n");
-CHATTY         return -2;
-CHATTY      }
-CHATTY      DEBUG_P  printf("   openned directory successfully\n");
-CHATTY      /*> printf("--crontabs-------------------------\n", a_user);                       <*/
-CHATTY      DEBUG_P  printf("   processing records\n\n");
-CHATTY      while ((den = readdir(dir)) != NULL) {
-CHATTY         rc = name (den->d_name, 'c');
-CHATTY         if (rc != 0)                         continue;
-CHATTY         /*---(filter files)-----------------------*/
-CHATTY         /*> DEBUG_P  printf("   found <<%s>>\n", den->d_name);                          <*/
-CHATTY         if (strcmp(a_user, "ALL") == 0 || strcmp(my.user, a_user) == 0) {
-CHATTY            snprintf(x_file, NAME, "%s.%s", my.user, my.desc);
-CHATTY            /*> DEBUG_P  printf("   processing <<%s>>\n", x_file);                       <*/
-CHATTY            if      (a_action == 'c') crontab_cat (den->d_name);
-CHATTY            else if (a_action == 'p') crontab_del (x_file);
-CHATTY            else                      printf("%s\n", den->d_name);
-CHATTY            ++count;
-CHATTY         }
-CHATTY      }
-CHATTY      DEBUG_P  printf("back to crontab_proc()...\n");
-CHATTY      DEBUG_P  printf("   processed %d installed crontabs\n", count);
-CHATTY      /*> printf("---%03d found-----------------------\n", count);                       <*/
-CHATTY      closedir(dir);
-CHATTY      DEBUG_P  printf("   closing directory\n");
-CHATTY      /*---(complete)------------------------------*/
-CHATTY      DEBUG_P  printf("   done\n\n");
-CHATTY      return 0;
-CHATTY   }
+char        /* PURPOSE : process updates to main crontable directory ---------*/
+crontab_proc       (cchar *a_user, cchar a_action)
+{
+   /*---(locals)--------------------------------*/
+   tDIRENT        *den;
+   DIR            *dir;
+   char            x_user[25] = "";
+   int             count     = 0;
+   int             rc        = 0;
+   char            x_file[NAME] = "";
+   /*---(defense)-------------------------------*/
+   DEBUG_P  printf("crontab_proc()...\n");
+   if (strcmp(a_user, "ALL") == 0 && my.am_root != 'y') {
+      DEBUG_P  printf("   ");
+      printf("must be root to use the \"--all\" option");
+      return -1;
+   }
+   /*---(format user names)---------------------*/
+   DEBUG_P  printf("   user = %s\n", a_user);
+   snprintf(x_user, 22, "%s.",  a_user);
+   /*---(open dir)------------------------------*/
+   DEBUG_P  printf("   dir  = %s\n", CRONTABS);
+   dir = opendir(CRONTABS);
+   if (dir == NULL) {
+      DEBUG_P  printf("   ");
+      printf("can not open crontab directory\n");
+      return -2;
+   }
+   DEBUG_P  printf("   openned directory successfully\n");
+   /*> printf("--crontabs-------------------------\n", a_user);                       <*/
+   DEBUG_P  printf("   processing records\n\n");
+   while ((den = readdir(dir)) != NULL) {
+      rc = name (den->d_name, 'c');
+      if (rc != 0)                         continue;
+      /*---(filter files)-----------------------*/
+      /*> DEBUG_P  printf("   found <<%s>>\n", den->d_name);                          <*/
+      if (strcmp(a_user, "ALL") == 0 || strcmp(my.user, a_user) == 0) {
+         snprintf(x_file, NAME, "%s.%s", my.user, my.desc);
+         /*> DEBUG_P  printf("   processing <<%s>>\n", x_file);                       <*/
+         if      (a_action == 'c') crontab_cat (den->d_name);
+         else if (a_action == 'p') crontab_del (x_file);
+         else                      printf("%s\n", den->d_name);
+         ++count;
+      }
+   }
+   DEBUG_P  printf("back to crontab_proc()...\n");
+   DEBUG_P  printf("   processed %d installed crontabs\n", count);
+   /*> printf("---%03d found-----------------------\n", count);                       <*/
+   closedir(dir);
+   DEBUG_P  printf("   closing directory\n");
+   /*---(complete)------------------------------*/
+   DEBUG_P  printf("   done\n\n");
+   return 0;
+}
 
 char       /* PURPOSE : search for and process crontab updates               */
 crontab_verify     (cchar *a_name, char a_loc)
@@ -124,7 +124,7 @@ crontab_verify     (cchar *a_name, char a_loc)
    DIR      *dir;
    /*---(create dir name)-----------------------*/
    if (a_loc == 'l') {
-      if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/system/c_quani/crontabs/", my.who);
+      if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
       else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
    } else {
       strcpy(dir_name, CRONTABS);
@@ -132,7 +132,7 @@ crontab_verify     (cchar *a_name, char a_loc)
    /*---(open dir)------------------------------*/
    dir = opendir(dir_name);
    if (dir == NULL) {
-      CHATTY   printf("can not open crontab directory\n");
+      printf("can not open crontab directory\n");
       return -1;
    }
    while ((den = readdir(dir)) != NULL) {
@@ -162,13 +162,13 @@ crontab_inst       (cchar *a_source)
    /*---(begin)---------------------------------*/
    DEBUG_P  printf("crontab_inst()...\n");
    /*---(set source directory)------------------*/
-   if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/system/c_quani/crontabs/", my.who);
+   if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
    else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
    /*---(move to local directory)--------*/
    DEBUG_P  printf("   moved to local crontab directory\n");
    if (chdir(dir_name) < 0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("could not move to crontab directory\n\n");
+      printf("could not move to crontab directory\n\n");
       return -4;
    }
    /*---(break up the file name)-------------*/
@@ -177,7 +177,7 @@ crontab_inst       (cchar *a_source)
    rc = name (x_file, '-');
    if (rc <  0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("crontab name is found, but format is not valid [%d]\n\n", rc);
+      printf("crontab name is found, but format is not valid [%d]\n\n", rc);
       return -2;
    }
    DEBUG_P  printf("   found properly named file\n");
@@ -185,7 +185,7 @@ crontab_inst       (cchar *a_source)
    rc = crontab_verify (x_file, 'l');
    if (rc != 1) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
+      printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
       return -1;
    }
    /*---(make sure to clear NEW)-------------*/
@@ -206,7 +206,7 @@ crontab_inst       (cchar *a_source)
    rc = system   (x_file);
    if (WIFEXITED(rc) <  0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("can not copy file (%s.%s.NEW) to crondir [%d]\n\n", "crontab", my.desc, rc);
+      printf("can not copy file (%s.%s.NEW) to crondir [%d]\n\n", "crontab", my.desc, rc);
       return -3;
    }
    /*---(change to root ownership)-----------*/
@@ -215,7 +215,7 @@ crontab_inst       (cchar *a_source)
    rc = system   (x_file);
    if (WIFEXITED(rc) <  0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("can not change to root ownership (%s.%s.NEW) [%d]\n\n", "crontab", my.desc, rc);
+      printf("can not change to root ownership (%s.%s.NEW) [%d]\n\n", "crontab", my.desc, rc);
       return -4;
    }
    /*---(change to strict permissions)-------*/
@@ -224,7 +224,7 @@ crontab_inst       (cchar *a_source)
    rc = system   (x_file);
    if (WIFEXITED(rc) <  0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("can not change to strict permissions (%s.%s.NEW) [%d]\n\n", "crontab", my.desc, rc);
+      printf("can not change to strict permissions (%s.%s.NEW) [%d]\n\n", "crontab", my.desc, rc);
       return -5;
    }
    /*---(send update)------------------------*/
@@ -256,7 +256,7 @@ crontab_del        (cchar *a_source)
       rc = name (file, 'c');
       if (rc <  0) { 
          DEBUG_P  printf("   FAILED\n");
-         CHATTY   printf("crontab name format is not valid (%d)\n\n", rc);
+         printf("crontab name format is not valid (%d)\n\n", rc);
          return -1;
       }
    }
@@ -279,11 +279,11 @@ crontab_del        (cchar *a_source)
          rc = crontab_verify (x_full, 's');
          if (rc == 1) {
             DEBUG_P  printf(" : (FOUND)\n   ");
-            CHATTY   printf("crontab already deleted, nothing to do\n\n", x_full);
+            printf("crontab already deleted, nothing to do\n\n");
             return -2;
          } else {
             DEBUG_P  printf(" : (none)\n   ");
-            CHATTY   printf("crontab not presently installed, nothing to do\n\n", x_full);
+            printf("crontab not presently installed, nothing to do\n\n");
             return -3;
          }
       } else {
@@ -296,7 +296,7 @@ crontab_del        (cchar *a_source)
    DEBUG_P  printf("   moved to crontab spool directory\n");
    if (chdir(CRONTABS) < 0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("could not move to crontab directory\n\n");
+      printf("could not move to crontab directory\n\n");
       return -4;
    }
    snprintf(x_dest, 500, "%s.DEL", file);
@@ -304,7 +304,7 @@ crontab_del        (cchar *a_source)
    rc = rename(x_full, x_dest);
    if (rc <  0) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("can not rename file (%s) in crondir\n\n", file);
+      printf("can not rename file (%s) in crondir\n\n", file);
       return -5;
    }
    /*---(send update)--------------------*/
@@ -322,62 +322,62 @@ crontab_cat   (cchar *a_name)
    int       rc        = 0;
    char      x_file[500]= "";          /* file name                           */
    /*---(verify existing file)------------------*/
-   CHATTY   printf ("# ===================================================================\n");
-   CHATTY   printf ("# crontab file name = %s\n", a_name);
-   CHATTY   printf ("# ===================================================================\n");
+   printf ("# ===================================================================\n");
+   printf ("# crontab file name = %s\n", a_name);
+   printf ("# ===================================================================\n");
    snprintf (x_file, 500, "cat %s/%s", CRONTABS, a_name);
    rc = system   (x_file);
    if (WIFEXITED(rc) <  0) {
-      CHATTY   printf("# can not open file (%s) to dislay\n", a_name);
+      printf("# can not open file (%s) to dislay\n", a_name);
       return -2;
    }
    /*---(complete)------------------------------*/
    return 0;
 }
 
-CHATTY   char       /* PURPOSE : test the contents of a crontab file ------------------*/
-CHATTY   crontab_test       (cchar *a_source)
-CHATTY   {
-CHATTY      /*---(locals)--------------------------------*/
-CHATTY      char      dir_name[300] = "";
-CHATTY      int       rc        = 0;
-CHATTY      char      x_file[500]= "";          /* file name                           */
-CHATTY      /*---(begin)---------------------------------*/
-CHATTY      DEBUG_P  printf("crontab_test()...\n");
-CHATTY      testing = 'y';
-CHATTY      failed  = 0;
-CHATTY      /*---(set source directory)------------------*/
-CHATTY      if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/system/c_quani/crontabs/", my.who);
-CHATTY      else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
-CHATTY      /*---(move to local directory)--------*/
-CHATTY      DEBUG_P  printf("   moved to local crontab directory\n");
-CHATTY      if (chdir(dir_name) < 0) {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("could not move to crontab directory\n\n");
-CHATTY         return -4;
-CHATTY      }
-CHATTY      /*---(break up the file name)-------------*/
-CHATTY      snprintf (x_file, 500, "%s.%s", "crontab", a_source);
-CHATTY      DEBUG_P  printf("   starting with <<%s>>\n", x_file);
-CHATTY      rc = name (x_file, '-');
-CHATTY      if (rc <  0) {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("crontab name is found, but format is not valid [%d]\n\n", rc);
-CHATTY         return -2;
-CHATTY      }
-CHATTY      DEBUG_P  printf("   found properly named file\n");
-CHATTY      /*---(verify source file)-----------------*/
-CHATTY      rc = crontab_verify (x_file, 'l');
-CHATTY      if (rc != 1) {
-CHATTY         DEBUG_P  printf("   ");
-CHATTY         CHATTY   printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
-CHATTY         return -1;
-CHATTY      }
-CHATTY      /*---(assimilate)-------------------------*/
-CHATTY      assimilate(x_file);
-CHATTY      /*---(complete)------------------------------*/
-CHATTY      return 0;
-CHATTY   }
+char       /* PURPOSE : test the contents of a crontab file ------------------*/
+crontab_test       (cchar *a_source)
+{
+   /*---(locals)--------------------------------*/
+   char      dir_name[300] = "";
+   int       rc        = 0;
+   char      x_file[500]= "";          /* file name                           */
+   /*---(begin)---------------------------------*/
+   DEBUG_P  printf("crontab_test()...\n");
+   testing = 'y';
+   failed  = 0;
+   /*---(set source directory)------------------*/
+   if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
+   else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
+   /*---(move to local directory)--------*/
+   DEBUG_P  printf("   moved to local crontab directory\n");
+   if (chdir(dir_name) < 0) {
+      DEBUG_P  printf("   ");
+      printf("could not move to crontab directory\n\n");
+      return -4;
+   }
+   /*---(break up the file name)-------------*/
+   snprintf (x_file, 500, "%s.%s", "crontab", a_source);
+   DEBUG_P  printf("   starting with <<%s>>\n", x_file);
+   rc = name (x_file, '-');
+   if (rc <  0) {
+      DEBUG_P  printf("   ");
+      printf("crontab name is found, but format is not valid [%d]\n\n", rc);
+      return -2;
+   }
+   DEBUG_P  printf("   found properly named file\n");
+   /*---(verify source file)-----------------*/
+   rc = crontab_verify (x_file, 'l');
+   if (rc != 1) {
+      DEBUG_P  printf("   ");
+      printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
+      return -1;
+   }
+   /*---(assimilate)-------------------------*/
+   assimilate(x_file);
+   /*---(complete)------------------------------*/
+   return 0;
+}
 
 
 
@@ -397,7 +397,7 @@ crontab_user (cchar *a_user)
    /*---(check for root)------------------------*/
    if (my.am_root != 'y') {
       DEBUG_P  printf("   ");
-      CHATTY   printf("must be root to use user change option\n");
+      printf("must be root to use user change option\n");
       exit (-10);
    }
    DEBUG_P  printf("   verified root status\n");
@@ -406,19 +406,19 @@ crontab_user (cchar *a_user)
    DEBUG_P  printf("   user requested = <<%s>>\n", a_user);
    if (ulen < 1) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("user name is null\n");
+      printf("user name is null\n");
       return -2;
    }
    if (ulen > 20) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("user name is too long\n");
+      printf("user name is too long\n");
       return -3;
    }
    /*---(user name)-----------------------------*/
    x_pass    = getpwnam(a_user);
    if (x_pass == NULL) {
       DEBUG_P  printf("   ");
-      CHATTY   printf("can not retreive user information from the system\n");
+      printf("can not retreive user information from the system\n");
       exit (-1);
    }
    DEBUG_P  printf("   verified user account\n");
@@ -443,7 +443,7 @@ crontab_hup   (void)
    /*---(read pid)------------------------------*/
    rc = fscanf(f, "%d", &crond_pid);
    if (rc < 1) {
-      CHATTY   printf("can not locate pid for crond\n");
+      printf("can not locate pid for crond\n");
       return -1;
    }
    /*---(close file)----------------------------*/
@@ -461,28 +461,28 @@ crontab_hup   (void)
 /*====================------------------------------------====================*/
 static void      o___STUBS___________________o (void) {;}
 
-CHATTY   char
-CHATTY   crontab_dir   (void)
-CHATTY   {
-CHATTY      printf("will never be able to change crontab directory in this version (security risk)\n");
-CHATTY      /*---(complete)------------------------------*/
-CHATTY      return 0;
-CHATTY   }
+char
+crontab_dir   (void)
+{
+   printf("will never be able to change crontab directory in this version (security risk)\n");
+   /*---(complete)------------------------------*/
+   return 0;
+}
 
-CHATTY   char
-CHATTY   crontab_stdin (void)
-CHATTY   {
-CHATTY      printf("will never be able to read from stdin in this version (no traceability)\n");
-CHATTY      /*---(complete)------------------------------*/
-CHATTY      return 0;
-CHATTY   }
+char
+crontab_stdin (void)
+{
+   printf("will never be able to read from stdin in this version (no traceability)\n");
+   /*---(complete)------------------------------*/
+   return 0;
+}
 
-CHATTY   char
-CHATTY   crontab_edit  (void)
-CHATTY   {
-CHATTY      printf("will never be able to edit installed crontabs in this version (no traceability)\n");
-CHATTY      /*---(complete)------------------------------*/
-CHATTY      return 0;
-CHATTY   }
+char
+crontab_edit  (void)
+{
+   printf("will never be able to edit installed crontabs in this version (no traceability)\n");
+   /*---(complete)------------------------------*/
+   return 0;
+}
 
 /*====================---------[[ end-of-code ]]----------====================*/

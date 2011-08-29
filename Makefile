@@ -2,34 +2,28 @@
 
 #*---(current variables)--------------*#
 BASE    = khronos
-MICRO   = ukhronos
 DIR     = /home/system/p_gvskav/khronos.heatherly_cron_daemon
 
 #*---(standard variables)-------------*#
-COMP    = tcc -c -g -Wall
+#COMP    = tcc -c -g -Wall
+COMP    = gcc -c -g -std=gnu89 -Wall
 INC     = 
-LINK    = tcc
-LIBS    = -L/usr/local/libs -lyLOG
+#LINK    = tcc
+LINK    = gcc
+LIBS    = -L/usr/local/libs -lyLOG -lySCHED
 COPY    = cp -f
 CLEAN   = rm -f
-ECHO    = @echo
+PRINT   = @printf
 
 
 tcc                : ${BASE}.h ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}.unit
 	# application
 	tcc -o   ${BASE}         ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c      ${LIBS}
 	# unit testing
-	uUNIT    ${BASE}
-	mv ${BASE}_unit.code ${BASE}_unit.c
-	tcc -o   ${BASE}_unit    ${BASE}_unit.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}_test.c      ${LIBS} -lyUNIT -lyVAR
+#	uUNIT    ${BASE}
+#	mv ${BASE}_unit.code ${BASE}_unit.c
+#	tcc -o   ${BASE}_unit    ${BASE}_unit.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}_test.c      ${LIBS} -lyUNIT -lyVAR
 
-lean               : 
-	./lean.awk ${BASE}.h       > ${MICRO}.h
-	./lean.awk ${BASE}.c       > ${MICRO}.c
-	./lean.awk ${BASE}_main.c  > ${MICRO}_main.c
-	./lean.awk ${BASE}_list.c  > ${MICRO}_list.c
-	./lean.awk ${BASE}_tab.c   > ${MICRO}_tab.c
-	tcc -o     ${MICRO}         ${MICRO}_main.c ${MICRO}_list.c ${MICRO}_tab.c ${MICRO}.c
 
 
 #*---(MAIN)---------------------------*#
@@ -37,11 +31,11 @@ lean               :
 
 
 #*---(executables)--------------------*#
-#${BASE}          : ${BASE}_main.o ${BASE}_list.o ${BASE}.o
-#	${LINK}  -o ${BASE}         ${BASE}_main.o ${BASE}_list.o ${BASE}.o ${LIBS}
+#${BASE}          : ${BASE}_main.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o
+#	${LINK}  -o ${BASE}         ${BASE}_main.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o ${LIBS}
 
-#${BASE}_unit     : ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}.o 
-#	${LINK}  -o ${BASE}_unit    ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}.o ${LIBS} -lyUNIT -lyVAR 
+#${BASE}_unit     : ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o 
+#	${LINK}  -o ${BASE}_unit    ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o ${LIBS} -lyUNIT -lyVAR 
 
 
 #*---(objects)------------------------*#
@@ -53,6 +47,9 @@ lean               :
 
 #${BASE}_list.o   : ${BASE}.h ${BASE}_list.c
 #	${COMP}  ${BASE}_list.c
+
+#${BASE}_tab.o    : ${BASE}.h ${BASE}_tab.c
+#	${COMP}  ${BASE}_tab.c
 
 #${BASE}_test.o   : ${BASE}.h ${BASE}_test.c
 #	${COMP}  ${BASE}_test.c
@@ -67,7 +64,8 @@ lean               :
 
 #*---(housecleaning)------------------*#
 clean              :
-	${ECHO}  cleaning out object, backup, and temp files
+	${PRINT}  "\n--------------------------------------\n"
+	${PRINT}  "cleaning out local object, backup, and temp files\n"
 	${CLEAN} *.o
 	${CLEAN} *~
 	${CLEAN} temp*
@@ -75,28 +73,32 @@ clean              :
 	${CLEAN} ${BASE}_unit
 	${CLEAN} ${BASE}_unit.c
 
-remove             :
-	${CLEAN} /usr/sbin/${BASE}
-
-
 bigclean           :
+	${PRINT}  "\n--------------------------------------\n"
+	${PRINT}  "clean out local swap files\n"
 	${CLEAN} .*.swp
 
 install            : ${BASE}
-	${ECHO}  installing in b_nvdo
+	${PRINT}  "\n--------------------------------------\n"
+	${PRINT}  "install ${BASE} into production\n"
 	# application
-	cp -f    ${BASE}    /usr/bin/
-	chown    root:root  /usr/bin/${BASE}
-	chmod    0711       /usr/bin/${BASE}
-	chmod    +s         /usr/bin/${BASE}
-	sha1sum  ${BASE}
-	# call graph
-	~/b_nvdo/call_graph
+	cp -f     ${BASE}    /usr/bin/
+	chown     root:root  /usr/bin/${BASE}
+	chmod     0711       /usr/bin/${BASE}
+	chmod     +s         /usr/bin/${BASE}
+	@sha1sum  ${BASE}
+	call_graph
 	# documentation
 	rm -f       /usr/share/man/man1/${BASE}.1.bz2
 	cp -f       ${BASE}.1    /usr/share/man/man1/
 	bzip2       /usr/share/man/man1/${BASE}.1
 	chmod 0644  /usr/share/man/man1/${BASE}.1.bz2
+
+remove             :
+	${PRINT}  "\n--------------------------------------\n"
+	${PRINT}  "remove ${BASE} from production\n"
+	${CLEAN} /usr/sbin/${BASE}
+
 
 gotesting          : 
 	#mount --bind /bin     ${DIR}/unit_root/bin
