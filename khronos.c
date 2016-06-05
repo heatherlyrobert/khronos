@@ -19,6 +19,8 @@ char      testing      = 'n';
 /*====================------------------------------------====================*/
 static void      o___UTILITIES_______________o (void) {;}
 
+void      prog_signal       (int a_signal, siginfo_t *a_info, void *a_nada) {return;};
+
 char       /*lf--: PURPOSE : write the current time to cronpulse -------------*/
 timestamp          (void)
 {
@@ -133,10 +135,12 @@ about              (void)
    strncpy (t, "[tcc built]", 15);
 #elif  __GNUC__  > 0
    strncpy (t, "[gnu gcc  ]", 15);
+#elif  __CBANG__  > 0
+   strncpy (t, "[cbang    ]", 15);
 #else
    strncpy (t, "[unknown  ]", 15);
 #endif
-   snprintf (verstring, 100, "%s   %s : %s\n", t, VER_NUM, VER_TXT);
+   snprintf (verstring, 100, "%s   %s : %s", t, VER_NUM, VER_TXT);
    return verstring;
 }
 
@@ -158,13 +162,13 @@ initialize         (const char a_quiet)
       printf("khronos : can not start logger, FATAL\n");
       exit(1);
    }
+   yLOG_enter (__FUNCTION__);
    yLOG_info  ("purpose",  "consistent, reliable time-based job scheduling");
    yLOG_info  ("cli args", "none");
    yLOG_info  ("khronos",  about());
    yLOG_info  ("yLOG"   ,  yLOG_version());
    yLOG_info  ("ySCHED" ,  ySCHED_version());
    /*---(init)---------------------------*//*===fat=end===*/
-   yLOG_enter (__FUNCTION__);
    my.uid = getuid();
    yLOG_value ("uid num", my.uid);
    my.silent  = 'n';
@@ -175,18 +179,6 @@ initialize         (const char a_quiet)
    nproc  = 0;
    /*---(end)----------------------------*/
    yLOG_exit  (__FUNCTION__);
-   /*---(complete)-----------------------*/
-   return 0;
-}
-
-char       /*lf--: PURPOSE : exit on termintation/signal ---------------------*/
-terminate          (const char *a_func, const int a_exit)
-{
-   /*---(log)----------------------------*//*===fat=beg===*/
-   if (strncmp(a_func, "", 1) != 0) yLOG_exit  (a_func);
-   yLOG_end   ();
-   /*---(check for harsh exit)-----------*//*===fat=end===*/
-   if (a_exit > 0) exit(a_exit);
    /*---(complete)-----------------------*/
    return 0;
 }
@@ -203,17 +195,17 @@ communicate        (int a_signal)
    case  SIGTERM:
       yLOG_info  ("SIGNAL", "SIGTERM means terminate daemon");
       watch_end();
-      terminate("EXITING", 99);
+      yEXEC_term ("EXITING", 99);
       break;
    case  SIGSEGV:
       yLOG_info  ("SIGNAL", "SIGSEGV means daemon blew up");
       watch_end();
-      terminate("EXITING", 99);
+      yEXEC_term ("EXITING", 99);
       break;
    case  SIGABRT:
       yLOG_info  ("SIGNAL", "SIGABRT means daemon blew up");
       watch_end();
-      terminate("EXITING", 99);
+      yEXEC_term ("EXITING", 99);
       break;
    }
    /*---(reset)--------------------------*/
@@ -248,43 +240,10 @@ daemonize          (void)
    int      status  = 0;
    /*---(fork off and die)----------------------*/
    DAEMON {
-      yLOG_info("foad", "fork off and die");
-      my.pid = fork();
-      if (my.pid < 0) {         /* error               */
-         yLOG_info  ("fork",   "creation of child FAILED");
-         terminate(__FUNCTION__, 1);
-      }
-      if (my.pid > 0) {         /* parent process      */
-         yLOG_info  ("PARENT", "exiting parent");
-         exit(0);
-      }
-      wait4(my.pid, &status, 0, NULL);
-      /*---(fix the umask)-------------------------*/
-      yLOG_info  ("umask",  "reset the default file permissions");
-      umask(0);
-      /*---(close off all descriptors)-------------*/
-      yLOG_info  ("fds",    "close all inherited file descriptors");
-      for (i = 0; i < 256; ++i) {
-         if (i == my.logger) continue;
-         close(i);
-      }
-      /*---(tie std fds to the bitbucket)----------*/
-      yLOG_info  ("std fds",   "redirect stdin, stdout, and stderr to /dev/null");
-      fd = open("/dev/null", O_RDWR);
-      if (fd < 0) {
-         yLOG_info  ("fds",    "creation of safe fd FAILED");
-         terminate(__FUNCTION__, 2);
-      }
-      dup2(fd, 0);
-      dup2(fd, 1);
-      dup2(fd, 2);
-      /*---(obtain a new process group)------------*/
-      yLOG_info  ("session", "create a new process/session");
-      my.sid = setsid();
-      if (my.sid < 0) {
-         yLOG_info  ("sid",    "creation FAILED");
-         terminate(__FUNCTION__, 3);
-      }
+      yLOG_info  ("mode", "daemon mode requested");
+      yEXEC_daemon (my.logger, &my.pid);
+   } else {
+      yLOG_info  ("mode", "foreground mode requested");
    }
    /*---(check security on crontabs)------------*/
    struct    stat s;
@@ -292,94 +251,50 @@ daemonize          (void)
    rc = lstat(CRONTABS, &s);
    if  (rc < 0) {
       yLOG_info  ("crondir", "directory does not exist");
-      terminate(__FUNCTION__, 6);
+      yEXEC_term (__FUNCTION__, 6);
    }
    if  (!S_ISDIR(s.st_mode))  {
       yLOG_info  ("crondir", "not a directory");
-      terminate(__FUNCTION__, 6);
+      yEXEC_term (__FUNCTION__, 6);
    }
+   yLOG_info  ("crondir", "directory existance verified");
    if  (s.st_uid  != 0)  {
       yLOG_info  ("crondir", "directory not owned by root");
-      terminate(__FUNCTION__, 6);
+      yEXEC_term (__FUNCTION__, 6);
    }
    if  (s.st_gid  != 0)  {
       yLOG_info  ("crondir", "directory group is not root");
-      terminate(__FUNCTION__, 6);
+      yEXEC_term (__FUNCTION__, 6);
    }
    if  ((s.st_mode & 00777) != 00700)  {
       yLOG_info  ("crondir", "directory permissions not 0700");
-      terminate(__FUNCTION__, 6);
+      yEXEC_term (__FUNCTION__, 6);
    }
-   yLOG_info  ("crondir", "directory owned by root:root and 0700");
+   yLOG_info  ("security", "directory owned by root:root and 0700");
    /*---(change to safe location)---------------*/
    yLOG_info  ("location", "change current dir to a safe place");
    if (chdir(CRONTABS) < 0) {
       yLOG_info  ("cd",    "change directory FAILED");
-      terminate(__FUNCTION__, 4);
+      yEXEC_term (__FUNCTION__, 4);
    }
-   /*---(record process info)-------------------*/
-   my.pid  = getpid();
-   my.ppid = getppid();
-   yLOG_value ("new pid",  my.pid);
-   yLOG_value ("new ppid", my.ppid);
-   DAEMON {
-      if (my.ppid != 1) {
-         /*---(fork off and die)----------------------*/
-         yLOG_info("foad", "fork off and die again");
-         my.pid = fork();
-         if (my.pid < 0) {         /* error               */
-            yLOG_info  ("fork",   "creation of child FAILED");
-            terminate(__FUNCTION__, 1);
-         }
-         if (my.pid > 0) {         /* parent process      */
-            exit(0);
-         }
-         my.pid  = getpid();
-         my.ppid = getppid();
-         yLOG_value ("and pid",  my.pid);
-         yLOG_value ("and ppid", my.ppid);
-         if (my.ppid != 1) {
-            yLOG_info  ("ppid",  "not owned by init, FAILED");
-            terminate(__FUNCTION__, 5);
-         }
-      }
-   }
-   yLOG_info  ("ppid",  "owned by init, success");
    /*---(signals)-------------------------------*/
    yLOG_info  ("signals",  "setup signal handlers");
-   signals();
+   yEXEC_signal (yEXEC_SOFT, 'n', yEXEC_CNO, 'n');
    /*---(run file)------------------------------*/
-   yLOG_info  ("lockfile", "test for single crond instance");
+   yLOG_info  ("unique"  , "test for single instance");
    lock();
    /*---(complete)------------------------------*/
    yLOG_exit  (__FUNCTION__);
    return 0;
 }
 
-char        /* PURPOSE : ensure single threading                       */
-lock          (void)
+char       /* ---- : ensure single threading of the daemon -------------------*/
+lock               (void)
 {
-   int        rc = 0;
-   struct flock lk;
-   my.locker = open(LOCKFILE, O_RDWR | O_CREAT, 0644);
-   if (my.locker < 0) {
-      yLOG_info  ("FAILURE", "crond already running (can not open file)");
-      terminate("FAILURE", 7);
+   if (yEXEC_find ("khronos", NULL) > 1) {
+      yLOG_info  ("FAILURE", "khronos already running");
+      yEXEC_term ("FAILURE", 7);
    }
-   lk.l_type   = F_WRLCK;           /* exclusive lock            */
-   lk.l_whence = 0;                 /* zero offset               */
-   lk.l_start  = 0L;                /* start at BOF              */
-   lk.l_len    = 0L;                /* whole file                */
-   rc = fcntl(my.locker, F_SETLK, &lk);    /* non-blocking              */
-   if (rc != 0) {
-      yLOG_info  ("FAILURE", "crond already running (can not lock file)");
-      terminate("FAILURE", 8);
-   }
-   yLOG_info  ("lock",     "write final pid to /var/run/crond.pid");
-   char _msg[50];
-   snprintf(_msg, 50, "%d\n", my.pid);
-   write(my.locker, _msg, strlen(_msg));
-   fsync(my.locker);
    return 0;
 }
 
@@ -906,6 +821,7 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
    tCLINE   *cline;
    char     *p;
    char     *s0        = NULL;
+   char      original  = 'n';
    /*---(run input lines)-----------------------*/
    yLOG_point ("cfile",    a_cfile);
    while (1) {
@@ -919,8 +835,28 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
        *> if (buffer[0] == '#') { ySCHED_parse (NULL, ""); continue; }                <*/
       /*---(call parsing)----------------*/
       /*> yLOG_break();                                                               <*/
+      original = 'n';
+      p = strchr   (buffer, '\x1F');
+      if (p == NULL)  {
+         /*> printf ("%p : %s\n", buffer, buffer);                                    <*/
+         if ((p = strchr   (buffer, ' ')) == NULL)   continue;
+         /*> printf ("%p : <<%s>>\n", p, p);                                          <*/
+         if ((p = strchr   (p + 1 , ' ')) == NULL)   continue;
+         /*> printf ("%p : <<%s>>\n", p, p);                                          <*/
+         if ((p = strchr   (p + 1 , ' ')) == NULL)   continue;
+         /*> printf ("%p : <<%s>>\n", p, p);                                          <*/
+         if ((p = strchr   (p + 1 , ' ')) == NULL)   continue;
+         /*> printf ("%p : <<%s>>\n", p, p);                                          <*/
+         if ((p = strchr   (p + 1 , ' ')) == NULL)   continue;
+         /*> printf ("%p : <<%s>>\n", p, p);                                          <*/
+         *p = '\x1F';
+         /*> printf ("%p : <<%s>>\n", buffer, buffer);                                <*/
+         original = 'y';
+      }
       p = strtok_r (buffer, "\x1F", &s0);
+      /*> printf ("%p : <<%s>>\n", p, p);                                             <*/
       rc = ySCHED_parse (NULL, p);
+      /*> printf ("rc = %d\n", rc);                                                   <*/
       if (rc < 0) continue;
       yLOG_value  ("line_no"   , recds);
       /*---(create a line)---------------*/
@@ -939,20 +875,24 @@ inventory     (tCFILE *a_cfile, FILE *a_source)
       /*---(scheduling info)-------------*/
       ySCHED_save (&cline->sched);
       /*---(title)-----------------------*/
-      p = strtok_r (NULL , "\x1F", &s0);
-      str_trim(p);
-      strncpy(cline->title, p, CMD);
-      yLOG_info  ("title",    cline->title);
+      if (original == 'n') {
+         p = strtok_r (NULL , "\x1F", &s0);
+         str_trim(p);
+         strncpy(cline->title, p, CMD);
+         yLOG_info  ("title",    cline->title);
+      }
       /*---(chars)-----------------------*/
-      p = strtok_r (NULL , "\x1F", &s0);
-      str_trim(p);
-      if (strlen(p) > 3) {
-         cline->recovery = p[0];
-         cline->priority = p[1];
-         cline->alerting = p[2];
-         yLOG_char  ("recovery", cline->recovery);
-         yLOG_char  ("priority", cline->priority);
-         yLOG_char  ("alerting", cline->alerting);
+      if (original == 'n') {
+         p = strtok_r (NULL , "\x1F", &s0);
+         str_trim(p);
+         if (strlen(p) > 3) {
+            cline->recovery = p[0];
+            cline->priority = p[1];
+            cline->alerting = p[2];
+            yLOG_char  ("recovery", cline->recovery);
+            yLOG_char  ("priority", cline->priority);
+            yLOG_char  ("alerting", cline->alerting);
+         }
       }
       /*---(final data)-------------------------*/
       p = strtok_r (NULL , "\x1F", &s0);
@@ -1053,7 +993,7 @@ dispatch      (cint a_min)
    tCLINE   *x_line;                         /* current line                  */
    char      msg[200];
    /*---(process all time periods)--------------*/
-   if (my.silent == 'n') yLOG_value ("potential",  nfast);
+   /*> if (my.silent == 'n') yLOG_value ("potential",  nfast);                        <*/
    for (x_line = fasthead; x_line != NULL; x_line = x_line->fnext) {
       if (my.silent == 'y') {
          switch (x_line->recovery) {
@@ -1085,8 +1025,8 @@ dispatch      (cint a_min)
       ++njobs;
    }
    if (my.silent == 'n') {
-      yLOG_value ("tested", ntest);
-      yLOG_value ("ran",    njobs);
+      /*> yLOG_value ("tested", ntest);                                               <*/
+      /*> yLOG_value ("ran",    njobs);                                               <*/
       yLOG_exit  (__FUNCTION__);
    }
    /*---(complete)------------------------------*/
@@ -1096,7 +1036,6 @@ dispatch      (cint a_min)
 char
 run        (tCFILE *a_file, tCLINE *a_line)
 {
-   yLOG_senter ("RUN");
    /*---(locals)--------------------------------*/
    int       rc        = 0;                       /* simple return code       */
    int       rpid      = 0;                       /* child pid for execution  */
@@ -1106,188 +1045,64 @@ run        (tCFILE *a_file, tCLINE *a_line)
    tTIME    *curr_time = NULL;
    char      msg[200];
    char      envp[10][200];
-   /*---(prepare)-------------------------------*/
-   a_line->rpid   = 0;
-   /*---(fork off to execute)-------------------*/
+   /*---(run)----------------------------*/
    snprintf(msg, 200, "%-16.16s,%3d", a_line->file->name, a_line->recd);
-   yLOG_snote(msg);
-   yLOG_snote("fork");
-   rpid = fork();
-   if (rpid < 0) {                        /* error                            */
-      yLOG_snote ("FAILURE");
-      yLOG_sexit ();
+   rc = yEXEC_run (STUFF, msg, a_file->user, a_line->cmd, SHELL, PATH);
+   if (rc <  0) {
+      a_line->rpid       = 0;
       return -1;
    }
-   if (rpid > 0) {
-      yLOG_svalue ("pid", rpid);
-      /*---(link into proc dll)-----------------*/
-      a_line->rpid       = rpid;
+   if (rc >= 0) {
+      a_line->rpid       = rc;
       a_line->lasttime = time(NULL);
       ++a_line->attempts;
       proclist_add (a_line);
-      /*---(log and exit)-----------------------*/
-      yLOG_snote  ("SUCCESS");
-      yLOG_sexit  ();
-      return 0;              /* parent moves on to next task     */
    }
-   output = fopen(STUFF, "a");
-   /*---(display header for debugging)----------*/
-   fprintf(output, "=== crond : the heatherly cron system ==================================begin===\n");
-   /*---(get the date)-----------------------*/
-   now = time(NULL);
-   curr_time = localtime(&now);
-   strftime(msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", curr_time);
-   fprintf(output, "start     : %s\n",   msg);
-   /*---(get user information)------------------*/
-   pass = getpwnam(a_file->user);
-   if (pass == NULL) {
-      exit (-2);
-   }
-   /*---(set execution environment)-------------*/
-   rc = setenv("USER",                 pass->pw_name, 1);
-   snprintf(envp[0], 200, "USER=%s",   pass->pw_name);
-   fprintf(output, "USER set  : %s\n", pass->pw_name);
-   if (rc <  0) {
-      exit (-3);
-   }
-   rc = setenv("HOME",                 pass->pw_dir,  1);
-   snprintf(envp[1], 200, "HOME=%s",   pass->pw_dir);
-   fprintf(output, "HOME set  : %s\n", pass->pw_dir);
-   if (rc <  0) {
-      exit (-3);
-   }
-   rc = setenv("SHELL",                SHELL, 1);
-   snprintf(envp[2], 200, "SHELL=%s",  SHELL);
-   fprintf(output, "SHELL set : %s\n", SHELL);
-   if (rc <  0) {
-      exit (-3);
-   }
-   rc = setenv("PATH",                 PATH, 1);
-   snprintf(envp[3], 200, "PATH=%s",   PATH);
-   fprintf(output, "PATH set  : %s\n", PATH);
-   if (rc <  0) {
-      exit (-3);
-   }
-   /*---(set permossions)-----------------------*/
-   rc = initgroups(a_file->user, pass->pw_gid);
-   if (rc <  0) {
-      exit (-3);
-   }
-   rc = setregid(pass->pw_gid,         pass->pw_gid);
-   snprintf(envp[4], 200, "GID=%d",    pass->pw_gid);
-   fprintf(output, "GID set   : %d\n", pass->pw_gid);
-   if (rc <  0) {
-      return (-3);
-   }
-   rc = setreuid(pass->pw_uid, pass->pw_uid);
-   snprintf(envp[5], 200, "UID=%d",    pass->pw_uid);
-   fprintf(output, "UID set   : %d\n", pass->pw_uid);
-   if (rc <  0) {
-      return (-3);
-   }
-   /*---(set current dir)-----------------------*/
-   rc = chdir(pass->pw_dir);
-   fprintf(output, "chdir     : %s\n", pass->pw_dir);
-   if (rc <  0) {
-      return (-3);
-   }
-   /*---(try direct execution)------------------*/
-   fprintf(output, "execvp    : %.50s\n", a_line->cmd);
-   fprintf(output, "==========================================================================end===\n");
-   fflush (output);
-   fclose (output);
-   char    backup2[CMD];
-   strncpy(backup2, a_line->cmd, CMD);
-   str_parse (backup2);
-   rc = execvp(*args, args);
-   /*---(close log)-----------------------------*/
-   envp[6][0] = '\0';
-   output = fopen(STUFF, "a");
-   fprintf(output, "FAILED execvp, fallback...\n");
-   fprintf(output, "execl     : %.50s\n", a_line->cmd);
-   fprintf(output, "==========================================================================end===\n");
-   fflush (output);
-   fclose (output);
-   rc = execl(SHELL, SHELL, "-c", a_line->cmd, NULL, NULL);
-   /*---(this should never come back)-----------*/
-   output = fopen(STUFF, "a");
-   fprintf(output, "FAILED execl, just won't run\n");
-   fprintf(output, "==========================================================================end===\n");
-   fflush (output);
-   fclose (output);
-   _exit (-3);    /* must use _exit to get out properly                       */
+   return 0;
 }
 
 char        /* PURPOSE : verify status of running jobs and mark completions   */
 check         (void)
 {
    yLOG_enter (__FUNCTION__);
+   int          rc =0;
    /*---(defense)-------------------------------*/
    if (nproc == 0) {
-      /*> yLOG_note  ("no currently running jobs");                                   <*/
+      yLOG_note  ("no currently running jobs");
       yLOG_exit  (__FUNCTION__);
       return 0;
    }
    /*---(locals)--------------------------------*/
-   int       rc        = 0;                       /* return code              */
    tCLINE   *x_line    = NULL;                    /* current line             */
    tCFILE   *x_file    = NULL;                    /* the line's file          */
    tCLINE   *x_pnext   = NULL;                    /* the next line to process */
    int       x_status  = 0;                       /* the line's job status    */
    char      msg[200];
    /*---(prepare)-------------------------------*/
-   yLOG_value ("before", nproc);
    x_line    = prochead;
    /*---(loop)----------------------------------*/
    while (x_line != NULL) {
       /*---(save the next)----------------------*/
       x_pnext   = x_line->pnext;
       x_file    = x_line->file;
-      /*---(output header)----------------------*/
-      yLOG_senter("chk");
       snprintf(msg, 200, "%-15.15s,%3d", x_line->file->name, x_line->recd);
-      yLOG_snote (msg);
-      yLOG_sint  (x_line->rpid);
-      /*---(check status)-----------------------*/
-      rc = wait4(x_line->rpid, &x_status, WNOHANG, NULL);
+      rc = yEXEC_check (msg, x_line->rpid);
       /*---(handle running line)----------------*/
-      if (rc ==  0) {
-         yLOG_snote ("still running");
-      }
-      /*---(handle completed line)--------------*/
-      else {
-         x_line->lastexit = -1;
-         /*---(log status code)-----------------*/
-         if (WIFEXITED(x_status)) {
-            x_line->lastexit = WEXITSTATUS(x_status);
-            yLOG_snote ("exited");
-            if      (WEXITSTATUS(x_status) == 0) {
-               yLOG_snote ("normal");
-            } else if (WEXITSTATUS(x_status) >  0) {
-               yLOG_snote ("positive");
-            } else {
-               ++x_line->failures;
-               yLOG_snote ("FAILURE");
-            }
-         } else {
+      if (rc <= 0)  {
+         if (rc <  0)  {
+            x_line->lastexit = -1;
             ++x_line->failures;
-            yLOG_snote ("TERMINATED");
          }
-         /*---(clear from proc list)------------*/
-         yLOG_snote ("clearing");
          proclist_del (x_line);
-         /*---(clear from proc list)------------*/
          if (x_line->deleted == 'y') {
             yLOG_snote ("deleted");
             cronline_del (x_line);
             if (x_file->nlines == 0) cronfile_del (x_file);
          }
       }
-      yLOG_sexit();
       x_line = x_pnext;
       if (x_line == NULL)    break;
    }
-   yLOG_value ("after", nproc);
    yLOG_exit  (__FUNCTION__);
    return 0;
 }

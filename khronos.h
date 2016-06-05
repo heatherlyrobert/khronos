@@ -4,13 +4,13 @@
 
  *   focus         : (SA) system_admin
  *   niche         : (js) job_scheduler
- *   application   : khronos           (primeval god of time [not cronos] HP)
+ *   application   : khronos-ageraton  (primeval god of time [not cronos] HP)
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
  *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
- *   lang_name     : gnu/ansi-c  (right, just, best, standard, and everlasting)
- *   dependencies  : yLOG, ySCHED
- *   size          : moderate   (less than 5,000 slocL)
+ *   lang_name     : ansi-c      (righteous, limitless, universal, and forever)
+ *   dependencies  : ySCHED* (must), yLOG+ (optional), dash (shell)
+ *   size          : moderate    (less than 5,000 slocL)
  * 
  *   author        : the_heatherlys
  *   created       : 2010-05
@@ -24,8 +24,8 @@
 /*===[[ SUMMARY ]]=============================================================*
 
  *   khronos is a fast, simplified, modernized, and technical version of the
- *   classic posix-defined crond time-based process scheduler which combines
- *   crond and crontab to allow deeper verification, verbosity, and traceablity.
+ *   classic posix-defined crond time-based process scheduler which merges crond
+ *   and crontab to allow deeper verification, verbosity, and traceablity.
  *
  */
 /*===[[ PURPOSE ]]=============================================================*
@@ -56,7 +56,7 @@
  *   khronos will attempt to implement the original simplicity, clarity, and
  *   power with updated algorithms, automated testing, strong logging and
  *   monitoring, stronger security, and a few added recovery/notification
- *   features.  we will maintain much backward compatibility while focusing on
+ *   features.  we will maintain some backward compatibility while focusing on
  *   an automation-intensive, power-user environment for our own personal use.
  *
  *   "do one thing and do it well (securely) and focus on technical power users"
@@ -72,17 +72,19 @@
  *      - eliminate known and potential security gaps and hacking vectors
  *      - ability to test/verify crontabs before actual installation
  *
- *   khronos' crontab format will be...
+ *   khronos' crontab format will...
  *      - utilize the elegant core scheduling grammar as the original design
+ *      - allow both original and the modified heatherly format
  *      - will be 98% backward compatible on the first five fields
  *      - but will use "and" to combine day of month/week (cleaner and stronger)
  *      - add a week field (6) for week-of-year (alternating, etc)
  *      - add a duration field (7) to allow khronos to know max run time
- *      - will not add a year column, continues to work as a rolling 12-months
- *      - add a short title field (8) for human-readable status reporting
- *      - add a five-character field (9) to indicate job characteristics
+ *      - will add a year column, as admins have trouble keeping long-term notes
+ *      - add a title fields for human-readable status reporting
  *      - the command/script field remains last and is now in the tenth position
  *      - add shortcuts for days of week, weekends, etc to increase readability
+ *      - add duration expectations to control bad behaviour (min/max/exp)
+ *      - add importance to decide what to run in recovery situations
  *
  *   khronos will not provide...
  *      - automatic email -- everyone ultimately hates it (security risk)
@@ -92,7 +94,7 @@
  *      - special symbols for easily expressible things (@hourly, @weekly)
  *
  *   khronos will break backward compatiblilty in the following areas...
- *      - crontabs format will be expanded by four fields
+ *      - crontabs format will be expanded after the scheduling grammar part
  *      - crontabs will be stored in /var/spool/crontabs (not a big deal)
  *      - crontab names will allow for many files per user (like dcron)
  *      - crontabs will only be pulled from ~/c_quani/crontabs (std for us)
@@ -105,6 +107,11 @@
  *      - dependency-based scheduling (like init systems provide)
  *      - event-based launches like @reboot (daemons can and should do this)
  *      - resource-based changes to schedules, such as system load or avail
+ *
+ *   as a result of our changes, khronos is not a novice user tool, but neither
+ *   was cron as admins can not allow crazy user processes to run all night.
+ *   does anyone want users or installers to make decisions about what and when
+ *   to run jobs on you system ?!#@!  really!!!
  *
  *   we don't want to just use the system, we want to *own* it; so that means
  *   we have to fundmentally understand the critical services which only tearing
@@ -360,15 +367,21 @@
 #ifndef YKHRONOS_hguard
 #define YKHRONOS_hguard loaded
 
+
+
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.0b"
-#define VER_TXT   "reports library versions and compiliers"
+#define VER_NUM   "1.2b"
+#define VER_TXT   "final github preparation"
+
 
 
 /*---(headers)--------------------------------------------------*/
 #include  <yLOG.h>
 #include  <ySCHED.h>
+#include  <yEXEC.h>
+#include  <ySTR.h>
 
+#include  <unistd.h>
 #include  <sys/unistd.h>
 #include  <sys/types.h>
 #include  <sys/stat.h>
@@ -390,23 +403,37 @@
 #include  <ctype.h>
 
 /*---(communcation files)---------------------------------------*/
-#define    LOCKFILE      "/var/run/crond.pid"
-#define    PULSER        "/var/log/yLOG/cronpulse.intrarun_last_check"
-#define    STUFF         "/var/log/yLOG/cronextra.execution_feedback"
-#define    WATCHER       "/var/log/yLOG.historical/cronwatch.interrun_monitoring"
-#define    STATUS        "/var/log/yLOG/khronos.status_reporting"
+#define     DIR_CONF         "/etc/"
+#define     DIR_RUN          "/var/run/"
+#define     DIR_LOG          "/var/log/"
+#define     DIR_YLOG         "/var/log/yLOG/"
+#define     DIR_YHIST        "/var/log/yLOG.historical/"
+#define     DIR_ROOT         "/home/machine/crontabs/"
+#define     DIR_LOCAL        "c_quani/crontabs/"
+
+#define    FILE_LOCK     "khronos.pid"
+#define    FILE_PULSE    "khronos.heartbeat"
+#define    FILE_WATCH    "khronos.interrun_monitoring"
+#define    FILE_EXEC     "khronos.execution_feedback"
+#define    FILE_STATUS   "khronos.status_reporting"
 
 /*---(work files and directories)-------------------------------*/
 #define    CRONTABS      "/var/spool/crontabs"
 #define    PATH          "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
 #define    SHELL         "/bin/dash"
 
-#define    USER            21     /* max user field   */
-#define    DESC            51     /* max desc field   */
-#define    NAME            72     /* max crontab name */
-#define    LEN            100     /* max text field   */
-#define    LINE           500     /* max crontab line */
-#define    CMD            500     /* max command len  */
+#define     LEN_TRACKER     16     /* max title field  */
+#define     LEN_COMMENT     60     /* max comment field*/
+#define     LEN_USER        21     /* max user field   */
+#define     LEN_DESC        51     /* max desc field   */
+#define     LEN_NAME        72     /* max crontab name */
+#define     LEN_FIELD      100     /* max text field   */
+#define     LEN_LINE      2000     /* max crontab line */
+#define     LEN_CMD        500     /* max command len  */
+#define     LEN_TEXT      2000
+#define     LEN_DIR        300
+#define     LEN_LONG       500
+#define     LEN_ACTION       5
 
 #define    HOUR          3600     /* seconds per hour */
 
@@ -416,21 +443,76 @@ extern     char       version;
 
 
 
+
+/*===[[ DEBUGGING SETUP ]]====================================================*/
+/* this is my latest standard format, vars, and urgents                       */
+/* v3.0b : added signal handling                                (2014-feb-01) */
+struct cDEBUG
+{
+   /*---(handle)-------------------------*/
+   int         logger;                 /* log file so that we don't close it  */
+   /*---(overall)------------------------*/  /* abcdefghi_kl__opq_stu__x__    */
+   /* f = full urgents turns on all standard urgents                          */
+   /* k = kitchen sink and turns everything, i mean everything on             */
+   /* q = quiet turns all urgents off including the log itself                */
+   char        tops;                   /* t) broad structure and context      */
+   char        summ;                   /* s) statistics and analytical output */
+   /*---(startup/shutdown)---------------*/
+   char        args;                   /* a) command line args and urgents    */
+   char        conf;                   /* c) configuration handling           */
+   char        prog;                   /* p) program setup and teardown       */
+   /*---(file processing)----------------*/
+   char        inpt;                   /* i) text/data file input             */
+   char        inpt_mas;               /* i) text/data file input   (mas/more)*/
+   char        outp;                   /* o) text/data file output            */
+   char        outp_mas;               /* o) text/data file output  (mas/more)*/
+   /*---(event handling)-----------------*/
+   char        loop;                   /* l) main program event loop          */
+   char        user;                   /* u) user input and handling          */
+   char        apis;                   /* z) interprocess communication       */
+   char        sign;                   /* x) os signal handling               */
+   char        scrp;                   /* b) scripts and batch operations     */
+   char        hist;                   /* h) history, undo, redo              */
+   /*---(program)------------------------*/
+   char        graf;                   /* g) grahpics, drawing, and display   */
+   char        data;                   /* d) complex data structure handling  */
+   char        envi;                   /* e) environment processing           */
+   char        envi_mas;               /* E) environment processing (mas/more)*/
+   /*---(specific)-----------------------*/
+   /*---(done)---------------------------*/
+};
+typedef     struct      cDEBUG       tDEBUG;
+extern      tDEBUG      debug;
+
+#define     DEBUG_TOPS          if (debug.tops      == 'y')
+#define     DEBUG_SUMM          if (debug.summ      == 'y')
+#define     DEBUG_ARGS          if (debug.args      == 'y')
+#define     DEBUG_CONF          if (debug.conf      == 'y')
+#define     DEBUG_PROG          if (debug.prog      == 'y')
+#define     DEBUG_INPT          if (debug.inpt      == 'y')
+#define     DEBUG_INPTM         if (debug.inpt_mas  == 'y')
+#define     DEBUG_OUTP          if (debug.outp      == 'y')
+#define     DEBUG_OUTPM         if (debug.outp_mas  == 'y')
+#define     DEBUG_LOOP          if (debug.loop      == 'y')
+#define     DEBUG_USER          if (debug.user      == 'y')
+#define     DEBUG_APIS          if (debug.apis      == 'y')
+#define     DEBUG_SIGN          if (debug.sign      == 'y')
+#define     DEBUG_SCRP          if (debug.scrp      == 'y')
+#define     DEBUG_HIST          if (debug.hist      == 'y')
+#define     DEBUG_GRAF          if (debug.graf      == 'y')
+#define     DEBUG_DATA          if (debug.data      == 'y')
+#define     DEBUG_ENVI          if (debug.envi      == 'y')
+#define     DEBUG_ENVIM         if (debug.envi_mas  == 'y')
+
 /*---(debugging)-------------------------*/
-#define   DEBUG_T    if (debug_top   == 'y')
-#define   DEBUG_A    if (debug_args  == 'y')
-#define   DEBUG_I    if (debug_input == 'y')
-#define   DEBUG_P    if (debug_proc  == 'y')
-#define   TEST       if (testing     == 'y')
-extern    char      debug_top;
-extern    char      debug_args;
-extern    char      debug_input;
-extern    char      debug_proc;
-extern    char      testing;
-extern    int       failed;
+#define     TEST        if (testing     == 'y')
+extern      char        testing;
+extern      int         failed;
 
-#define   EXTRA
+#define     EXTRA
 
+extern      char        unit_answer [LEN_TEXT];
+extern      char      verstring    [500];
 
 
 /*---(convienence typedefs)-------------------------------------*/
@@ -446,6 +528,7 @@ typedef struct stat      tSTAT;
 typedef struct passwd    tPASSWD;
 typedef struct tm        tTIME;
 typedef struct dirent    tDIRENT;
+typedef struct flock     tFLOCK;
 
 /*---(structures)-----------------------------------------------*/
 
@@ -454,91 +537,111 @@ typedef struct dirent    tDIRENT;
 struct cACCESSOR
 {
    /*---(files)----------------*/
-   char      quiet;              /* bool : 0=normal, 1=quiet                  */
-   char      updates;            /* bool : 0=normal, 1=quiet                  */
-   int       logger;             /* log file so that we don't close it        */
-   int       locker;             /* lock file in /var/run                     */
-   char      pulse_time [50];    /* last time string written to pulse         */
-   char      pulse_begin[50];    /* start of this cron run as string          */
-   char      pulse_end  [50];    /* ending of last cron run as string         */
+   char        quiet;              /* bool : 0=normal, 1=quiet                  */
+   char        updates;            /* bool : 0=normal, 1=quiet                  */
+   /*---(files)----------------*/
+   char        name_pulser  [200]; /* pulser file name                          */
+   char        name_watcher [200]; /* watcher file name                         */
+   char        name_locker  [200]; /* run lock file name                        */
+   char        name_exec    [200]; /* execution file name                       */
+   char        name_status  [200]; /* status update file name                   */
+   /*---(pulse)----------------*/
+   char        pulse_time   [ 50]; /* last time string written to pulse         */
+   char        pulse_begin  [ 50]; /* start of this cron run as string          */
+   char        pulse_end    [ 50]; /* ending of last cron run as string         */
    /*---(idenfiers)------------*/
-   char      prog[USER];         /* program name called                       */
-   int       uid;                /* user udi of person who called khronos     */
-   char      who[USER];          /* user name of person who launched khronos  */
-   char      am_root;            /* marked if actually called by root         */
-   int       pid;                /* process id of khronos                     */
-   int       ppid;               /* parent process id of khronos              */
-   int       sid;                /* session id of khronos                     */
+   char        prog        [LEN_USER];         /* program name called                       */
+   int         uid;                /* user udi of person who called khronos     */
+   char        who         [LEN_USER];          /* user name of person who launched khronos  */
+   char        am_root;            /* marked if actually called by root         */
+   int         pid;                /* process id of khronos                     */
+   int         ppid;               /* parent process id of khronos              */
+   int         sid;                /* session id of khronos                     */
    /*---(working variables)----*/
-   char      parsed[LEN];        /* representation of the results of parsing  */
-   char      name[NAME];         /* name of the current crontab               */
-   char      user[USER];         /* user name on current crontab              */
-   char      desc[DESC];         /* descrpition for current crontab           */
-   char      action[5];          /* crontab action requested                  */
-   long      fast_beg;           /* current fast list start                   */
+   char        parsed      [LEN_FIELD];     /* representation of the results of parsing  */
+   char        name        [LEN_NAME];      /* name of the current crontab               */
+   char        user        [LEN_USER];      /* user name on current crontab              */
+   char        desc        [LEN_DESC];      /* descrpition for current crontab           */
+   char        action      [LEN_ACTION];    /* crontab action requested                  */
+   long        fast_beg;                    /* current fast list start                   */
    /*---(context info)---------*/
-   int       for_line;           /* line which uses context (next one)        */
-   char      title[DESC];        /* title of current cron line                */
-   char      recovery;           /* -=?, x=no, 1=once, B=batch                */
-   char      priority;           /* -=normal                                  */
-   char      alerting;           /* -=none                                    */
-   long      last_end;           /* last end                                  */
-   long      this_start;         /* present start                             */
+   int         for_line;                    /* line which uses context (next one)        */
+   char        tracker     [LEN_DESC];      /* title of current cron line                */
+   long        last_end;                    /* last end                                  */
+   long        this_start;                  /* present start                             */
    /*---(trigger)--------------*/
-   char      resync;             /* update crontabs : n=not, -=marked, a=all  */
-   char      silent;             /* y=log runs, n=no logging                  */
+   char        resync;                      /* update crontabs : n=not, -=marked, a=all  */
+   char        silent;                      /* y=log runs, n=no logging                  */
 };
 extern    struct cACCESSOR my;
 
 
-struct cCFILE {      /* SLL, singly linked-list of crontab files              */
-   char      name[NAME];     /* name of cronfile                              */
-   char      user[USER];     /* username to execute jobs                      */
-   int       uid;            /* uid of user to execute jobs                   */
-   char      retire;         /* file should be retired, but lines are running */
-   int       nlines;         /* number of lines in file                       */
-   tCLINE   *head;           /* head of this file's line linked list          */
-   tCLINE   *tail;           /* tail of this file's line linked list          */
-   tCFILE   *prev;           /* next file in file doubly linked list          */
-   tCFILE   *next;           /* next file in file doubly linked list          */
+
+struct cCFILE {
+   /*---(context)------------------------*/
+   char        user        [LEN_USER];      /* username to execute jobs       */
+   char        name        [LEN_NAME];      /* name of cronfile               */
+   /*---(working)------------------------*/
+   int         uid;                         /* uid of user to execute jobs    */
+   char        retire;                      /* file retired, but lines running*/
+   int         nlines;                      /* number of lines in file        */
+   /*---(linked lists)-------------------*/
+   tCLINE     *head;                        /* head of line linked list       */
+   tCLINE     *tail;                        /* tail of line linked list       */
+   tCFILE     *prev;                        /* next file doubly linked list   */
+   tCFILE     *next;                        /* next file doubly linked list   */
+   /*---(done)---------------------------*/
 };
+
+
 
 struct cCLINE {
    /*---(link to file)-------------------*/
-   tCFILE   *file;           /* link back up to the parent                    */
-   int       recd;           /* crontab record number                         */
-   char      cmd[CMD];       /* shell command                                 */
-   /*---(run)----------------------------*/
-   char      active;         /* line is on the fast list                      */
-   char      deleted;        /* line should be retired, but is running        */
-   int       rpid;           /* running=pid, ready=0                          */
-   /*---(schedule masks)-----------------*/
-   tSCHED    sched;
+   tCFILE     *file;                        /* link back up to the parent          */
+   /*---(basics)-------------------------*/
+   tSCHED      sched;                       /* schedule structure                  */
+   char        command     [LEN_CMD];       /* shell command                       */
    /*---(context)------------------------*/
-   char      title[DESC];    /* user assigned title of current cron line      */
-   char      recovery;       /* -=no, q=+15m, h=+1hr,  t=+2hr,  c=cumm        */
-   char      priority;       /* -=normal                                      */
-   char      alerting;       /* -=none                                        */
+   int         recd;                        /* crontab record number               */
+   char        tracker     [LEN_TRACKER];   /* long-term reference for entry  */
+   char        comment     [LEN_COMMENT];   /* descriptive text               */
+   /*---(execution)----------------------*/
+   char        active;                      /* line is on the fast list            */
+   char        deleted;                     /* line should be retired, but running */
+   int         rpid;                        /* running=pid, ready=0                */
+   /*---(profile)------------------------*/
+   int         dur_exp;                     /* expected duration                   */
+   int         dur_min;                     /* minimum duration                    */
+   int         dur_max;                     /* maximum duration                    */
+   /*---(controls)-----------------------*/
+   char        importance;                  /* 0-5 levels of importance            */
+   char        monitoring;                  /* should its status be reported       */
+   char        catchup;                     /* must khronos rerun a miss           */
+   char        busy_delay;                  /* delay start time if system is busy  */
+   char        busy_skip;                   /* skip a run if the system is busy    */
+   char        busy_kill;                   /* kill running job if system is busy  */
    /*---(historical)---------------------*/
-   int       attempts;       /* number of times it has been launched          */
-   int       failures;       /* number of times it has not ended well         */
-   long      lasttime;       /* timestamp of last run                         */
-   char      lastexit;       /* return code of last run                       */
+   int         attempts;                    /* number of times it has been launched        */
+   int         failures;                    /* number of times it has not ended well       */
+   long        lasttime;                    /* timestamp of last run                       */
+   char        lastexit;                    /* return code of last run                     */
    /*---(linked lists)-------------------*/
-   tCLINE   *next;           /* next line in line's doubly linked list        */
-   tCLINE   *prev;           /* next line in line's doubly linked list        */
-   tCLINE   *fnext;          /* next line in the fast path linked list        */
-   tCLINE   *fprev;          /* prev line in the fast path linked list        */
-   tCLINE   *pnext;          /* next line in the processing linked list       */
-   tCLINE   *pprev;          /* prev line in the processing linked list       */
+   tCLINE     *next;                        /* next line in line's doubly linked list      */
+   tCLINE     *prev;                        /* next line in line's doubly linked list      */
+   tCLINE     *fnext;                       /* next line in the fast path linked list      */
+   tCLINE     *fprev;                       /* prev line in the fast path linked list      */
+   tCLINE     *pnext;                       /* next line in the processing linked list     */
+   tCLINE     *pprev;                       /* prev line in the processing linked list     */
 };
 
-
 /*---(file linked list)--------*/
-extern    tCFILE   *cronhead;
-extern    tCFILE   *crontail;
-extern    int       nfile;
-extern    int       nentry;
+extern    tCFILE   *h_cfile;   /* head cfile                                  */
+extern    tCFILE   *t_cfile;   /* tail cfile                                  */
+extern    tCFILE   *c_cfile;   /* current cfile                               */
+extern    int       m_cfile;   /* total malloc'd cfile structures             */
+extern    int       n_cfile;   /* total linked cfile structures               */
+extern    int       m_cline;   /* total malloc'd cline structures             */
+extern    int       n_cline;   /* total linked cline structures               */
 
 /*---(fast path linked list)---*/
 extern    tCLINE   *fasthead;
@@ -553,80 +656,130 @@ extern    int       nproc;
 
 /*---(prototypes)-----------------------------------------------*/
 
-int       main               (int argc, char *argv[]);
-char      prog_urgent        (int argc, char *argv[]);
-char      prog_whoami        (void);
-char      prog_args          (int argc, char *argv[]);
-char      prog_usage         (void);
-char      prog_begin         (void);
-char      prog_term          (void);
-char      prog_end           (void);
+int         main               (int argc, char *argv[]);
 
 
-char      initialize    (cchar);
+/*===[[ KHRONOS_PROG.C ]]=====================================================*/
+/*---(utility)--------------*/
+char        wait_minute        (void);
+long        curr_hours         (void);
+char        catchup            (void);
+/*---(program)--------------*/
+char*       PROG_version       (void);
+char        PROG_urgsmass      (char a_set, char a_extra);
+char        PROG_urgs          (int argc, char *argv[]);
+char        PROG_init          (void);
+char        PROG_whoami        (void);
+char        PROG_args          (int argc, char *argv[]);
+char        PROG_usage         (void);
+char        PROG_begin         (void);
+char        PROG_term          (void);
+char        PROG_end           (void);
+/*---(unit testing)---------*/
+char*       PROG_getter        (char *a_question, int a_num);
+char        PROG_testfiles     (void);
+char        PROG_testquiet     (void);
+char        PROG_testloud      (void);
+
+
+/*> char      initialize    (cchar);                                                  <*/
 char      terminate     (cchar*, cint);;
 void      communicate   (cint);
 char      signals       (void);
 char      daemonize     (void);
 char      lock          (void);
 char      pulse         (void);
-char      status        (void);
-char      watch_beg     (void);
-char      watch_end     (void);
+char      BASE_status   (void);
+char      BASE_begwatch (void);
+char      BASE_endwatch (void);
 char      prepare       (void);
 
-long      pulse_last    (void);
+long        BASE_lastpulse     (void);
+char        BASE_timestamp     (void);
 long      lastrun       (void);
-char      timestamp     (void);
 
-char      search        (cchar);
-char      assimilate    (cchar*);
-char      name          (cchar*, cchar);
-char      purge         (void);
-char      retire        (cchar*);
-char      create        (cchar*, cchar*, tCFILE**);
-char      inventory     (tCFILE*, FILE*);
-char      context       (int, cchar*);
-char      parse         (char*, char *, int, int, char*);
-int       convert       (cchar*, cchar*, cint, cint);
+char        search             (cchar);
+char        assimilate         (cchar*);
+char        BASE_name          (cchar*, cchar);
+char        BASE_purge         (void);
+char        BASE_retire        (cchar*);
+char        BASE_create        (cchar*, cchar*, tCFILE**);
+char        BASE_inventory     (tCFILE*, FILE*);
+char        context            (int, cchar*);
+char        parse              (char*, char *, int, int, char*);
+int         convert            (cchar*, cchar*, cint, cint);
+char*       BASE_unit          (char*, int);
+char        BASE_unitfile      (void);
+char        BASE_unitproc      (void);
+char        BASE_unitfast      (void);
+char        BASE_unitshape     (char*);
 
-char      fast          (clong);
-char      dispatch      (cint);
+char        BASE_fast          (clong);
+char        BASE_dispatch      (cint);
 char      run           (tCFILE*, tCLINE*);
 char      check         (void);
 
-char      cronfile_add  (tCFILE*);
-char      cronfile_del  (tCFILE*);
-char      cronline_add  (tCFILE*, tCLINE*);
-char      cronline_del  (tCLINE*);
+
+
+
+
+/*===[[ KHRONOS_LIST.C ]]======================================*/
+#define     UNLINKED       '-'
+#define     LINKED         'y'
+/*---(overall)---------*/
+char        LIST_purge         (void);
+/*---(cronfiles)-------*/
+tCFILE*     CFILE_create       (char    a_linked);
+char        CFILE_link         (tCFILE* a_cfile);
+char        CFILE_unlink       (tCFILE* a_cfile);
+tCFILE*     CFILE_delete       (tCFILE* a_cfile);
+tCFILE*     CFILE_purge        (tCFILE* a_cfile);
+tCFILE*     CFILE_find         (char*   a_name);
+/*---(cronlines)-------*/
+tCLINE*     CLINE_create       (tCFILE* a_cfile);
+char        CLINE_link         (tCFILE* a_cfile, tCLINE* a_cline);
+char        CLINE_unlink       (tCLINE* a_cline);
+tCLINE*     CLINE_delete       (tCLINE* a_cline);
+char        CLINE_show         (tCLINE *a_cline);
+/*---(unittest)--------*/
+char*       LIST_unit          (char *a_question, void *a_file);
+char        LIST_list          (void);
+
+
 char      proclist_add  (tCLINE*);
 char      proclist_del  (tCLINE*);
 
 
 char*     unit_accessor (char*, int);
-char      shape         (char*);
-char      list_cron     (void);
-char      list_fast     (void);
-char      list_proc     (void);
+/*> char      shape         (char*);                                                  <* 
+ *> char      list_cron     (void);                                                   <* 
+ *> char      list_fast     (void);                                                   <* 
+ *> char      list_proc     (void);                                                   <*/
 
 
 
-char      crontab_proc    (cchar*, cchar);
-char      crontab_local   (cchar);
-char      crontab_verify  (cchar*, char);
+/*===[[ KHRONOS_TABS.C ]]======================================*/
+/*---directories-------*/
+char        crontab_proc       (cchar*, cchar);
+char        TABS_local         (cchar a_action);
+char        crontab_verify     (cchar*, char);
+/*---actions-----------*/
+char        crontab_inst       (cchar*);
+char        crontab_del        (cchar*);
+char        crontab_cat        (cchar*);
+char        crontab_test       (cchar*);
+/*---specialty---------*/
+char        crontab_help       (void);
+char        crontab_user       (cchar*);
+char        crontab_hup        (void);
+/*---stubs-------------*/
+char        crontab_stdin      (void);
+char        crontab_edit       (void);
+char        crontab_dir        (void);
 
-char      crontab_inst    (cchar*);
-char      crontab_del     (cchar*);
-char      crontab_test    (cchar*);
-char      crontab_cat     (cchar*);
 
-char      crontab_help    (void);
-char      crontab_user    (cchar*);
-char      crontab_hup     (void);
 
-char      crontab_stdin   (void);
-char      crontab_edit    (void);
-char      crontab_dir     (void);
+void      PROG_signal       (int a_signal, siginfo_t *a_info, void *a_nada);
 
 #endif
 /*=============================[[ end-of-code ]]==============================*/

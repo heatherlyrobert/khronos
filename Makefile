@@ -2,103 +2,149 @@
 
 #*---(current variables)--------------*#
 BASE    = khronos
-DIR     = /home/system/p_gvskav/khronos.heatherly_cron_daemon
-
-#*---(standard variables)-------------*#
-#COMP    = tcc -c -g -Wall
-COMP    = gcc -c -g -std=gnu89 -Wall
-INC     = 
-#LINK    = tcc
+DEBUG   = khronos_debug
+UNIT    = khronos_unit
+DIR     = /home/system/khronos.job_scheduling_daemon
+#*---(compilier variables)------------*#
+# must have "-x c" on gcc line so stripped files work with alternate extensions
+COMP    = gcc -c -std=gnu89 -x c -g -pg -Wall -Wextra
+INCS    = -I/usr/local/include 
 LINK    = gcc
-LIBS    = -L/usr/local/libs -lyLOG -lySCHED
+LIBDIR  = -L/usr/local/lib
+LIBS    = ${LIBDIR} -lySCHED       -lyEXEC       -lySTR
+LIBD    = ${LIBDIR} -lySCHED_debug -lyEXEC_debug -lySTR_debug  -lyLOG
+LIBU    = ${LIBDIR} -lySCHED_debug -lyEXEC_debug -lySTR_debug  -lyLOG -lyUNIT -lyVAR
+#*---(file lists)---------------------*#
+HEADS   = ${BASE}.h
+OBJS    = ${BASE}_main.os ${BASE}_prog.os ${BASE}_base.os ${BASE}_list.os ${BASE}_tabs.os ${BASE}_test.os
+OBJD    = ${BASE}_main.o  ${BASE}_prog.o  ${BASE}_base.o  ${BASE}_list.o  ${BASE}_tabs.o  ${BASE}_test.o
+OBJU    = ${UNIT}.o       ${BASE}_prog.o  ${BASE}_base.o  ${BASE}_list.o  ${BASE}_tabs.o  ${BASE}_test.o
+#*---(make variables)-----------------*#
 COPY    = cp -f
 CLEAN   = rm -f
 PRINT   = @printf
+STRIP   = @grep -v -e " DEBUG_" -e " yLOG_" 
 
-
-tcc                : ${BASE}.h ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}.unit
-	# application
-	tcc -o   ${BASE}         ${BASE}_main.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c      ${LIBS}
-	# unit testing
-#	uUNIT    ${BASE}
-#	mv ${BASE}_unit.code ${BASE}_unit.c
-#	tcc -o   ${BASE}_unit    ${BASE}_unit.c ${BASE}_list.c ${BASE}_tab.c ${BASE}.c ${BASE}_test.c      ${LIBS} -lyUNIT -lyVAR
-
-
-
-#*---(MAIN)---------------------------*#
-#all                : ${BASE} ${BASE}_unit
 
 
 #*---(executables)--------------------*#
-#${BASE}          : ${BASE}_main.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o
-#	${LINK}  -o ${BASE}         ${BASE}_main.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o ${LIBS}
+all                : ${BASE} ${UNIT}
 
-#${BASE}_unit     : ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o 
-#	${LINK}  -o ${BASE}_unit    ${BASE}_unit.o ${BASE}_test.o ${BASE}_list.o ${BASE}_tab.o ${BASE}.o ${LIBS} -lyUNIT -lyVAR 
+${BASE}            : ${OBJD}
+	${LINK}  -o ${BASE}        ${OBJS}   ${LIBS}
+	${LINK}  -o ${DEBUG}       ${OBJD}   ${LIBD}
+
+${UNIT}          : ${OBJU}
+	${LINK}  -o ${UNIT}        ${OBJU}   ${LIBU}
+
 
 
 #*---(objects)------------------------*#
-#${BASE}.o        : ${BASE}.h ${BASE}.c
-#	${COMP}  ${BASE}.c ${INC}
+${BASE}.o        : ${HEADS}       ${BASE}.c
+	${COMP}    ${BASE}_main.c                        ${INC}
+	${STRIP}   ${BASE}_main.c    > ${BASE}_main.cs
+	${COMP}    ${BASE}_main.cs  -o ${BASE}_main.os   ${INC}
 
-#${BASE}_main.o   : ${BASE}.h ${BASE}_main.c
-#	${COMP}  ${BASE}_main.c
+${BASE}_main.o   : ${HEADS}       ${BASE}_main.c
+	${COMP}    ${BASE}_main.c                        ${INC}
+	${STRIP}   ${BASE}_main.c    > ${BASE}_main.cs
+	${COMP}    ${BASE}_main.cs  -o ${BASE}_main.os   ${INC}
 
-#${BASE}_list.o   : ${BASE}.h ${BASE}_list.c
-#	${COMP}  ${BASE}_list.c
+${BASE}_prog.o     : ${HEADS}     ${BASE}_prog.c
+	${COMP}    ${BASE}_prog.c                        ${INC}
+	${STRIP}   ${BASE}_prog.c    > ${BASE}_prog.cs
+	${COMP}    ${BASE}_prog.cs  -o ${BASE}_prog.os   ${INC}
 
-#${BASE}_tab.o    : ${BASE}.h ${BASE}_tab.c
-#	${COMP}  ${BASE}_tab.c
+${BASE}_base.o     : ${HEADS}     ${BASE}_base.c
+	${COMP}    ${BASE}_base.c                        ${INC}
+	${STRIP}   ${BASE}_base.c    > ${BASE}_base.cs
+	${COMP}    ${BASE}_base.cs  -o ${BASE}_base.os   ${INC}
 
-#${BASE}_test.o   : ${BASE}.h ${BASE}_test.c
-#	${COMP}  ${BASE}_test.c
+${BASE}_list.o     : ${HEADS}     ${BASE}_list.c
+	${COMP}    ${BASE}_list.c                        ${INC}
+	${STRIP}   ${BASE}_list.c    > ${BASE}_list.cs
+	${COMP}    ${BASE}_list.cs  -o ${BASE}_list.os   ${INC}
 
+${BASE}_tabs.o     : ${HEADS}     ${BASE}_tabs.c
+	${COMP}    ${BASE}_tabs.c                        ${INC}
+	${STRIP}   ${BASE}_tabs.c    > ${BASE}_tabs.cs
+	${COMP}    ${BASE}_tabs.cs  -o ${BASE}_tabs.os   ${INC}
 
-#${BASE}_unit.o   : ${BASE}.unit
+${BASE}_test.o     : ${HEADS}     ${BASE}_test.c
+	${COMP}    ${BASE}_test.c                        ${INC}
+	${STRIP}   ${BASE}_test.c    > ${BASE}_test.cs
+	${COMP}    ${BASE}_test.cs  -o ${BASE}_test.os   ${INC}
+
+${BASE}_unit.o   : ${BASE}.unit
 #	uUNIT    ${BASE}
+	koios    ${BASE}
 #	${COMP}  -x c ${BASE}_unit.code
 #	mv ${BASE}_unit.code ${BASE}_unit.c
-#	${COMP}  ${BASE}_unit.c
+	${COMP}  ${BASE}_unit.c
+
 
 
 #*---(housecleaning)------------------*#
 clean              :
 	${PRINT}  "\n--------------------------------------\n"
 	${PRINT}  "cleaning out local object, backup, and temp files\n"
-	${CLEAN} *.o
+	${CLEAN} ${BASE}
+	${CLEAN} ${BASE}*.o
+	${CLEAN} ${BASE}*.cs
+	${CLEAN} ${BASE}*.os
+	${CLEAN} ${BASE}*.Sc
+	${CLEAN} ${BASE}*.So
 	${CLEAN} *~
 	${CLEAN} temp*
-	${CLEAN} ${BASE}
-	${CLEAN} ${BASE}_unit
+	#${CLEAN} ${BASE}_unit
 	${CLEAN} ${BASE}_unit.c
+	${CLEAN} ${DEBUG}
+	#---(complete)------------------------#
 
 bigclean           :
 	${PRINT}  "\n--------------------------------------\n"
 	${PRINT}  "clean out local swap files\n"
 	${CLEAN} .*.swp
+	#---(complete)------------------------#
+
+remove             :
+	#---(all versions)--------------------#
+	${CLEAN}  /usr/bin/${BASE}
+	${CLEAN}  /usr/local/bin/${DEBUG}
+	${CLEAN}  /usr/bin/crond
+	${CLEAN}  /usr/bin/crontab
+	#---(documentation)-------------------#
+	rm -f     /usr/share/man/man1/${BASE}.1.bz2
+	rm -f     /usr/share/man/man1/${DEBUG}.1.bz2
+	rm -f     /usr/share/man/man1/crond.1.bz2
+	rm -f     /usr/share/man/man1/crontab.1.bz2
+	#---(complete)------------------------#
 
 install            : ${BASE}
-	${PRINT}  "\n--------------------------------------\n"
-	${PRINT}  "install ${BASE} into production\n"
-	# application
-	cp -f     ${BASE}    /usr/bin/
+	#---(production version)--------------#
+	${COPY}   ${BASE}    /usr/bin/
 	chown     root:root  /usr/bin/${BASE}
 	chmod     0711       /usr/bin/${BASE}
 	chmod     +s         /usr/bin/${BASE}
 	@sha1sum  ${BASE}
-	call_graph
-	# documentation
-	rm -f       /usr/share/man/man1/${BASE}.1.bz2
-	cp -f       ${BASE}.1    /usr/share/man/man1/
-	bzip2       /usr/share/man/man1/${BASE}.1
-	chmod 0644  /usr/share/man/man1/${BASE}.1.bz2
-
-remove             :
-	${PRINT}  "\n--------------------------------------\n"
-	${PRINT}  "remove ${BASE} from production\n"
-	${CLEAN} /usr/sbin/${BASE}
-
+	#---(debug version)-------------------#
+	${COPY}  ${DEBUG}    /usr/local/bin/
+	chown     root:root  /usr/local/bin/${DEBUG}
+	chmod     0711       /usr/local/bin/${DEBUG}
+	chmod     +s         /usr/local/bin/${DEBUG}
+	#---(provide other links)-------------#
+	ln --force --physical /usr/bin/${BASE}  /usr/bin/crond
+	ln --force --physical /usr/bin/${BASE}  /usr/bin/crontab
+	#---(documentation)-------------------#
+	rm -f     /usr/share/man/man1/${BASE}.1.bz2
+	cp -f     ${BASE}.1    /usr/share/man/man1/
+	bzip2     /usr/share/man/man1/${BASE}.1
+	chmod     0644  /usr/share/man/man1/${BASE}.1.bz2
+	#---(provide other links)-------------#
+	ln --force --physical /usr/share/man/man1/${BASE}.1.bz2  /usr/share/man/man1/${DEBUG}.1.bz2
+	ln --force --physical /usr/share/man/man1/${BASE}.1.bz2  /usr/share/man/man1/crontab.1.bz2
+	ln --force --physical /usr/share/man/man1/${BASE}.1.bz2  /usr/share/man/man1/crontab.1.bz2
+	#---(complete)------------------------#
 
 gotesting          : 
 	#mount --bind /bin     ${DIR}/unit_root/bin
@@ -119,6 +165,7 @@ untesting          :
 	#mount -f  ${DIR}/unit_root/lib   ||  umount ${DIR}/unit_root/lib
 	#mount -f  ${DIR}/unit_root/sbin  ||  umount ${DIR}/unit_root/sbin
 	#mount -f  ${DIR}/unit_root/usr   ||  umount ${DIR}/unit_root/usr
+
 
 
 #*============================----(source-end)----============================*#

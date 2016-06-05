@@ -464,7 +464,7 @@ static void      o___STUBS___________________o (void) {;}
 char
 crontab_dir   (void)
 {
-   printf("will never be able to change crontab directory in this version (security risk)\n");
+   printf("will NEVER allow anyone to change the crontab directory (security risk)\n");
    /*---(complete)------------------------------*/
    return 0;
 }
@@ -472,7 +472,7 @@ crontab_dir   (void)
 char
 crontab_stdin (void)
 {
-   printf("will never be able to read from stdin in this version (no traceability)\n");
+   printf("will NEVER allow reading from stdin (no traceability)\n");
    /*---(complete)------------------------------*/
    return 0;
 }
@@ -480,7 +480,7 @@ crontab_stdin (void)
 char
 crontab_edit  (void)
 {
-   printf("will never be able to edit installed crontabs in this version (no traceability)\n");
+   printf("will NEVER allow editing installed crontabs (no traceability)\n");
    /*---(complete)------------------------------*/
    return 0;
 }

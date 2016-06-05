@@ -1,42 +1,40 @@
-." heatherly hand crafted (like a dope)
-."
-." sections, break up the document into pieces
-."   .SH <str>   begin a new section
-."   .SS <str>   begin a new sub-section
-."
-." paragraphs, if not special formatting is used, these are unnecessary
-."   .PP         before a set of contiguous lines will run them together into
-."               a single paragraph -- helps if macros separate by accident
-."   .RS <n>     start a paragraph indented by <n> characters (i use 3 mostly)
-."   .RE         end that relative paragraph
-."   .IP <str>   uses <str> as an outdent and the next line is indented
-."   .TP         tag paragraph which has a more controllable outdent than .IP
-."   .HP         start hanging paragraph where all following lines are indented
-."
-."
-."
-."
-."
 .TH khronos 1 2010-Dec "linux" "heatherly custom tools manual"
 
 .SH NAME
-khronos \- fast, simplified, modernized, and technical time-based process scheduler
+khronos-ageraton (unaging) \- fast and technical time-based job scheduler
+
+.SH IMAGERY (see HERITAGE at bottom for more)
+winged serpent khronos is the primeval god of creation and unyielding time
 
 .SH SYNOPSIS
 .nf
-.B khronos [OPTIONS]
+.B khronos [OPTIONS] [<FILE>]
+.nf
+which is the primary production version
+.sp
+.B khronos_debug [URGENTS] [OPTIONS] [<FILE>]
+.nf
+which will perform all production actions, but with debugging and tracing
+.sp
+.B crond   [OPTIONS] [<FILE>]
+.nf
+which is a hard-link to provide the traditional crond interface
+.sp
+.B crontab [OPTIONS] [<FILE>]
+.nf
+which is a hard-link to provide the traditional crontab interface
 .nf
 
 .SH DESCRIPTION (short)
 khronos is a fast, simplified, modernized, and technical version of the
-classic posix-defined crond time-based process scheduler that combines both
-crond and crontab to allow deeper verification, flexibility, and traceablity.
+classic posix-defined crond time-based job scheduler that merges crond and
+crontab to allow deeper verification, flexibility, and traceablity.
 
 .SH DESCRIPTION (backstory)
 crond is a well-worn, familiar, time-tested, and posix-defined daemon that
 provides time-based job scheduling.  while this is just one aspect of batch
 automation, it is the most commonly used and crond does it exceptionally
-well.  many attempts have been made to "do it better", but its still here.
+well.  many attempts have been made to "do it better", but its still here ;)
 
 brian kernighan nailed it in the original (1979) by focusing on a real and
 definite need by folks that understood automation on low power systems.  he
@@ -49,11 +47,11 @@ accessibility "improvements."  they all just tend to piss me off as
 everything seems to be trending towards the closely coupled, gui-focused,
 kitchen-sink mentality that then tends to display well but never gets used.
 
-the one thing the advancements, since the original, truly improved were the
-algorithms.  the original cron apparently could not scale to a large
-number of users, not that helpful for them.  in our case, we won't have a
-ton of different users, but we will have tons of jobs running -- we want
-the better algorithms to make up for the primitiveness of our coding ;)
+the one thing these advancements truly improved were the algorithms.
+the original cron apparently could not scale to a large number of users --
+not that helpful for them.  in our case, we won't have a ton of different
+users, but we will have tons of jobs running -- we want the better algorithms
+to make up for the primitiveness of our coding ;)
 
 khronos will attempt to implement the original simplicity, clarity, and
 power with updated algorithms, automated testing, strong logging and
@@ -228,9 +226,7 @@ background on the tool.
 .RE
 
 .SH SCHEDULING GRAMMAR
-
-.B khronos
-the magic of khronos is a slightly modified form of the kernighan scheduling
+the magic of our khronos is a slightly modified form of the kernighan scheduling
 grammar he implemented in the original cron in 1978.
 
 a crontab line is composed of six scheduling grammar fields which have no
@@ -405,31 +401,216 @@ some further examples to explain are...
 
 
 .SH FILES
+most versions of crond allow directories to be changed which creates a
+potential security gap.  khronos will only use standard directories and
+file naming to close this gap.  it will also not allow the /etc entries
+to be used as then packages can sneak cronjobs onto my system.
 
-.I ~/c_quani/contabs/
+.B /home/machine/contabs/
+.RS 3
+this directory is where khronos will source the system-wide crontabs
+-- it can not be set to be elsewhere or do otherwise.
+.RE
+
+.B ~/c_quani/contabs/
 .RS 3
 this directory is where khronos will source the local crontabs for a specific
-user -- it can not be set to do otherwise.
+user -- it can not be set to be elsewhere or do otherwise.
 .RE
 
-.I /var/spool/crontabs/
+.B /var/spool/crontabs/
 .RS 3
 this is the system directory where installed crontabs are kept and khronos
-reads these files when launched and sent a SIGHUP.
+reads these files either when launched, hourly, or sent a SIGHUP.
 .RE
 
 
-.SH RESOURCES
-will only work with yLOG installed for khronos.
+.SH DEPENDENCIES
+khronos attempts to keep most processing within the application to minimize
+dependencies, but several capabilities are useful elsewhere and so placed
+into libraries.
+
+.B ySCHED (dynamic-link)
+.RS 8
+required dependency on this custom library which interprets the standard
+kernighan scheduling grammar created for the original cron.
+.RE
+.B yEXEC (dynamic-link)
+.RS 8
+required dependency on this custom library which launches and monitors
+processes for the host application.
+.RE
+.B yLOG (dynamic-link)
+.RS 8
+only required for khronos_debug in order to implement clean, consistent
+logging to standard output files.
+.RE
+.B dash
+.RS 8
+khronos uses this posix-compliant, minimal shell to launch jobs to prevent
+security gaps due to bash's huge power and flexibility.
+.RE
+
+.SH DEBUGGING and LOGGING
+khronos_debug uses the heatherly standard debugging model and options.
+calling the program through any other executable name, such as khronos or
+crond, will result in all logging requests through urgents being ignored.
+
+debugging urgents are processed at one time and before normal argument
+processing and therefore the order of urgents and arguments is almost never
+significant.  logging output is sent to a standard system logging directory.
+the use of any urgent will turn on logging output and set the @@tops urgent.
+
+.nf
+.B /var/yLOG/
+
+and, the file name follows the standard heatherly logging format.  any number
+of debugging output files may be kept as the name is always unique.
+
+.nf
+.B yy.mm.dd.hh.mm.ss.khronos_________.ww.ulog
+   -- yy   last two digits of year
+   -- mm   month number 01-12
+   -- dd   day number 01-31
+   -- hh   hour number 00-23
+   -- mm   minute number 00-59
+   -- ss   second number 00-59
+   -- ww   week of the year number 00-53
+
+.B --- mass urgent setting -------------------------------
+
+.B @f, @@full
+.RS 8
+turn on all standard urgents
+.RE
+
+.B @k, @@kitchen
+.RS 8
+turn on all standard and custom urgents
+.RE
+
+.B @q, @@quiet
+.RS 8
+turn off all standard and custom urgents
+.RE
+
+.B @t, @@tops
+.RS 8
+log the general flow of the program
+.RE
+
+.B @s, @@summ
+.RS 8
+provide summary statistics and analytical output
+.RE
+
+.B --- startup and shutdown urgents ----------------------
+
+.B @a, @@args
+.RS 8
+log details of urgent and argument processing
+.RE
+
+.B @c, @@conf
+.RS 8
+log details of configuration file processing
+.RE
+
+.B @p, @@prog
+.RS 8
+log details of program setup and teardown
+.RE
+
+.B --- file processing urgents ---------------------------
+
+.B @i, @@inpt, @I, @@INPT
+.RS 8
+log details of input text file reading/parsing (caps means deeper)
+.RE
+
+.B @o, @@outp, @O, @@OUTP
+.RS 8
+log details of output text file writing (caps means deeper)
+.RE
+
+.B --- event handling urgents ----------------------------
+
+.B @l, @@loop
+.RS 8
+log details of main program loop
+.RE
+
+.B @u, @@user
+.RS 8
+log details of interactive user input processing
+.RE
+
+.B @z, @@apis
+.RS 8
+log details of interprocess communication channels
+.RE
+
+.B @x, @@sign
+.RS 8
+log details of operating system signal processing
+.RE
+
+.B @b, @@scrp
+.RS 8
+log details of batch script processing
+.RE
+
+.B @h, @@hist
+.RS 8
+log details of history, undo, and redo processing
+.RE
+
+.B --- processing urgents --------------------------------
+
+.B @g, @@graf
+.RS 8
+log details of graphics, drawing, and display
+.RE
+
+.B @d, @@data
+.RS 8
+log details of complex data structure handling
+.RE
+
+.B @e, @@envi, @E, @@ENVI
+.RS 8
+log details of environmental processing (caps means deeper)
+.RE
+
+.B --- helios-specific urgents ---------------------------
+
+.B ((none))
+.RS 8
+no khronos specific urgents are currently required
+.RE
+
 
 .SH AUTHOR
-the_heatherlys
+heatherlyrobert at gmail dot com
 
 .SH HERITAGE
-khronos is the primeval god to time, not the titan cronos who was
-zeus' father (which was spelled cronos).
+khronos-ageraton (unaging) is the primeval god (protogenos) of time who emerged
+self-formed at the beginning of everything.  khronos is an incorporial god
+in serpentine form (drakon) with wings on its shoulders and three heads --
+that of a man, a bull, and a lion.
+
+khronos' consort was ananke (inevitability and compulsion) who was also
+serpentine.  together they created the ordered universe and continue to
+circle it in their coils thereby driving the movement of the heavens and the
+wind/passage of time.
+
+khronos and ananke gave birth to aither (light), unbounded khaos (chasm),
+and erebos (darkness).  khronos and ananke also created the world-egg and
+split it into earth (gaia), sea (hydros), and sky (ouranos).
+
+khronos must not be confused with the titan cronos, zeus' father.
 
 .SH COLOPHON
-this page is part of a documentation package mean to make our use of the
+this page is part of a documentation package meant to make use of the
 heatherly tools easier and faster
 
