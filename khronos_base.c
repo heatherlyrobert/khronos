@@ -253,7 +253,7 @@ BASE_timestamp     (void)
    now       = time      (NULL);
    curr      = localtime (&now);
    /*---(log to pulser)------------------*//*===fat=beg===*/
-   strftime (my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
+   strftime (my.pulse_time , 50, "%y'%m'%d'%H'%M'%S'%U   %s", curr);
    if (my.silent != 'y') {
       /*---(open)------------------------*/
       pulser = fopen (my.name_pulser, "w");
@@ -394,7 +394,7 @@ lastrun       (void)
    }
    /*---(save if off)----------------------------*/
    curr  = localtime(&my.last_end);
-   strftime(my.pulse_time , 50, "%y.%m.%d.%H.%M.%S.%U   %s", curr);
+   strftime(my.pulse_time , 50, "%y'%m'%d'%H'%M'%S'%U   %s", curr);
    yLOG_info  ("last end", my.pulse_time);
    /*---(complete)-------------------------------*/
    return my.last_end;

@@ -370,8 +370,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.2c"
-#define VER_TXT   "missed a few files in previous commit ;("
+#define VER_NUM   "1.2d"
+#define VER_TXT   "changed timestamp delimiter to single quote for testing"
 
 
 
