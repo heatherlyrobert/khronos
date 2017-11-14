@@ -7,9 +7,6 @@ char       *args[20];
 char        version      = 'd';
 int         failed;
 
-char        debug_args   = 'n';
-char        debug_input  = 'n';
-char        debug_proc   = 'n';
 char        testing      = 'n';
 
 char        strtest      [100];
@@ -166,7 +163,7 @@ daemonize          (void)
          printf("FATAL : khronos can only be daemonized by root\n");
          exit (-1);
       }
-      yEXEC_daemon (debug.logger, &my.pid);
+      yEXEC_daemon (yLOG_lognum, &my.pid);
    } else {
       yLOG_info  ("mode", "foreground mode requested");
    }

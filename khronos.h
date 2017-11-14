@@ -370,8 +370,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.2d"
-#define VER_TXT   "changed timestamp delimiter to single quote for testing"
+#define VER_NUM   "1.3a"
+#define VER_TXT   "moved to yURG and new makefile structure"
 
 
 
@@ -380,6 +380,7 @@
 #include  <ySCHED.h>
 #include  <yEXEC.h>
 #include  <ySTR.h>
+#include  <yURG.h>
 
 #include  <unistd.h>
 #include  <sys/unistd.h>
@@ -444,65 +445,6 @@ extern     char       version;
 
 
 
-/*===[[ DEBUGGING SETUP ]]====================================================*/
-/* this is my latest standard format, vars, and urgents                       */
-/* v3.0b : added signal handling                                (2014-feb-01) */
-struct cDEBUG
-{
-   /*---(handle)-------------------------*/
-   int         logger;                 /* log file so that we don't close it  */
-   /*---(overall)------------------------*/  /* abcdefghi_kl__opq_stu__x__    */
-   /* f = full urgents turns on all standard urgents                          */
-   /* k = kitchen sink and turns everything, i mean everything on             */
-   /* q = quiet turns all urgents off including the log itself                */
-   char        tops;                   /* t) broad structure and context      */
-   char        summ;                   /* s) statistics and analytical output */
-   /*---(startup/shutdown)---------------*/
-   char        args;                   /* a) command line args and urgents    */
-   char        conf;                   /* c) configuration handling           */
-   char        prog;                   /* p) program setup and teardown       */
-   /*---(file processing)----------------*/
-   char        inpt;                   /* i) text/data file input             */
-   char        inpt_mas;               /* i) text/data file input   (mas/more)*/
-   char        outp;                   /* o) text/data file output            */
-   char        outp_mas;               /* o) text/data file output  (mas/more)*/
-   /*---(event handling)-----------------*/
-   char        loop;                   /* l) main program event loop          */
-   char        user;                   /* u) user input and handling          */
-   char        apis;                   /* z) interprocess communication       */
-   char        sign;                   /* x) os signal handling               */
-   char        scrp;                   /* b) scripts and batch operations     */
-   char        hist;                   /* h) history, undo, redo              */
-   /*---(program)------------------------*/
-   char        graf;                   /* g) grahpics, drawing, and display   */
-   char        data;                   /* d) complex data structure handling  */
-   char        envi;                   /* e) environment processing           */
-   char        envi_mas;               /* E) environment processing (mas/more)*/
-   /*---(specific)-----------------------*/
-   /*---(done)---------------------------*/
-};
-typedef     struct      cDEBUG       tDEBUG;
-extern      tDEBUG      debug;
-
-#define     DEBUG_TOPS          if (debug.tops      == 'y')
-#define     DEBUG_SUMM          if (debug.summ      == 'y')
-#define     DEBUG_ARGS          if (debug.args      == 'y')
-#define     DEBUG_CONF          if (debug.conf      == 'y')
-#define     DEBUG_PROG          if (debug.prog      == 'y')
-#define     DEBUG_INPT          if (debug.inpt      == 'y')
-#define     DEBUG_INPTM         if (debug.inpt_mas  == 'y')
-#define     DEBUG_OUTP          if (debug.outp      == 'y')
-#define     DEBUG_OUTPM         if (debug.outp_mas  == 'y')
-#define     DEBUG_LOOP          if (debug.loop      == 'y')
-#define     DEBUG_USER          if (debug.user      == 'y')
-#define     DEBUG_APIS          if (debug.apis      == 'y')
-#define     DEBUG_SIGN          if (debug.sign      == 'y')
-#define     DEBUG_SCRP          if (debug.scrp      == 'y')
-#define     DEBUG_HIST          if (debug.hist      == 'y')
-#define     DEBUG_GRAF          if (debug.graf      == 'y')
-#define     DEBUG_DATA          if (debug.data      == 'y')
-#define     DEBUG_ENVI          if (debug.envi      == 'y')
-#define     DEBUG_ENVIM         if (debug.envi_mas  == 'y')
 
 /*---(debugging)-------------------------*/
 #define     TEST        if (testing     == 'y')
@@ -666,13 +608,12 @@ long        curr_hours         (void);
 char        catchup            (void);
 /*---(program)--------------*/
 char*       PROG_version       (void);
-char        PROG_urgsmass      (char a_set, char a_extra);
-char        PROG_urgs          (int argc, char *argv[]);
 char        PROG_init          (void);
 char        PROG_whoami        (void);
 char        PROG_args          (int argc, char *argv[]);
 char        PROG_usage         (void);
 char        PROG_begin         (void);
+char        PROG_final         (void);
 char        PROG_term          (void);
 char        PROG_end           (void);
 /*---(unit testing)---------*/
