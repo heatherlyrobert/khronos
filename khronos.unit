@@ -18,7 +18,7 @@ PREP          v21  include the prototype headers                              
 SCRP          v21  verify cronpulse operations                                  BASE_timestamp, BASE_lastpulse                                          ((01.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  initialize program                                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((01.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger (quiet mode)   PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger (quiet mode)   prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  holder for broken-down time          - - - - - - - - - -   struct tm *curr_time = NULL;                                                                                                                                   
      code     v21  holder for current time              - - - - - - - - - -   long       xbase     = 0;                                                                                                                                      
      code     v21  create a custom time string          - - - - - - - - - -   char       c_time[60];                                                                                                                                         
@@ -225,7 +225,7 @@ SCRP          v21  verify cronpulse operations                                
      exec     v21  write the cronpulse (returns min)    BASE_timestamp                                                                                i_equal     [[ CUSTOM ]]                                                           
 
    COND       v21  move cronpulse back to legal location                        - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((01.019))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  reset the cronpulse location         PROG_testfiles                                                                                i_equal     0                                                                      
+     exec     v21  reset the cronpulse location         prog__unit_files                                                                              i_equal     0                                                                      
      code     v21  get the current time                 - - - - - - - - - -   xbase     = time(NULL);                                                                                                                                        
      code     v21  make a broken down time              - - - - - - - - - -   curr_time = localtime(&xbase);                                                                                                                                 
      code     v21  create a custom cronpulse string     - - - - - - - - - -   strftime (CUSTOM, 50, "%M", curr_time);                                                                                                                        
@@ -245,7 +245,7 @@ SCRP          v21  verify cronpulse operations                                
 SCRP          v21  verify correct writes to cronwatch file                      BASE_begwatch, BASE_endwatch                                            ((02.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  initialize program                                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((02.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger (quiet mode)   PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger (quiet mode)   prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  holder for broken-down time          - - - - - - - - - -   struct tm *curr_time = NULL;                                                                                                                                   
      code     v21  create a custom time string          - - - - - - - - - -   char c_time[60];                                                                                                                                               
      code     v21  holder for current time              - - - - - - - - - -   long       xbase     = 0;                                                                                                                                      
@@ -308,126 +308,10 @@ SCRP          v21  verify correct writes to cronwatch file                    
 
 #23456789-12  123  123456789-123456789-123456789-12345  123456789-123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  -  123456789-123456789- 
 #==(verb)===  ver  ===========(description)===========  =====(function)=====  ========================(arguments)===================================  ==(test)==  ==========================(results)===================================  t  ========(var)======= 
-SCRP          v21  crontab name validation                                      BASE_name                                                               ((03.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-
-   COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger (quiet mode)   PROG_testquiet                                                                                i_equal     0                                                                      
-
-   COND       v21  put a simple name through                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.002))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.crontab", '-'                                                     i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : root                                                
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : crontab                                             
-     get      v21  review the crontab name              BASE_unit             "name",          0                                                      s_equal     BASE_name name   : root.crontab                                        
-
-   COND       v21  put a one part name through                                  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.003))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root"                      , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a traditional name through                               - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.004))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "crontab"                   , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a three part name though                                 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.005))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.crontab.special"      , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a NEW version through                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.crontab.NEW"          , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a DEL version through                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.007))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.crontab.DEL"          , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a hidden file through                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.008))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             ".root.crontab"             , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with a internal space through                     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.009))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with a dash through                               - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.010))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my-crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with an underscore through                        - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.011))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my_crontab"           , '-'                                       i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : root                                                
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : my_crontab                                          
-     get      v21  review the crontab name              BASE_unit             "name",          0                                                      s_equal     BASE_name name   : root.my_crontab                                     
-
-   COND       v21  put a null user name through                                 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.012))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             ".my-crontab"               , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a backup file through                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.013))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my-crontab~"          , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a null description through                               - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.014))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root."                     , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with a hash through                               - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.015))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my#crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with a parens through                             - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.016))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my(best)crontab"      , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with a brackets through                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.017))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my[best]crontab"      , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a name with a splat through                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.018))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.my*crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a user with a internal space through                     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.019))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "my user.crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a user with a internal dash through                      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.020))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "my user.crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a user with a leading hash                               - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.021))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "#myuser.crontab"           , '-'                                       i_not       0                                                                      
-
-   COND       v21  put a short name through                                     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.022))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "a.a"                      , '-'                                        i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : a                                                   
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : a                                                   
-     get      v21  review the crontab name              BASE_unit             "name",          0                                                      s_equal     BASE_name name   : a.a                                                 
-
-   COND       v21  put a max user name through                                  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.023))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "abcdefghijklmnopqrst.uvwxyzabcdefghijklmnopqrstuvwxy", '-'             i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : abcdefghijklmnopqrst                                
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : uvwxyzabcdefghijklmnopqrstuvwxy                     
-
-   COND       v21  put a one over user name through                             - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.024))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "abcdefghijklmnopqrstu.vwxyzabcdefghijklmnopqrstuvwxy", '-'             i_not       0                                                                      
-
-   COND       v21  put a long user name through                                 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.025))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "abcdefghijklmnopqrstuvwxyz.abcdefghijklmnopqrstuvwxy", '-'             i_not       0                                                                      
-
-   COND       v21  put a max decription through                                 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.026))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "a.abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwx", '-'             i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : a                                                   
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : abcdefghijklmnopqrstuvwxyzabcdefghi                 
-
-   COND       v21  put a one over description through                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.027))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "a.abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxy", '-'            i_not       0                                                                      
-
-   COND       v21  put a NEW version through with crontab switch                - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.028))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.crontab.NEW"          , 'c'                                       i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : root                                                
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : crontab                                             
-     get      v21  review the crontab name              BASE_unit             "name",          0                                                      s_equal     BASE_name name   : root.crontab.NEW                                    
-
-   COND       v21  put a DEL version through with crontab switch                - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.029))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  call the crontab name validation     BASE_name             "root.crontab.DEL"          , 'c'                                       i_equal     0                                                                      
-     get      v21  review the user name                 BASE_unit             "user",          0                                                      s_equal     BASE_name user   : root                                                
-     get      v21  review the description               BASE_unit             "desc",          0                                                      s_equal     BASE_name desc   : crontab                                             
-     get      v21  review the crontab name              BASE_unit             "name",          0                                                      s_equal     BASE_name name   : root.crontab.DEL                                    
-
-   COND       v21  purge the cron system                                        - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.030))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  retire all files                     BASE_purge                                                                                    i_equal     0                                                                      
-     get      v21  review the file list                 LIST_unit             "files"        , NULL                                                   s_equal     LIST file list   : n=   0, f=   0, b=   0, h=(nil)     , t=(nil)       
-
-
-
-#23456789-12  123  123456789-123456789-123456789-12345  123456789-123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  -  123456789-123456789- 
-#==(verb)===  ver  ===========(description)===========  =====(function)=====  ========================(arguments)===================================  ==(test)==  ==========================(results)===================================  t  ========(var)======= 
 SCRP          v21  create and retire cronfiles directly                         CFILE_create, CFILE_link, CFILE_unlink, CFILE_delete                    ((04.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((04.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_2nd = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_3rd = NULL;                                                                                                                                      
@@ -571,7 +455,7 @@ SCRP          v21  create and retire cronfiles directly                       
 SCRP          v21  create and retire cronlines directly                         CLINE_create, CLINE_link, CLINE_unlink, CLINE_delete, CFILE_purge       ((05.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((05.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_2nd = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCLINE *cline_1st = NULL;                                                                                                                                      
@@ -898,7 +782,7 @@ SCRP          v21  create and retire cronlines directly                       
 SCRP          v21  create and retire cronfiles                                  BASE_create, BASE_retire, BASE_purge                                    ((06.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((06.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_2nd = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_3rd = NULL;                                                                                                                                      
@@ -971,7 +855,7 @@ SCRP          v21  create and retire cronfiles                                
 SCRP          v21  create and retire cron lines                                 BASE_inventory, BASE_retire                                             ((07.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((07.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_2nd = NULL;                                                                                                                                      
 
@@ -1040,7 +924,7 @@ SCRP          v21  create and retire cron lines                               
 SCRP          v21  verify the running of jobs                                   BASE_fast, BASE_dispatch                                                ((08.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for parsing                                          - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      exec     v21  set the date                         ySCHED_setdate        11,  1, 15                                                              i_equal     0                                                                      
 
@@ -1137,7 +1021,7 @@ SCRP          v21  verify the running of jobs                                 
 SCRP          v21  retire files with running lines                              BASE_inventory, BASE_retire                                             ((09.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((09.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_2nd = NULL;                                                                                                                                      
      exec     v21  set the date                         ySCHED_setdate        11,  1, 15                                                              i_equal     0                                                                      
@@ -1249,7 +1133,7 @@ SCRP          v21  retire files with running lines                            
 SCRP          v21  parse all versions of cron lines                             BASE_inventory, BASE_parse                                              ((10.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       v21  prepare for run                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((10.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the logger                PROG_testquiet                                                                                i_equal     0                                                                      
+     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_2nd = NULL;                                                                                                                                      
      code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_3rd = NULL;                                                                                                                                      

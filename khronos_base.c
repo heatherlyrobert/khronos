@@ -4,7 +4,6 @@
 
 struct cACCESSOR my;
 char       *args[20];
-char        version      = 'd';
 int         failed;
 
 char        testing      = 'n';
@@ -73,32 +72,6 @@ void      PROG_signal       (int a_signal, siginfo_t *a_info, void *a_nada) {ret
 /*====================------------------------------------====================*/
 static void      o___HOUSEKEEPING____________o (void) {;}
 
-char       /*lf--: PURPOSE : get the logging up and going --------------------*/
-initialize         (const char a_quiet)
-{
-   yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   if (getuid() != 0) {
-      printf("FATAL : khronos can only be daemonized by root\n");
-      exit (-1);
-   }
-   /*---(init)---------------------------*//*===fat=end===*/
-   my.uid = getuid();
-   yLOG_value   ("uid num", my.uid);
-   my.silent  = 'n';
-   /*---(variables)----------------------*/
-   m_cfile  = 0;
-   n_cfile  = 0;
-   m_cline  = 0;
-   n_cline  = 0;
-   nfast    = 0;
-   nproc    = 0;
-   /*---(end)----------------------------*/
-   yLOG_exit    (__FUNCTION__);
-   /*---(complete)-----------------------*/
-   return 0;
-}
-
 /*> void       /+----: PURPOSE : handle signals ----------------------------------+/   <* 
  *> communicate        (int a_signal)                                                  <* 
  *> {                                                                                  <* 
@@ -155,7 +128,7 @@ daemonize          (void)
    int       fd   = 0;                       /* file descriptor               */
    int      status  = 0;
    /*---(fork off and die)----------------------*/
-   DAEMON {
+   RUN_DAEMON {
       yLOG_info  ("mode", "daemon mode requested");
       /*---(defense)------------------------*/
       if (getuid() != 0) {
@@ -201,7 +174,7 @@ daemonize          (void)
    }
    /*---(signals)-------------------------------*/
    yLOG_info  ("signals",  "setup signal handlers");
-   yEXEC_signal (yEXEC_SOFT, 'n', yEXEC_CNO, 'n');
+   yEXEC_signal (yEXEC_SOFT, 'n', yEXEC_CNO, NULL);
    /*---(run file)------------------------------*/
    yLOG_info  ("unique"  , "test for single instance");
    lock();
@@ -524,7 +497,7 @@ assimilate    (cchar *a_name)
    FILE     *f    = NULL;                         /* crontab file decriptor   */
    tCFILE   *curr = NULL;                         /* current crontab struct   */
    /*---(check file name)-----------------------*/
-   rc      = BASE_name (a_name, '-');             /* vaildate name            */
+   rc      = file_parse_name (a_name, '-');             /* vaildate name            */
    if (rc <  0) {
       TEST  printf("   crontab is misnamed\n");
       yLOG_warn  ("name",    "file name is not valid");
@@ -532,7 +505,7 @@ assimilate    (cchar *a_name)
       return -1;
    }
    TEST  printf("   name is good = <<%s>>\n", a_name);
-   TEST  strlcpy (my.user, my.who, LEN_USER);
+   TEST  strlcpy (my.f_user, my.who, LEN_USER);
    /*---(check on crontab file)-----------------*/
    struct    stat s;
    rc = lstat(a_name, &s);
@@ -567,137 +540,12 @@ assimilate    (cchar *a_name)
    }
    TEST  printf("   crontab openned successfully\n");
    ySCHED_reset();
-   rc = BASE_create (my.name, my.user, &curr);
+   rc = BASE_create (my.f_name, my.f_user, &curr);
    if (rc >= 0) rc = BASE_inventory (curr, f);
    /*---(complete)------------------------------*/
    fclose(f);
    yLOG_exit  (__FUNCTION__);
    return rc;
-}
-
-char        /* PURPOSE : validate the crontab name                            */
-BASE_name     (cchar *a_name, cchar a_loc)
-{
-   if (a_name == NULL) return -1;
-   yLOG_enter (__FUNCTION__);
-   yLOG_info  ("CRONTAB",   a_name);
-   /*---(locals)--------------------------------*/
-   char     *p;                                   /* pointer  for strtok      */
-   int       len;                                 /* string's length          */
-   int       i    = 0;                            /* loop iterator -- char    */
-   char      legal[100] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
-   char      x_name[LEN_NAME];        /* name of the current crontab               */
-   char        rc          = 0;
-   char        rce         = -10;
-   /*---(defense)-------------------------------*/
-   --rce;  if (a_name[0] == '.') {
-      yLOG_warn  ("name",  "can not process hidden crontab names");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   len = strllen (a_name, LEN_NAME);
-   --rce;  if (len <  0) {
-      yLOG_warn  ("name",  "strllen did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   --rce;  if (len >= LEN_NAME) {
-      yLOG_warn  ("name",  "crontab name too long to be processed");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   rc = strlcpy (x_name, a_name, LEN_NAME);
-   --rce;  if (rc <  0) {
-      yLOG_warn  ("name",  "strlcpy did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   /*---(get user name)-------------------------*/
-   p = strtok(x_name, ".");
-   --rce;  if (p == NULL) {
-      yLOG_warn  ("user",  "crontab file does not have a user name");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   len = strllen (p, LEN_USER);
-   --rce;  if (len <  0) {
-      yLOG_warn  ("user",  "strllen did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   --rce;  if (len >= LEN_USER) {
-      yLOG_warn  ("user",  "user name too long to be processed");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   --rce;  for (i = 0; i < len; ++i) {
-      if (strchr(legal, p[i]) != NULL) continue;
-      yLOG_warn  ("user",  "user name has illegal characters");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   rc = strlcpy (my.user, p, LEN_USER);
-   --rce;  if (rc <  0) {
-      yLOG_warn  ("user",  "strlcpy did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   /*---(get crontab description)---------------*/
-   p = strtok(NULL,   ".");
-   --rce;  if (p == NULL) {
-      yLOG_warn  ("desc"      ,  "crontab file does not have a description");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   len = strllen (p, LEN_DESC);
-   --rce;  if (len <  0) {
-      yLOG_warn  ("desc",  "strllen did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   --rce;  if (len >= LEN_DESC) {
-      yLOG_warn  ("desc"      ,  "decription too long to be processed");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   --rce;  for (i = 0; i < len; ++i) {
-      if (strchr(legal, p[i]) != NULL) continue;
-      yLOG_warn  ("desc"      ,  "crontab description has illegal characters");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   rc = strlcpy (my.desc, p, LEN_DESC);
-   --rce;  if (rc <  0) {
-      yLOG_warn  ("desc",  "strlcpy did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   /*---(defense, improper format)--------------*/
-   p = strtok(NULL,   ".");
-   --rce;  if (a_loc == 'c') {
-      if (p != NULL && strncmp(p, "NEW", 4) != 0 && strncmp(p, "DEL", 4) != 0) {
-         yLOG_info  ("name",  "crontab name is illegally suffixed");
-         yLOG_exit  (__FUNCTION__);
-         return rce;
-      }
-   }
-   --rce;  if (a_loc != 'c') {
-      if (p != NULL) {
-         yLOG_info  ("name",  "crontab name is illegally suffixed");
-         yLOG_exit  (__FUNCTION__);
-         return rce;
-      }
-   }
-   /*---(complete)------------------------------*/
-   rc = strlcpy (my.name, a_name, LEN_NAME);
-   --rce;  if (rc <  0) {
-      yLOG_warn  ("my.name", "strlcpy did not find null before max reached");
-      yLOG_exit  (__FUNCTION__);
-      return rce;
-   }
-   yLOG_info  ("success", "crontab name is legal");
-   yLOG_exit  (__FUNCTION__);
-   return 0;
 }
 
 char
@@ -1307,11 +1155,11 @@ BASE_unit          (char *a_question, int a_num)
    }
    /*---(crontab name)-------------------*/
    else if   (strncmp(a_question, "name", 20)        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "BASE_name name   : %.35s", my.name);
+      snprintf (unit_answer, LEN_TEXT, "BASE_name name   : %.35s", my.f_name);
    } else if (strncmp(a_question, "user", 20)        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "BASE_name user   : %.35s", my.user);
+      snprintf (unit_answer, LEN_TEXT, "BASE_name user   : %.35s", my.f_user);
    } else if (strncmp(a_question, "desc", 20)        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "BASE_name desc   : %.35s", my.desc);
+      snprintf (unit_answer, LEN_TEXT, "BASE_name desc   : %.35s", my.f_desc);
    }
    /*---(crontab files)------------------*/
    else if   (strncmp(a_question, "cron count", 20)  == 0) {

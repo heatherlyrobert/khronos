@@ -2,177 +2,341 @@
 #include   "khronos.h"
 
 
-
-/*====================------------------------------------====================*/
-/*===----                     directory processing                     ----===*/
-/*====================------------------------------------====================*/
-static void      o___DIRECTORIES_____________o (void) {;}
-
-char         /*--> process entries in local crontab dir --[ ------ [ ------ ]-*/
-TABS_local         (
-      /*---(params)-----------+----------*/
-      cchar       a_action    )        /* i=insert/process, l=list            */
-{  /*---(locals)-----------+-----------+-*/
-   int         rc          = 0;             /* generic return code            */
-   char        rce         = -10;           /* return code for errors         */
-   char        dir_name    [300] = "";      /* holder for directory name      */
-   DIR        *dir;                         /* directory pointer              */
-   tDIRENT    *den;                         /* directory entry pointer        */
-   int         reviewed    = 0;             /* count of entries reviewed      */
-   int         processed   = 0;             /* count of entries processed     */
+char
+tabs_set_path           (cchar *a_user)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
-   DEBUG_INPT   yLOG_char    ("a_action"  , a_action);
-   DEBUG_INPT   yLOG_info    ("my.who"    , my.who);
-   /*---(build dir name)-----------------*/
-   if (strcmp (my.who, "root") == 0) snprintf (dir_name, 300, DIR_ROOT);
-   else                              snprintf (dir_name, 300, "/home/%s/%s", my.who, DIR_LOCAL);
-   DEBUG_INPT   yLOG_info    ("dir_name"  , dir_name);
-   /*---(move to crontab dir)------------*/
-   rc = chdir (dir_name);
-   DEBUG_INPT   yLOG_value   ("chdir_rc"  , rc);
+   /*---(prepare)------------------------*/
+   strlcpy (my.path, "", LEN_NAME);
+   /*---(check user)---------------------*/
+   rc = file_check_user (a_user, LOC_CENTRAL);
    --rce;  if (rc < 0) {
-      DEBUG_INPT   yLOG_note    ("could not move to directory");
-      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-      return  rce;
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   DEBUG_INPT   yLOG_note    ("successfully changed directory");
-   /*---(open dir)-----------------------*/
-   dir = opendir(".");
-   DEBUG_INPT   yLOG_point   ("*dir"      , dir);
-   --rce;  if (dir == NULL) {
-      DEBUG_INPT   yLOG_note    ("could not open directory for reading");
-      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-      return  rce;
-   }
-   DEBUG_INPT   yLOG_note    ("successfully openned directory for reading");
-   /*---(process entries)----------------*/
-   DEBUG_INPT   yLOG_note    ("processing entries");
-   while (1) {
-      den = readdir (dir);
-      DEBUG_INPT   yLOG_point   ("*entry"    , den);
-      if (den == NULL)  break;
-      ++reviewed;
-      rc = BASE_name (den->d_name, '-');
-      DEBUG_INPT   yLOG_value   ("name_rc"   , rc);
-      if (rc < 0) {
-         DEBUG_INPT   yLOG_note    ("not a valid crontab file, skipping");
-         continue;
-      }
-      DEBUG_INPT   yLOG_info    ("prefix"    , my.user);
-      DEBUG_INPT   yLOG_info    ("suffix"    , my.desc);
-      if (strcmp (my.user, "crontab") != 0) {
-         DEBUG_INPT   yLOG_note    ("not a valid crontab prefix, skipping");
-         continue;
-      }
-      if (rc == 0) {
-         /*> DEBUG_INPT   printf("   found <<%s>>\n", den->d_name);                       <*/
-         if      (a_action == 'i') {
-            DEBUG_INPT   yLOG_note    ("insert action requested");
-            crontab_inst  (my.desc);
-         }
-         else if (a_action == 'l') {
-            DEBUG_INPT   yLOG_note    ("list action requested");
-            printf ("crontab.%s\n", my.desc);
-         }
-         ++processed;
-      }
-      den = readdir (dir);
-   }
-   DEBUG_INPT   yLOG_note    ("done with entries");
-   DEBUG_INPT   yLOG_value   ("reviewed"  , reviewed);
-   DEBUG_INPT   yLOG_value   ("processed" , processed);
-   /*---(close dir)----------------------*/
-   DEBUG_INPT   yLOG_note    ("closing directory");
-   rc = closedir (dir);
-   DEBUG_INPT   yLOG_value   ("close_rc"  , rc);
-   /*---(complete)------------------------------*/
+   /*---(build dir name)-----------------*/
+   if      (my.user_mode == MODE_UNIT)    strlcpy  (my.path, DIR_UNIT_USER, LEN_PATH);
+   else if (strcmp (a_user, "root") == 0) strlcpy  (my.path, DIR_ROOT     , LEN_PATH);
+   else                                   snprintf (my.path, LEN_PATH, "/home/%s/%s", a_user, DIR_LOCAL);
+   DEBUG_INPT   yLOG_info    ("my.path"   , my.path);
+   /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-char        /* PURPOSE : process updates to main crontable directory ---------*/
-crontab_proc       (cchar *a_user, cchar a_action)
+
+
+/*====================------------------------------------====================*/
+/*===----                     reviewing directories                    ----===*/
+/*====================------------------------------------====================*/
+static void      o___REVIEW__________________o (void) {;}
+
+char         /*--> review and act on global crontabs -------------------------*/
+tabs_global        (cchar *a_user, cchar a_action)
 {
-   /*---(locals)--------------------------------*/
-   tDIRENT        *den;
-   DIR            *dir;
-   char            x_user[25] = "";
-   int             count     = 0;
-   int             rc        = 0;
-   char            x_file[LEN_NAME] = "";
-   /*---(defense)-------------------------------*/
-   DEBUG_INPT   printf("crontab_proc()...\n");
-   if (strcmp(a_user, "ALL") == 0 && my.am_root != 'y') {
-      DEBUG_INPT   printf("   ");
-      printf("must be root to use the \"--all\" option");
-      return -1;
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   DIR        *x_dir       = NULL;
+   tDIRENT    *x_file      = NULL;
+   int         x_count     =    0;
+   int         x_total     =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT   yLOG_point   ("a_user"    , a_user);
+   --rce;  if (a_user == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(format user names)---------------------*/
-   DEBUG_INPT   printf("   user = %s\n", a_user);
-   snprintf(x_user, 22, "%s.",  a_user);
-   /*---(open dir)------------------------------*/
-   DEBUG_INPT   printf("   dir  = %s\n", CRONTABS);
-   dir = opendir(CRONTABS);
-   if (dir == NULL) {
-      DEBUG_INPT   printf("   ");
-      printf("can not open crontab directory\n");
-      return -2;
+   DEBUG_INPT   yLOG_info    ("a_user"    , a_user);
+   DEBUG_INPT   yLOG_char    ("a_action"  , a_action);
+   DEBUG_INPT   yLOG_info    ("ACT_ALL"   , ACT_ALL);
+   --rce;  if (strchr (ACT_ALL, a_action) == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   DEBUG_INPT   printf("   openned directory successfully\n");
-   /*> printf("--crontabs-------------------------\n", a_user);                       <*/
-   DEBUG_INPT   printf("   processing records\n\n");
-   while ((den = readdir(dir)) != NULL) {
-      rc = BASE_name (den->d_name, 'c');
-      if (rc != 0)                         continue;
+   /*---(check for all user)-------------*/
+   --rce;  if (strcmp (a_user, "ALL") == 0 && my.am_root != 'y') {
+      RUN_USER     printf ("warn, must be logged in as root to use the --all option\n");
+      DEBUG_INPT   yLOG_note    ("must be root to use the --all option");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(set path)-----------------------*/
+   strlcpy (my.path, my.dir_central, LEN_PATH);
+   /*---(open dir)-----------------------*/
+   DEBUG_INPT   yLOG_info    ("dir name"  , my.path);
+   x_dir = opendir (my.path);
+   DEBUG_INPT   yLOG_point   ("x_dir"     , x_dir);
+   --rce;  if (x_dir == NULL) {
+      RUN_USER     printf ("fatal, can not open crontab directory\n");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(walk files)---------------------*/
+   DEBUG_INPT   yLOG_note    ("walk through directory files");
+   x_file = readdir (x_dir);
+   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+   while (x_file  != NULL) {
+      /*---(check name)-------------------------*/
+      rc = file_parse_name (x_file->d_name, LOC_CENTRAL);
+      DEBUG_INPT   yLOG_value   ("parse"     , rc);
       /*---(filter files)-----------------------*/
-      /*> DEBUG_INPT   printf("   found <<%s>>\n", den->d_name);                          <*/
-      if (strcmp(a_user, "ALL") == 0 || strcmp(my.user, a_user) == 0) {
-         snprintf(x_file, LEN_NAME, "%s.%s", my.user, my.desc);
-         /*> DEBUG_INPT   printf("   processing <<%s>>\n", x_file);                       <*/
-         if      (a_action == 'c') crontab_cat (den->d_name);
-         else if (a_action == 'p') crontab_del (x_file);
-         else                      printf("%s\n", den->d_name);
-         ++count;
+      if (rc >= 0  && (strcmp (a_user, "ALL") == 0 || strcmp (my.f_user, a_user) == 0)) {
+         switch (a_action) {
+         case ACT_PURGE :  tabs_delete (x_file->d_name);     break;
+         case ACT_LIST  :  printf ("%s\n", x_file->d_name);  break;
+         case ACT_NONE  :  break;
+         }
+         ++x_count;
       }
+      /*---(next)------------------------*/
+      ++x_total;
+      x_file = readdir (x_dir);
+      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+      /*---(done)------------------------*/
    }
-   DEBUG_INPT   printf("back to crontab_proc()...\n");
-   DEBUG_INPT   printf("   processed %d installed crontabs\n", count);
-   /*> printf("---%03d found-----------------------\n", count);                       <*/
-   closedir(dir);
-   DEBUG_INPT   printf("   closing directory\n");
-   /*---(complete)------------------------------*/
-   DEBUG_INPT   printf("   done\n\n");
+   /*---(summary)------------------------*/
+   DEBUG_INPT   yLOG_value   ("found"     , x_total);
+   DEBUG_INPT   yLOG_value   ("processed" , x_count);
+   /*---(close)--------------------------*/
+   rc = closedir (x_dir);
+   DEBUG_INPT   yLOG_point   ("close"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return (x_count % 100);
+}
+
+char         /*--> review and act on local crontabs --------------------------*/
+tabs_local         (cchar *a_user, cchar a_action)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   DIR        *x_dir       = NULL;
+   tDIRENT    *x_file      = NULL;
+   int         x_count     =    0;
+   int         x_total     =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT   yLOG_point   ("a_user"    , a_user);
+   --rce;  if (a_user == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_info    ("a_user"    , a_user);
+   DEBUG_INPT   yLOG_char    ("a_action"  , a_action);
+   DEBUG_INPT   yLOG_info    ("ACT_ALL"   , ACT_ALL);
+   --rce;  if (strchr (ACT_ALL, a_action) == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(build dir name)-----------------*/
+   rc = tabs_set_path (a_user);
+   DEBUG_INPT   yLOG_value   ("set path"  , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(open dir)-----------------------*/
+   x_dir = opendir (my.path);
+   DEBUG_INPT   yLOG_point   ("x_dir"      , x_dir);
+   --rce;  if (x_dir == NULL) {
+      RUN_USER     printf ("fatal, can not open local crontab directory\n");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return  rce;
+   }
+   /*---(walk files)---------------------*/
+   DEBUG_INPT   yLOG_note    ("walk through directory files");
+   x_file = readdir (x_dir);
+   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+   while (x_file  != NULL) {
+      /*---(check name)-------------------------*/
+      rc = file_parse_name (x_file->d_name, LOC_LOCAL);
+      DEBUG_INPT   yLOG_value   ("parse"     , rc);
+      /*---(filter files)-----------------------*/
+      if (rc >= 0) {
+         switch (a_action) {
+         case ACT_INST  :  tabs_install (x_file->d_name);    break;
+         case ACT_LIST  :  printf ("%s\n", x_file->d_name);  break;
+         case ACT_NONE  :  break;
+         }
+         ++x_count;
+      }
+      /*---(next)------------------------*/
+      ++x_total;
+      x_file = readdir (x_dir);
+      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+      /*---(done)------------------------*/
+   }
+   /*---(summary)------------------------*/
+   DEBUG_INPT   yLOG_value   ("found"     , x_total);
+   DEBUG_INPT   yLOG_value   ("processed" , x_count);
+   /*---(close)--------------------------*/
+   rc = closedir (x_dir);
+   DEBUG_INPT   yLOG_point   ("close"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return (x_count % 100);
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                       support functions                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___SUPPORT_________________o (void) {;}
+
+char       /*--> verify file existance ---------------------------------------*/
+tabs__verify            (cchar *a_full)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tSTAT       s;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT   yLOG_point   ("a_full"    , a_full);
+   --rce;  if (a_full == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_info    ("a_full"    , a_full);
+   /*---(check on crontab file)-----------------*/
+   rc = stat (a_full, &s);
+   DEBUG_INPT   yLOG_value   ("stat"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   --rce;  if (S_ISDIR (s.st_mode))  {
+      DEBUG_INPT   yLOG_note    ("can not use a directory");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   --rce;  if (S_ISLNK (s.st_mode))  {
+      DEBUG_INPT   yLOG_note    ("can not use a symlink");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   --rce;  if (!S_ISREG (s.st_mode))  {
+      DEBUG_INPT   yLOG_note    ("can only use regular files");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-char       /* PURPOSE : search for and process crontab updates               */
-crontab_verify     (cchar *a_name, char a_loc)
+char       /* PURPOSE : install a local crontab file -------------------------*/
+tabs__remove            (cchar *a_full)
 {
-   /*---(locals)--------------------------------*/
-   char      dir_name [LEN_DIR] = "";
-   tDIRENT  *den;
-   DIR      *dir;
-   /*---(create dir name)-----------------------*/
-   if (a_loc == 'l') {
-      if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
-      else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
-   } else {
-      strlcpy (dir_name, CRONTABS, LEN_DIR);
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(check)--------------------------*/
+   DEBUG_INPT   yLOG_info    ("looking"   , a_full);
+   rc = tabs__verify (a_full);
+   DEBUG_INPT   yLOG_value   ("verify"    , rc);
+   --rce;  if (rc <  0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(open dir)------------------------------*/
-   dir = opendir(dir_name);
-   if (dir == NULL) {
-      printf("can not open crontab directory\n");
-      return -1;
+   /*---(remove)-------------------------*/
+   rc = remove   (a_full);
+   DEBUG_INPT   yLOG_value   ("remove"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   while ((den = readdir(dir)) != NULL) {
-      if (strncmp(a_name, den->d_name, LEN_NAME)  == 0) {
-         return 1;
-      }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char       /* PURPOSE : install a local crontab file -------------------------*/
+tabs__clear             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   char        x_name      [LEN_RECD]  = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(clear new)--------------------------*/
+   snprintf (x_name, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.who, my.f_desc);
+   tabs__remove (x_name);
+   /*---(clear del)--------------------------*/
+   snprintf (x_name, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.who, my.f_desc);
+   tabs__remove (x_name);
+   /*---(clear base)-------------------------*/
+   snprintf (x_name, LEN_RECD, "%s%s.%s"    , my.dir_central, my.who, my.f_desc);
+   tabs__remove (x_name);
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char       /* PURPOSE : install a local crontab file -------------------------*/
+tabs__notify            (cchar *a_full)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   char        x_cmd       [LEN_RECD]  = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(change to root ownership)-----------*/
+   snprintf (x_cmd, LEN_RECD, "chown root:root %s", a_full);
+   DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
+   rc = system   (x_cmd);
+   DEBUG_INPT   yLOG_value   ("system"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   closedir(dir);
-   /*---(complete)------------------------------*/
+   DEBUG_INPT   yLOG_value   ("wifexited" , WIFEXITED(rc));
+   if (WIFEXITED(rc) <  0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(change to strict permissions)-------*/
+   snprintf (x_cmd, LEN_RECD, "chmod 0700 %s", a_full);
+   DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
+   rc = system   (x_cmd);
+   DEBUG_INPT   yLOG_value   ("system"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_value   ("wifexited" , WIFEXITED(rc));
+   if (WIFEXITED(rc) <  0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(send update)------------------------*/
+   DEBUG_INPT   yLOG_note    ("send HUP signal to khronos");
+   khronos_tabs_hup ();
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -184,185 +348,125 @@ crontab_verify     (cchar *a_name, char a_loc)
 static void      o___ACTIONS_________________o (void) {;}
 
 char       /* PURPOSE : install a local crontab file -------------------------*/
-crontab_inst       (cchar *a_source)
+tabs_install            (cchar *a_name)
 {
-   /*---(locals)--------------------------------*/
-   char      dir_name[300] = "";
-   int       rc        = 0;
-   char      x_file[500]= "";          /* file name                           */
-   /*---(begin)---------------------------------*/
-   DEBUG_INPT   printf("crontab_inst()...\n");
-   /*---(set source directory)------------------*/
-   if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
-   else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
-   /*---(move to local directory)--------*/
-   DEBUG_INPT   printf("   moved to local crontab directory\n");
-   if (chdir(dir_name) < 0) {
-      DEBUG_INPT   printf("   ");
-      printf("could not move to crontab directory\n\n");
-      return -4;
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   char        x_name      [LEN_RECD]  = "";
+   char        x_full      [LEN_RECD]  = "";
+   char        x_cmd       [LEN_RECD]  = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(check name)-------------------------*/
+   rc = file_parse_name (a_name, LOC_LOCAL);
+   DEBUG_INPT   yLOG_value   ("parse"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(break up the file name)-------------*/
-   snprintf (x_file, 500, "%s.%s", "crontab", a_source);
-   DEBUG_INPT   printf("   starting with <<%s>>\n", x_file);
-   rc = BASE_name (x_file, '-');
-   if (rc <  0) {
-      DEBUG_INPT   printf("   ");
-      printf("crontab name is found, but format is not valid [%d]\n\n", rc);
-      return -2;
+   /*---(build dir name)-----------------*/
+   rc = tabs_set_path (my.who);
+   DEBUG_INPT   yLOG_value   ("set path"  , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   DEBUG_INPT   printf("   found properly named file\n");
-   /*---(verify source file)-----------------*/
-   rc = crontab_verify (x_file, 'l');
-   if (rc != 1) {
-      DEBUG_INPT   printf("   ");
-      printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
-      return -1;
+   /*---(verify source)------------------*/
+   snprintf (x_name, LEN_RECD, "%s%s", my.path, my.f_name);
+   DEBUG_INPT   yLOG_info    ("x_name"    , x_name);
+   rc = tabs__verify  (x_name);
+   DEBUG_INPT   yLOG_value   ("verify"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(make sure to clear NEW)-------------*/
-   snprintf (x_file, 500, "%s/%s.%s.NEW", CRONTABS, my.who, my.desc);
-   rc = remove   (x_file);
-   DEBUG_INPT   printf("   deleting <<%s>> : %s\n", x_file, (rc != 0) ? "(none)" : "(FOUND)");
-   /*---(make sure to clear DEL)-------------*/
-   snprintf (x_file, 500, "%s/%s.%s.DEL", CRONTABS, my.who, my.desc);
-   rc = remove   (x_file);
-   DEBUG_INPT   printf("   deleting <<%s>> : %s\n", x_file, (rc != 0) ? "(none)" : "(FOUND)");
-   /*---(delete previous copy)---------------*/
-   snprintf (x_file, 500, "%s/%s.%s", CRONTABS, my.who, my.desc);
-   rc = remove   (x_file);
-   DEBUG_INPT   printf("   deleting <<%s>>     : %s\n", x_file, (rc != 0) ? "(none)" : "(FOUND)");
+   snprintf (x_full, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.who, my.f_desc);
+   DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
+   /*---(clear files)------------------------*/
+   rc = tabs__clear  ();
+   DEBUG_INPT   yLOG_value   ("clear"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(copy file to crontab dir)-----------*/
-   snprintf (x_file, 500, "cp %s.%s %s/%s.%s.NEW", "crontab", my.desc, CRONTABS, my.who, my.desc);
-   DEBUG_INPT   printf("   run <<%s>>\n", x_file);
-   rc = system   (x_file);
+   snprintf (x_cmd, LEN_RECD, "cp %s %s", x_name, x_full);
+   DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
+   rc = system   (x_cmd);
+   DEBUG_INPT   yLOG_value   ("system"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_value   ("wifexited" , WIFEXITED(rc));
    if (WIFEXITED(rc) <  0) {
-      DEBUG_INPT   printf("   ");
-      printf("can not copy file (%s.%s.NEW) to crondir [%d]\n\n", "crontab", my.desc, rc);
-      return -3;
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(change to root ownership)-----------*/
-   snprintf (x_file, 500, "chown root:root %s/%s.%s.NEW", CRONTABS, my.who, my.desc);
-   DEBUG_INPT   printf("   run <<%s>>\n", x_file);
-   rc = system   (x_file);
-   if (WIFEXITED(rc) <  0) {
-      DEBUG_INPT   printf("   ");
-      printf("can not change to root ownership (%s.%s.NEW) [%d]\n\n", "crontab", my.desc, rc);
-      return -4;
+   /*---(update file)------------------------*/
+   rc = tabs__notify (x_full);
+   DEBUG_INPT   yLOG_value   ("notify"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(change to strict permissions)-------*/
-   snprintf (x_file, 500, "chmod 0700 %s/%s.%s.NEW", CRONTABS, my.who, my.desc);
-   DEBUG_INPT   printf("   run <<%s>>\n", x_file);
-   rc = system   (x_file);
-   if (WIFEXITED(rc) <  0) {
-      DEBUG_INPT   printf("   ");
-      printf("can not change to strict permissions (%s.%s.NEW) [%d]\n\n", "crontab", my.desc, rc);
-      return -5;
-   }
-   /*---(send update)------------------------*/
-   DEBUG_INPT   printf("   send HUP signal to khronos\n");
-   crontab_hup();
-   /*---(complete)---------------------------*/
-   DEBUG_INPT   printf("   done\n\n");
-   return 0;
-}
-
-char       /* PURPOSE : delete a crontab from system directory ---------------*/
-crontab_del        (cchar *a_source)
-{
-   /*---(locals)-------------------------*/
-   int       rc        = 0;
-   char      file[LEN_NAME]= "";           /* file name                           */
-   char      x_full[LEN_LONG]= "";          /* full source file name               */
-   char      x_dest[LEN_LONG]= "";          /* destination file name               */
-   /*---(begin)--------------------------*/
-   DEBUG_INPT   printf("crontab_del()...\n");
-   /*---(verify name)--------------------*/
-   snprintf(file, LEN_NAME, "%s", a_source);
-   DEBUG_INPT   printf("   crontab  = <<%s>> (vanilla name)", file);
-   rc = BASE_name (file, 'c');
-   if (rc < 0) {
-      DEBUG_INPT   printf("   FAILED\n");
-      snprintf(file, LEN_NAME, "%s.%s", my.who, a_source);
-      DEBUG_INPT   printf("   crontab  = <<%s>> (contructed name)", file);
-      rc = BASE_name (file, 'c');
-      if (rc <  0) { 
-         DEBUG_INPT   printf("   FAILED\n");
-         printf("crontab name format is not valid (%d)\n\n", rc);
-         return -1;
-      }
-   }
-   DEBUG_INPT   printf("   PASSED\n");
-   /*---(verify existing file)-----------*/
-   strlcpy (x_full, file, LEN_LONG);
-   DEBUG_INPT   printf("    searching (%s)", x_full);
-   rc = crontab_verify (x_full, 's');
-   if (rc != 1) {
-      DEBUG_INPT   printf("    : (none)\n");
-      /*---(if not, try the NEW version)-*/
-      snprintf (x_full, 500, "%s.%s.NEW", my.who, my.desc);
-      DEBUG_INPT   printf("   searching (%s)", x_full);
-      rc = crontab_verify (x_full, 's');
-      if (rc != 1) {
-         DEBUG_INPT   printf(" : (none)\n");
-         /*---(if not, try DEL version)--*/
-         snprintf (x_full, 500, "%s.%s.DEL", my.who, my.desc);
-         DEBUG_INPT   printf("   searching (%s)", x_full);
-         rc = crontab_verify (x_full, 's');
-         if (rc == 1) {
-            DEBUG_INPT   printf(" : (FOUND)\n   ");
-            printf("crontab already deleted, nothing to do\n\n");
-            return -2;
-         } else {
-            DEBUG_INPT   printf(" : (none)\n   ");
-            printf("crontab not presently installed, nothing to do\n\n");
-            return -3;
-         }
-      } else {
-         DEBUG_INPT   printf(" : (FOUND)\n");
-      }
-   } else {
-      DEBUG_INPT   printf("    : (FOUND)\n");
-   }
-   /*---(remove existing file)-----------*/
-   DEBUG_INPT   printf("   moved to crontab spool directory\n");
-   if (chdir(CRONTABS) < 0) {
-      DEBUG_INPT   printf("   ");
-      printf("could not move to crontab directory\n\n");
-      return -4;
-   }
-   snprintf(x_dest, 500, "%s.DEL", file);
-   DEBUG_INPT   printf("   rename to <<%s>>\n", x_dest);
-   rc = rename(x_full, x_dest);
-   if (rc <  0) {
-      DEBUG_INPT   printf("   ");
-      printf("can not rename file (%s) in crondir\n\n", file);
-      return -5;
-   }
-   /*---(send update)--------------------*/
-   DEBUG_INPT   printf("   send HUP signal to khronos\n");
-   crontab_hup();
    /*---(complete)-----------------------*/
-   DEBUG_INPT   printf("   done\n\n");
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-char       /* PURPOSE : list contents of installed crontab -------------------*/
-crontab_cat   (cchar *a_name)
+char       /* PURPOSE : install a local crontab file -------------------------*/
+tabs_delete             (cchar *a_name)
 {
-   /*---(locals)--------------------------------*/
-   int       rc        = 0;
-   char      x_file[500]= "";          /* file name                           */
-   /*---(verify existing file)------------------*/
-   printf ("# ===================================================================\n");
-   printf ("# crontab file name = %s\n", a_name);
-   printf ("# ===================================================================\n");
-   snprintf (x_file, 500, "cat %s/%s", CRONTABS, a_name);
-   rc = system   (x_file);
-   if (WIFEXITED(rc) <  0) {
-      printf("# can not open file (%s) to dislay\n", a_name);
-      return -2;
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   char        x_name      [LEN_RECD]  = "";
+   char        x_full      [LEN_RECD]  = "";
+   char        x_cmd       [LEN_RECD]  = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(check name)-------------------------*/
+   rc = file_parse_name (a_name, LOC_LOCAL);
+   DEBUG_INPT   yLOG_value   ("parse"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(complete)------------------------------*/
+   /*---(verify source)------------------*/
+   snprintf (x_full, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.who, my.f_desc);
+   DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
+   /*---(clear files)------------------------*/
+   rc = tabs__clear  ();
+   DEBUG_INPT   yLOG_value   ("clear"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(copy file to crontab dir)-----------*/
+   snprintf (x_cmd, LEN_RECD, "touch %s", x_full);
+   DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
+   rc = system   (x_cmd);
+   DEBUG_INPT   yLOG_value   ("system"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_value   ("wifexited" , WIFEXITED(rc));
+   if (WIFEXITED(rc) <  0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(update file)------------------------*/
+   rc = tabs__notify (x_full);
+   DEBUG_INPT   yLOG_value   ("notify"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -370,7 +474,7 @@ char       /* PURPOSE : test the contents of a crontab file ------------------*/
 crontab_test       (cchar *a_source)
 {
    /*---(locals)--------------------------------*/
-   char      dir_name[300] = "";
+   char      dir_name[LEN_PATH] = "";
    int       rc        = 0;
    char      x_file[500]= "";          /* file name                           */
    /*---(begin)---------------------------------*/
@@ -378,8 +482,8 @@ crontab_test       (cchar *a_source)
    testing = 'y';
    failed  = 0;
    /*---(set source directory)------------------*/
-   if (strcmp(my.who, "root") == 0) snprintf(dir_name, 300, "/home/machine/crontabs/");
-   else                             snprintf(dir_name, 300, "/home/%s/c_quani/crontabs/", my.who);
+   if (strcmp(my.who, "root") == 0) snprintf(dir_name, LEN_PATH, "/home/machine/crontabs/");
+   else                             snprintf(dir_name, LEN_PATH, "/home/%s/c_quani/crontabs/", my.who);
    /*---(move to local directory)--------*/
    DEBUG_INPT   printf("   moved to local crontab directory\n");
    if (chdir(dir_name) < 0) {
@@ -390,7 +494,7 @@ crontab_test       (cchar *a_source)
    /*---(break up the file name)-------------*/
    snprintf (x_file, 500, "%s.%s", "crontab", a_source);
    DEBUG_INPT   printf("   starting with <<%s>>\n", x_file);
-   rc = BASE_name (x_file, '-');
+   rc = file_parse_name (x_file, '-');
    if (rc <  0) {
       DEBUG_INPT   printf("   ");
       printf("crontab name is found, but format is not valid [%d]\n\n", rc);
@@ -398,7 +502,7 @@ crontab_test       (cchar *a_source)
    }
    DEBUG_INPT   printf("   found properly named file\n");
    /*---(verify source file)-----------------*/
-   rc = crontab_verify (x_file, 'l');
+   rc = tabs__verify (x_file);
    if (rc != 1) {
       DEBUG_INPT   printf("   ");
       printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
@@ -418,56 +522,38 @@ crontab_test       (cchar *a_source)
 static void      o___SPECIALTY_______________o (void) {;}
 
 char
-crontab_user (cchar *a_user)
+tabs_user               (cchar *a_user)
 {
-   /*---(locals)--------------------------------*/
-   tPASSWD  *x_pass    = NULL;         /* passwd data structure               */
-   uint      ulen      = 0;               /* length of the user name             */
-   /*---(begin)---------------------------------*/
-   DEBUG_INPT   printf("crontab_user()...\n");
-   /*---(check for root)------------------------*/
-   if (my.am_root != 'y') {
-      DEBUG_INPT   printf("   ");
-      printf("must be root to use user change option\n");
-      exit (-10);
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(check for root)-----------------*/
+   DEBUG_INPT   yLOG_char    ("am root"   , my.am_root);
+   --rce;  if (my.am_root != 'y') {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   DEBUG_INPT   printf("   verified root status\n");
-   /*---(defense)-------------------------------*/
-   ulen       = strllen (a_user, LEN_USER);
-   DEBUG_INPT   printf("   user requested = <<%s>>\n", a_user);
-   if (ulen < 1) {
-      DEBUG_INPT   printf("   ");
-      printf("user name is null\n");
-      return -2;
+   /*---(check name)---------------------*/
+   rc = file_check_user (a_user, LOC_VERIFY);
+   DEBUG_INPT   yLOG_value   ("check"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   if (ulen > 20) {
-      DEBUG_INPT   printf("   ");
-      printf("user name is too long\n");
-      return -3;
-   }
-   /*---(user name)-----------------------------*/
-   x_pass    = getpwnam(a_user);
-   if (x_pass == NULL) {
-      DEBUG_INPT   printf("   ");
-      printf("can not retreive user information from the system\n");
-      exit (-1);
-   }
-   DEBUG_INPT   printf("   verified user account\n");
-   my.uid      = x_pass->pw_uid;
-   DEBUG_INPT   printf("   user id num    = %d\n", my.uid);
-   strlcpy(my.who , a_user, 20);
-   /*---(complete)------------------------------*/
-   DEBUG_INPT   printf("   done\n\n");
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char
-crontab_hup   (void)
+khronos_tabs_hup        (void)
 {
-   /*---(locals)--------------------------------*/
-   int       rc        = 0;
-   FILE      *f = NULL;
-   int        crond_pid = 0;
+   /*---(locals)-----------+-----+-----+-*/
+   int         rc          =    0;
+   FILE       *f           = NULL;
+   int         crond_pid   =    0;
    /*---(check for run file)--------------------*/
    f = fopen (FILE_LOCK, "r");
    if (f == NULL)   return -1;
@@ -492,28 +578,72 @@ crontab_hup   (void)
 /*====================------------------------------------====================*/
 static void      o___STUBS___________________o (void) {;}
 
-char
-crontab_dir   (void)
+char       /* PURPOSE : list contents of installed crontab -------------------*/
+tabs_cat_stub           (void)
 {
-   printf("will NEVER allow anyone to change the crontab directory (security risk)\n");
-   /*---(complete)------------------------------*/
-   return 0;
+   printf ("khronos will NEVER allow anyone to review installed crontabs (security risk)\n");
+   return -1;
 }
 
 char
-crontab_stdin (void)
+tabs_dir_stub           (void)
 {
-   printf("will NEVER allow reading from stdin (no traceability)\n");
-   /*---(complete)------------------------------*/
-   return 0;
+   printf ("khronos will NEVER allow anyone to change the crontab directory (security risk)\n");
+   return -1;
 }
 
 char
-crontab_edit  (void)
+tabs_stdin_stub         (void)
 {
-   printf("will NEVER allow editing installed crontabs (no traceability)\n");
-   /*---(complete)------------------------------*/
-   return 0;
+   printf ("khronos will NEVER allow reading from stdin (no traceability)\n");
+   return -1;
 }
+
+char
+tabs_edit_stub          (void)
+{
+   printf ("khronos will NEVER allow editing installed crontabs (no traceability)\n");
+   return -1;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      unit test accessor                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___UNITTEST________________o (void) {;}
+
+char*            /*--> unit test accessor ------------------------------*/
+tabs__unit              (char *a_question, int a_num)
+{
+   /*---(prepare)------------------------*/
+   strlcpy  (unit_answer, "TABS             : question not understood", LEN_TEXT);
+   /*---(crontab name)-------------------*/
+   if      (strncmp(a_question, "file", 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS file        : %2d[%.35s]", strlen (my.f_name), my.f_name);
+   }
+   else if (strncmp(a_question, "user", 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS user        : %2d[%.35s]", strlen (my.f_user), my.f_user);
+   }
+   else if (strncmp(a_question, "desc", 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS desc        : %2d[%.35s]", strlen (my.f_desc), my.f_desc);
+   }
+   else if (strncmp(a_question, "ext" , 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS ext         : %2d[%.35s]", strlen (my.f_ext), my.f_ext);
+   }
+   else if (strncmp(a_question, "path", 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS path        : %2d[%.35s]", strlen (my.path), my.path);
+   }
+   else if (strncmp(a_question, "who" , 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS who         : %2d[%.35s]", strlen (my.who), my.who);
+   }
+   else if (strncmp(a_question, "uid" , 20)        == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS uid         : %d"        , my.uid);
+   }
+   /*---(complete)-----------------------*/
+   return unit_answer;
+}
+
+
 
 /*====================---------[[ end-of-code ]]----------====================*/

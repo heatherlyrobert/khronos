@@ -18,21 +18,22 @@ main (int argc, char *argv[])
    int       rc        = 0;
    /*---(initialize)---------------------*/
    if (rc >= 0)  rc = yURG_logger  (argc, argv);
+   if (rc >= 0)  rc = yURG_urgs    (argc, argv);
    if (rc >= 0)  rc = PROG_init    ();
    if (rc == 0)  rc = PROG_whoami  ();
-   if (rc >= 0)  rc = yURG_urgs    (argc, argv);
    if (rc >= 0)  rc = PROG_args    (argc, argv);
    if (rc >= 0)  rc = PROG_begin   ();
    if (rc <  0) {
       PROG_end ();
       return -1;
    }
-   if (version == 'i') {
+   switch (my.user_mode) {
+   case MODE_USER   :
       PROG_end     ();
       return 0;
+      break;
    }
    /*---(khronos init)-------------------*/
-   /*> rc = initialize(0);                                                            <*/
    rc = daemonize();
    yLOG_break();
    curr      = curr_hours();

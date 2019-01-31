@@ -136,10 +136,24 @@ PROG_version       (void)
 char         /*--: pre-argument program initialization ---[ leaf   [ ------ ]-*/
 PROG_init          (void)
 {
+   /*---(locals)-------------------------*/
+   char        rc          =    0;
+   /*---(log header)---------------------*/
+   DEBUG_TOPS   yLOG_info    ("purpose" , "provide consistent, reliable, time-based job scheduling");
+   DEBUG_TOPS   yLOG_info    ("namesake", "winged serpent khronos is the god of creation and unyielding time");
+   DEBUG_TOPS   yLOG_info    ("khronos" , PROG_version    ());
+   DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOG_version    ());
+   DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
+   DEBUG_TOPS   yLOG_info    ("yDLST"   , yDLST_version   ());
+   DEBUG_TOPS   yLOG_info    ("yPARSE"  , yPARSE_version  ());
+   DEBUG_TOPS   yLOG_info    ("ySCHED"  , ySCHED_version  ());
+   DEBUG_TOPS   yLOG_info    ("yEXEC"   , yEXEC_version   ());
+   DEBUG_TOPS   yLOG_info    ("ySTR"    , ySTR_version    ());
+   /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(begin)--------------------------*/
    my.uid = getuid();
-   DEBUG_PROG   yLOG_value ("uid num", my.uid);
+   snprintf (my.dir_central , 200, "%s"  , DIR_CENTRAL);
    snprintf (my.name_pulser , 200, "%s%s", DIR_YLOG , FILE_PULSE);
    snprintf (my.name_watcher, 200, "%s%s", DIR_YHIST, FILE_WATCH);
    snprintf (my.name_locker , 200, "%s%s", DIR_RUN  , FILE_LOCK);
@@ -152,6 +166,9 @@ PROG_init          (void)
    n_cline  = 0;
    nfast    = 0;
    nproc    = 0;
+   my.user_mode = MODE_DAEMON;
+   rc = yPARSE_init  ('-', NULL, '-');
+   rc = yPARSE_delimiters  ("§");
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -216,13 +233,13 @@ PROG_whoami        (void)
 char       /* PURPOSE : process the command line arguments -------------------*/
 PROG_args          (int argc, char *argv[])
 {
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(locals)-------------------------*/
    char     *a         = NULL;         /* current argument                    */
    int       i         = 0;            /* loop iterator -- arguments          */
    int       len       = 0;            /* argument length                     */
    char      two_arg   = 0;
    /*---(begin)--------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    DEBUG_ARGS   printf("PROG_args()...\n");
    DEBUG_ARGS   printf("   processing %d args\n", argc);
    if (argc == 1) {
@@ -233,54 +250,46 @@ PROG_args          (int argc, char *argv[])
    strlcpy(my.prog, argv[0], LEN_USER);
    DEBUG_ARGS   printf("   prog name = <<%s>>\n\n", my.prog);
    /*---(process)------------------------*/
-   version = 'd';
    for (i = 1; i < argc; ++i) {
       a = argv[i];
       if (i < argc - 1) two_arg = 1; else two_arg = 0;
       len = strllen (a, LEN_LINE);
       /*---(skip debugging)--------------*/
       if      (a[0] == '@')                     continue;
-      version = 'i';
+      my.user_mode = MODE_USER;
       /*---(version)---------------------*/
       if      (strcmp (a, "--version"      ) == 0 || strcmp (a, "-V") == 0) {
          PROG_version ();
          printf ("%s\n", verstring);
          return -1;
       }
-      /*---(interactive)-----------------*/
-      else if (strcmp(a, "-i"        ) == 0)    version = 'i';
       /*---(usage/help)------------------*/
       else if (strcmp(a, "-h"        ) == 0)    PROG_usage();
       else if (strcmp(a, "--help"    ) == 0)    PROG_usage();
       /*---(lists)-----------------------*/
-      else if (strcmp(a, "-l"        ) == 0)    crontab_proc  (my.who, 'c');
-      else if (strcmp(a, "--list"    ) == 0)    crontab_proc  (my.who, 'l');
-      else if (strcmp(a, "--all"     ) == 0)    crontab_proc  ("ALL" , 'l');
-      else if (strcmp(a, "--here"    ) == 0)    TABS_local    ('l');
+      else if (strcmp(a, "--list"    ) == 0)    tabs_global  (my.who, 'l');
+      else if (strcmp(a, "--all"     ) == 0)    tabs_global  ("ALL" , 'l');
+      else if (strcmp(a, "--here"    ) == 0)    tabs_local   (my.who, 'l');
       /*---(installing)------------------*/
-      else if (a[0] != '-'           )          crontab_inst  (a);
+      else if (a[0] != '-'           )          tabs_install (a);
       else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }
-      else if (strcmp(a, "--reload"  ) == 0)    TABS_local    ('i');
+      else if (strcmp(a, "--reload"  ) == 0)    tabs_local   (my.who, 'i');
       /*---(removing)--------------------*/
-      else if (strcmp(a, "-d"        ) == 0)  { TWOARG  crontab_del   (argv[++i]); }
-      else if (strcmp(a, "-r"        ) == 0)  { TWOARG  crontab_del   (argv[++i]); }
-      else if (strcmp(a, "--purge"   ) == 0)    crontab_proc  (my.who, 'p');
-      else if (strcmp(a, "--cleanse" ) == 0)    crontab_proc  ("ALL" , 'p');
+      else if (strcmp(a, "-d"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
+      else if (strcmp(a, "-r"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
+      else if (strcmp(a, "--purge"   ) == 0)    tabs_global  (my.who, 'p');
+      else if (strcmp(a, "--cleanse" ) == 0)    tabs_global  ("ALL" , 'p');
       /*---(user switches)---------------*/
-      else if (strcmp(a, "-u"        ) == 0)  { TWOARG  crontab_user  (argv[++i]); }
-      else if (strcmp(a, "--user"    ) == 0)  { TWOARG  crontab_user  (argv[++i]); }
+      else if (strcmp(a, "-u"        ) == 0)  { TWOARG  tabs_user     (argv[++i]); }
+      else if (strcmp(a, "--user"    ) == 0)  { TWOARG  tabs_user     (argv[++i]); }
       /*---(warnings)--------------------*/
-      else if (strcmp(a, "-c"        ) == 0)    crontab_dir   ();
-      else if (strcmp(a, "-e"        ) == 0)    crontab_edit  ();
-      else if (strcmp(a, "-"         ) == 0)    crontab_stdin ();
+      else if (strcmp(a, "-l"        ) == 0)    tabs_cat_stub   ();
+      else if (strcmp(a, "-c"        ) == 0)    tabs_dir_stub   ();
+      else if (strcmp(a, "-e"        ) == 0)    tabs_edit_stub  ();
+      else if (strcmp(a, "-"         ) == 0)    tabs_stdin_stub ();
       /*---(unknown)---------------------*/
       else    printf("requested action not understood or incomplete\n");
    }
-   /*> if      (argc == 1)                                   crontab_stdin ();                          <* 
-    *> else if (argc >= 2 && argv[1][0] != '-')              crontab_inst  (argv[1]);                   <* 
-    *> else if (argc >= 2 && strncmp(a, "--system",10) == 0) printf("feature not implemented yet\n");   <* 
-    *> else if (argc >= 2 && strncmp(a, "--test",  10) == 0) printf("feature not implemented yet\n");   <* 
-    *> else    printf("requested action not understood or incomplete\n");                               <*/
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -388,7 +397,6 @@ PROG_end           (void)
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    DEBUG_TOPS   yLOG_end     ();
-   exit (0);
    return 0;
 }
 
@@ -416,49 +424,68 @@ PROG_getter        (char *a_question, int a_num)
 }
 
 char       /*----: set up program test file locations ------------------------*/
-PROG_testfiles     (void)
+prog__unit_files   (void)
 {
+   char        x_cmd       [LEN_RECD];
    snprintf (my.name_pulser , 200, "%s%s", "/tmp/" , FILE_PULSE);
    snprintf (my.name_watcher, 200, "%s%s", "/tmp/" , FILE_WATCH);
    snprintf (my.name_locker , 200, "%s%s", "/tmp/" , FILE_LOCK);
    snprintf (my.name_exec   , 200, "%s%s", "/tmp/" , FILE_EXEC);
    snprintf (my.name_status , 200, "%s%s", "/tmp/" , FILE_STATUS);
+   strlcpy (my.dir_central, DIR_UNIT_CENTRAL, LEN_PATH);
+   sprintf (x_cmd, "mkdir %s > /dev/null", DIR_UNIT_CENTRAL);
+   system  (x_cmd);
+   mkdir  (DIR_UNIT_CENTRAL, 0777);
+   sprintf (x_cmd, "mkdir %s > /dev/null", DIR_UNIT_USER   );
+   system  (x_cmd);
+   mkdir  (DIR_UNIT_USER   , 0777);
    return 0;
 }
 
 char       /*----: set up programgents/debugging -----------------------------*/
-PROG_testquiet     (void)
+prog__unit_quiet   (void)
 {
    char       *x_args [1]  = { "khronos" };
    yURG_logger    (1, x_args);
    PROG_init      ();
    yURG_urgs      (1, x_args);
    PROG_whoami    ();
-   PROG_testfiles ();
+   prog__unit_files ();
    PROG_args      (1, x_args);
    PROG_begin     ();
    PROG_final     ();
+   my.user_mode = MODE_UNIT;
    return 0;
 }
 
 char       /*----: set up programgents/debugging -----------------------------*/
-PROG_testloud      (void)
+prog__unit_loud    (void)
 {
-   char       *x_args [2]  = { "gyges_unit", "@@kitchen"    };
+   char       *x_args [2]  = { "khronos_unit", "@@kitchen"    };
    yURG_logger    (2, x_args);
    PROG_init      ();
    yURG_urgs      (2, x_args);
    PROG_whoami    ();
-   PROG_testfiles ();
+   prog__unit_files ();
    PROG_args      (2, x_args);
    PROG_begin     ();
    PROG_final     ();
+   my.user_mode = MODE_UNIT;
    return 0;
 }
 
 char       /*----: set up program urgents/debugging --------------------------*/
-PROG_testend       (void)
+prog__unit_end     (void)
 {
+   char        x_cmd       [LEN_RECD];
+   chdir  ("/tmp");
+   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_USER   );
+   system  (x_cmd);
+   rmdir  (DIR_UNIT_USER);
+   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_CENTRAL);
+   system  (x_cmd);
+   rmdir  (DIR_UNIT_CENTRAL);
+   strlcpy (my.dir_central, DIR_CENTRAL, LEN_PATH);
    PROG_end       ();
    return 0;
 }
