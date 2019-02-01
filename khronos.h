@@ -370,8 +370,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.4a"
-#define VER_TXT   "moving to yDLST have updated cronfile name and creation"
+#define VER_NUM   "1.4b"
+#define VER_TXT   "lines moved to yDLST including unit testing"
 
 
 
@@ -539,11 +539,12 @@ struct cACCESSOR
    char        action      [LEN_ACTION];    /* crontab action requested       */
    char        full        [LEN_RECD];      /* full name (path and all)       */
    /*---(lines)----------------*/
-   int         recdno;                      /* task line number in crontab    */
-   char        schedule    [LEN_RECD];      /* task schedule requested        */
-   char        tracker     [LEN_NAME];      /* task name                      */
-   char        flags       [LEN_NAME];      /* task behavior flags            */
-   char        command     [LEN_RECD];      /* task command to execute        */
+   char        t_ready;                     /* task line checks out           */
+   int         t_recdno;                    /* task line number in crontab    */
+   char        t_schedule  [LEN_RECD];      /* task schedule requested        */
+   char        t_tracker   [LEN_NAME];      /* task name                      */
+   char        t_flags     [LEN_NAME];      /* task behavior flags            */
+   char        t_command   [LEN_RECD];      /* task command to execute        */
    /*---(working variables)----*/
    char        parsed      [LEN_FIELD];     /* representation of the results of parsing  */
    long        fast_beg;                    /* current fast list start        */
@@ -800,7 +801,7 @@ char        file_parse_name         (cchar* a_file, cchar a_loc);
 tLINE*      line__new               (void);
 char        line__populate          (tLINE *a_line);
 char        line_create             (void);
-char        line_retrieve           (void);
+char        line_parse              (void);
 
 
 

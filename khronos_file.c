@@ -58,14 +58,14 @@ file_create             (void)
    /*---(defenses)-----------------------*/
    DEBUG_INPT   yLOG_char    ("f_ready"   , my.f_ready);
    --rce;  if (my.f_ready != 'y') {
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(create data)--------------------*/
    x_file = file__new ();
    DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
    --rce;  if (x_file == NULL) {
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(populate)-----------------------*/
@@ -77,7 +77,7 @@ file_create             (void)
    rc = yDLST_list_create (x_file->title, x_file);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(complete)-----------------------*/
@@ -397,12 +397,12 @@ file__unit              (char *a_question, int a_num)
       snprintf (unit_answer, LEN_TEXT, "FILE count       : %d", yDLST_list_count ());
    }
    else if (strcmp (a_question, "entry"   )        == 0) {
-      x_file = (tFILE *) yDLST_list_entry (a_num);
+      x_file = (tFILE *) yDLST_list_entry (a_num, &c);
       if (x_file != NULL) {
          sprintf (t, "[%s]", x_file->title);
-         snprintf (unit_answer, LEN_TEXT, "FILE entry  (%2d) : %2d%-37.37s  %4d", a_num, strlen (x_file->title), t, x_file->uid);
+         snprintf (unit_answer, LEN_TEXT, "FILE entry  (%2d) : %2d%-30.30s  %4d  %d", a_num, strlen (x_file->title), t, x_file->uid, c);
       } else {
-         snprintf (unit_answer, LEN_TEXT, "FILE entry  (%2d) :  0[]                                       -1", a_num);
+         snprintf (unit_answer, LEN_TEXT, "FILE entry  (%2d) :  0[]                                -1  0", a_num);
       }
    }
    /*---(complete)-----------------------*/

@@ -167,6 +167,7 @@ PROG_init          (void)
    nfast    = 0;
    nproc    = 0;
    my.user_mode = MODE_DAEMON;
+   rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
    rc = yPARSE_delimiters  ("§");
    /*---(complete)-----------------------*/
@@ -392,6 +393,7 @@ PROG_end           (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    int   rc = 0;
+   yDLST_wrap ();
    rc = setuid(my.uid);
    printf("\n");
    /*---(complete)-----------------------*/
@@ -445,13 +447,14 @@ prog__unit_files   (void)
 char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_quiet   (void)
 {
-   char       *x_args [1]  = { "khronos" };
-   yURG_logger    (1, x_args);
+   int         x_argc      = 1;
+   char       *x_argv [1]  = { "khronos" };
+   yURG_logger    (x_argc, x_argv);
    PROG_init      ();
-   yURG_urgs      (1, x_args);
+   yURG_urgs      (x_argc, x_argv);
    PROG_whoami    ();
    prog__unit_files ();
-   PROG_args      (1, x_args);
+   PROG_args      (x_argc, x_argv);
    PROG_begin     ();
    PROG_final     ();
    my.user_mode = MODE_UNIT;
@@ -461,13 +464,14 @@ prog__unit_quiet   (void)
 char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_loud    (void)
 {
-   char       *x_args [2]  = { "khronos_unit", "@@kitchen"    };
-   yURG_logger    (2, x_args);
+   int         x_argc      = 5;
+   char       *x_argv [5]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched"  };
+   yURG_logger    (x_argc, x_argv);
    PROG_init      ();
-   yURG_urgs      (2, x_args);
+   yURG_urgs      (x_argc, x_argv);
    PROG_whoami    ();
    prog__unit_files ();
-   PROG_args      (2, x_args);
+   PROG_args      (x_argc, x_argv);
    PROG_begin     ();
    PROG_final     ();
    my.user_mode = MODE_UNIT;

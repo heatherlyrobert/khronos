@@ -13,7 +13,7 @@ data_assimilate         (void)
    rc = file_create ();
    DEBUG_INPT   yLOG_value   ("file"      , rc);
    --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(open file)----------------------*/
@@ -21,27 +21,27 @@ data_assimilate         (void)
    rc = yPARSE_open_in (my.full);
    DEBUG_INPT   yLOG_value   ("open"      , rc);
    --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(lines)--------------------------*/
    while (rc >= 0) {
-      rc = yPARSE_read (&my.recdno, NULL);
+      rc = yPARSE_read (&my.t_recdno, NULL);
       DEBUG_INPT   yLOG_value   ("yparse"    , rc);
       --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      rc = line_retrieve ();
-      DEBUG_INPT   yLOG_value   ("data"      , rc);
+      rc = line_parse  ();
+      DEBUG_INPT   yLOG_value   ("parse"     , rc);
       --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
       rc = line_create  ();
       DEBUG_INPT   yLOG_value   ("data"      , rc);
       --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
    }
@@ -49,7 +49,7 @@ data_assimilate         (void)
    rc = yPARSE_close_in ();
    DEBUG_INPT   yLOG_value   ("close"     , rc);
    --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(complete)-----------------------*/
