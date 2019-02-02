@@ -434,6 +434,13 @@ prog__unit_files   (void)
    snprintf (my.name_locker , 200, "%s%s", "/tmp/" , FILE_LOCK);
    snprintf (my.name_exec   , 200, "%s%s", "/tmp/" , FILE_EXEC);
    snprintf (my.name_status , 200, "%s%s", "/tmp/" , FILE_STATUS);
+   chdir  ("/tmp");
+   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_USER   );
+   system  (x_cmd);
+   rmdir  (DIR_UNIT_USER);
+   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_CENTRAL);
+   system  (x_cmd);
+   rmdir  (DIR_UNIT_CENTRAL);
    strlcpy (my.dir_central, DIR_UNIT_CENTRAL, LEN_PATH);
    sprintf (x_cmd, "mkdir %s > /dev/null", DIR_UNIT_CENTRAL);
    system  (x_cmd);

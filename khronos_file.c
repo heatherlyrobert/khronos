@@ -85,6 +85,267 @@ file_create             (void)
    return 0;
 }
 
+char
+file_destroy            (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tFILE      *x_file      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defenses)-----------------------*/
+   DEBUG_INPT   yLOG_char    ("f_ready"   , my.f_ready);
+   --rce;  if (my.f_ready != 'y') {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(destroy list)-------------------*/
+   rc = yDLST_list_destroy (my.f_name);
+   DEBUG_INPT   yLOG_value   ("destroy"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      handling employment                     ----===*/
+/*====================------------------------------------====================*/
+static void  o___EMPLOYMENT______o () { return; }
+
+char
+file_assimilate         (void)
+{
+   /*---(locals)-----------+-----------+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(create file)--------------------*/
+   rc = file_create ();
+   DEBUG_INPT   yLOG_value   ("file"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(open file)----------------------*/
+   DEBUG_INPT  yLOG_info    ("my.full"   , my.full);
+   rc = yPARSE_open_in (my.full);
+   DEBUG_INPT   yLOG_value   ("open"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(lines)--------------------------*/
+   while (rc >= 0) {
+      rc = yPARSE_read (&my.t_recdno, NULL);
+      DEBUG_INPT   yLOG_value   ("yparse"    , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      rc = line_parse  ();
+      DEBUG_INPT   yLOG_value   ("parse"     , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      rc = line_create  ();
+      DEBUG_INPT   yLOG_value   ("data"      , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(close file)---------------------*/
+   rc = yPARSE_close_in ();
+   DEBUG_INPT   yLOG_value   ("close"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      handling retirement                     ----===*/
+/*====================------------------------------------====================*/
+static void  o___RETIREMENT______o () { return; }
+
+int
+file__retire_prune      (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   int         x_running   =    0;
+   tLINE      *x_line      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check all lines)----------------*/
+   x_line = yDLST_line_seek (YDLST_HEAD);
+   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+   while (x_line != NULL) {
+      /*---(check running)---------------*/
+      if (x_line->rpid > 1) {
+         DEBUG_INPT   yLOG_note    ("found running process");
+         ++x_running;
+         x_line = yDLST_line_seek (YDLST_NEXT);
+         DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+         continue;
+      }
+      /*---(destroy inactive)------------*/
+      rc = yDLST_line_destroy (x_line->tracker);
+      DEBUG_INPT   yLOG_value   ("destroy"   , rc);
+      if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(start fresh)-----------------*/
+      x_running = 0;
+      x_line = yDLST_line_seek (YDLST_HEAD);
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return x_running;
+}
+
+char
+file_retire_scan        (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   int         x_running   =    0;
+   char        x_replace   =  '-';
+   tFILE      *x_file      = NULL;
+   tLINE      *x_line      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check all lines)----------------*/
+   x_file = yDLST_list_seek (YDLST_HEAD);
+   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+   while (x_file != NULL) {
+      /*---(check for active)------------*/
+      if (x_file->retire == '-') {
+         x_file = yDLST_list_seek (YDLST_NEXT);
+         DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+         continue;
+      }
+      /*---(set replace flag)------------*/
+      if (x_file->retire == 'R')  x_replace = 'y';
+      else                        x_replace = '-';
+      /*---(prune lines)-----------------*/
+      x_running = file__retire_prune ();
+      DEBUG_INPT   yLOG_value   ("x_running" , x_running);
+      if (x_running < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(still running)---------------*/
+      x_running = file__retire_prune ();
+      if (x_running > 0) {
+         DEBUG_INPT   yLOG_note    ("still has running jobs");
+         x_file = yDLST_list_seek (YDLST_NEXT);
+         DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+         continue; 
+      }
+      /*---(ready to destroy)------------*/
+      rc = file_destroy ();
+      DEBUG_INPT   yLOG_value   ("destroy"   , x_running);
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(replace)---------------------*/
+      if (x_replace == 'R') {
+         DEBUG_INPT   yLOG_note    ("must reload the file");
+      }
+      /*---(start again)-----------------*/
+      x_file = yDLST_list_seek (YDLST_HEAD);
+      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+file_delete             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tFILE      *x_file      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defenses)-----------------------*/
+   DEBUG_INPT   yLOG_char    ("f_ready"   , my.f_ready);
+   --rce;  if (my.f_ready != 'y') {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(wipe the ext files)-------------*/
+   tabs_clear_extfiles ();
+   /*---(find list)----------------------*/
+   x_file = yDLST_list_find (my.f_name);
+   DEBUG_INPT   yLOG_point   ("find"      , x_file);
+   if (x_file == NULL) {
+      DEBUG_INPT   yLOG_note    ("crontab is not installed, request complete");
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(retire)-------------------------*/
+   DEBUG_INPT   yLOG_note    ("marked retired, start retirement process");
+   x_file->retire = 'y';
+   rc = file_retire_scan ();
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+file_request            (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tFILE      *x_file      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defenses)-----------------------*/
+   DEBUG_INPT   yLOG_char    ("f_ready"   , my.f_ready);
+   --rce;  if (my.f_ready != 'y') {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(wipe the ext files)-------------*/
+   tabs_clear_extfiles ();
+   /*---(find list)----------------------*/
+   x_file = yDLST_list_find (my.f_name);
+   DEBUG_INPT   yLOG_point   ("find"      , x_file);
+   if (x_file == NULL) {
+      DEBUG_INPT   yLOG_note    ("no existing file, assimilate now");
+      file_assimilate ();
+   }
+   DEBUG_INPT   yLOG_note    ("existing file, assimilate after retirement");
+   x_file->retire = 'R';
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
 
 
 
@@ -392,6 +653,9 @@ file__unit              (char *a_question, int a_num)
    }
    else if (strcmp (a_question, "ext"     )        == 0) {
       snprintf (unit_answer, LEN_TEXT, "FILE ext         : %2d[%.35s]", strlen (my.f_ext), my.f_ext);
+   }
+   else if (strcmp (a_question, "full"          )  == 0) {
+      snprintf (unit_answer, LEN_TEXT, "FILE full        : %2d[%.35s]", strlen (my.f_full), my.f_full);
    }
    else if (strcmp (a_question, "count"   )        == 0) {
       snprintf (unit_answer, LEN_TEXT, "FILE count       : %d", yDLST_list_count ());

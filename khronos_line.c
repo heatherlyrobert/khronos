@@ -29,18 +29,32 @@ line__new               (void)
       DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
       return NULL;
    }
-   /*---(wipe)---------------------------*/
-   DEBUG_INPT   yLOG_snote   ("wipe");
+   /*---(master)-------------------------*/
+   DEBUG_INPT   yLOG_snote   ("master");
    strlcpy (x_new->tracker, "n/a", LEN_NAME);
    x_new->recdno      =    0;
    strlcpy (x_new->command, ""   , LEN_NAME);
-   x_new->retire      =  '-';
-   x_new->rpid        =    0;
+   /*---(working)--------------*/
+   DEBUG_INPT   yLOG_snote   ("working");
+   x_new->dur         =    0;
+   x_new->dur_min     =    0;
+   x_new->dur_max     = 1000;    
+   x_new->rpid        =   -1;
+   x_new->start       =    0;
+   /*---(flags)----------------*/
+   DEBUG_INPT   yLOG_snote   ("flags");
    x_new->importance  =  '-';
-   x_new->limit       =  '-';
-   x_new->flag3       =  '-';
-   x_new->flag4       =  '-';
-   x_new->flag5       =  '-';
+   x_new->concern     =  '-';
+   x_new->lower       =  '-';
+   x_new->upper       =  '-';
+   x_new->delay       =  '-';
+   /*---(feedback)-------------*/
+   DEBUG_INPT   yLOG_snote   ("feedback");
+   x_new->attempts    =    0;
+   x_new->failures    =    0;
+   x_new->last_rpid   =   -1;
+   x_new->last_time   =    0;
+   x_new->last_exit   =    0;
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_sexit   (__FUNCTION__);
    return x_new;
@@ -56,7 +70,7 @@ line__populate          (tLINE *a_line)
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(tracker)---------------------*/
    DEBUG_INPT   yLOG_info    ("tracker"   , my.t_tracker);
-   strlcpy (a_line->tracker, my.t_tracker, LEN_NAME);
+   strlcpy (a_line->tracker, my.t_tracker, LEN_TRACKER);
    /*---(parse schedule)-----------------*/
    DEBUG_INPT   yLOG_info    ("t_sched"   , my.t_schedule);
    rc = ySCHED_parse (NULL, my.t_schedule);
@@ -65,6 +79,12 @@ line__populate          (tLINE *a_line)
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(flags)-----------------------*/
+   a_line->importance = my.t_flags [0];
+   a_line->concern    = my.t_flags [2];
+   a_line->lower      = my.t_flags [4];
+   a_line->upper      = my.t_flags [6];
+   a_line->delay      = my.t_flags [8];
    /*---(save scheduling info)--------*/
    rc = ySCHED_save (&a_line->sched);
    DEBUG_INPT   yLOG_value   ("save_rc"   , rc);
@@ -72,15 +92,39 @@ line__populate          (tLINE *a_line)
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(flags)-----------------------*/
-   a_line->importance = my.t_flags [0];
-   a_line->limit      = my.t_flags [2];
-   a_line->flag3      = my.t_flags [4];
-   a_line->flag4      = my.t_flags [6];
-   a_line->flag5      = my.t_flags [8];
+   a_line->dur        = a_line->sched.dur;
+   DEBUG_INPT   yLOG_value   ("dur"       , a_line->dur);
+   if (a_line->dur > 0) {
+      switch (a_line->lower) {
+      case '9' :  a_line->dur_min = a_line->dur *  0.90;   break;
+      case '8' :  a_line->dur_min = a_line->dur *  0.80;   break;
+      case '7' :  a_line->dur_min = a_line->dur *  0.70;   break;
+      case '6' :  a_line->dur_min = a_line->dur *  0.60;   break;
+      case 'h' :  a_line->dur_min = a_line->dur *  0.50;   break;
+      case 'q' :  a_line->dur_min = a_line->dur *  0.25;   break;
+      case 't' :  a_line->dur_min = a_line->dur *  0.10;   break;
+      case '-' :  a_line->dur_min = 0;                     break;
+      default  :  a_line->dur_min = 0;                     break;
+      }
+      switch (a_line->upper) {
+      case '1' :  a_line->dur_max = a_line->dur *  1.10;   break;
+      case '2' :  a_line->dur_max = a_line->dur *  1.20;   break;
+      case '3' :  a_line->dur_max = a_line->dur *  1.30;   break;
+      case '4' :  a_line->dur_max = a_line->dur *  1.40;   break;
+      case 'H' :  a_line->dur_max = a_line->dur *  1.50;   break;
+      case 'D' :  a_line->dur_max = a_line->dur *  2.00;   break;
+      case 'T' :  a_line->dur_max = a_line->dur *  3.00;   break;
+      case 'Q' :  a_line->dur_max = a_line->dur *  4.00;   break;
+      case 'X' :  a_line->dur_max = a_line->dur * 10.00;   break;
+      case '-' :  a_line->dur_max = 1000;                  break;
+      default  :  a_line->dur_max = 1000;                  break;
+      }
+   }
+   DEBUG_INPT   yLOG_value   ("dur_min"   , a_line->dur_min);
+   DEBUG_INPT   yLOG_value   ("dur_max"   , a_line->dur_max);
    /*---(command)---------------------*/
    DEBUG_INPT   yLOG_info    ("command"   , my.t_command);
-   strlcpy (a_line->command, my.t_command, LEN_RECD);
+   strlcpy (a_line->command, my.t_command, LEN_COMMAND);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -141,10 +185,10 @@ line_parse              (void)
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
    my.t_ready = '-';
-   strlcpy (my.t_tracker , "n/a"      , LEN_NAME);
+   strlcpy (my.t_tracker , "n/a"      , LEN_TRACKER);
    strlcpy (my.t_schedule, ""         , LEN_RECD);
-   strlcpy (my.t_flags   , "- - - - -", LEN_NAME);
-   strlcpy (my.t_command , ""         , LEN_RECD);
+   strlcpy (my.t_flags   , "- - - - -", LEN_FLAGS);
+   strlcpy (my.t_command , ""         , LEN_COMMAND);
    /*---(field count)--------------------*/
    rc = yPARSE_ready (&x_fields);
    DEBUG_INPT   yLOG_value   ("ready"     , rc);
@@ -176,9 +220,9 @@ line_parse              (void)
       x_pos = strldpos (x_recd, ' ', 5, LEN_RECD);
       DEBUG_INPT   yLOG_value   ("x_pos"     , x_pos);
       x_recd [x_pos] = '\0';
-      strlcpy (my.t_schedule, x_recd, LEN_NAME);
+      strlcpy (my.t_schedule, x_recd, LEN_RECD);
       DEBUG_INPT   yLOG_info    ("t_schedule", my.t_schedule);
-      strlcpy (my.t_command , x_recd + x_pos + 1, LEN_NAME);
+      strlcpy (my.t_command , x_recd + x_pos + 1, LEN_COMMAND);
       DEBUG_INPT   yLOG_info    ("t_command" , my.t_command);
       my.t_ready = 'y';
       /*---(complete)-----------------------*/
@@ -212,7 +256,7 @@ line_parse              (void)
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      DEBUG_INPT   yLOG_info    ("flags"     , my.t_flags);
+      DEBUG_INPT   yLOG_info    ("t_flags"   , my.t_flags);
    }
    /*---(command)------------------------*/
    rc = yPARSE_popstr  (my.t_command);

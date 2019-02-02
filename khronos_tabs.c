@@ -3,7 +3,7 @@
 
 
 char
-tabs_set_path           (cchar *a_user)
+tabs_set_path           (cchar *a_user, char a_scope)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -11,18 +11,27 @@ tabs_set_path           (cchar *a_user)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
-   strlcpy (my.path, "", LEN_NAME);
+   strlcpy (my.f_path, "", LEN_PATH);
    /*---(check user)---------------------*/
-   rc = file_check_user (a_user, LOC_CENTRAL);
+   if (strcmp (a_user, "ALL") == 0)  rc = file_check_user ("root", LOC_CENTRAL);
+   else                              rc = file_check_user (a_user, LOC_CENTRAL);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(build dir name)-----------------*/
-   if      (my.user_mode == MODE_UNIT)    strlcpy  (my.path, DIR_UNIT_USER, LEN_PATH);
-   else if (strcmp (a_user, "root") == 0) strlcpy  (my.path, DIR_ROOT     , LEN_PATH);
-   else                                   snprintf (my.path, LEN_PATH, "/home/%s/%s", a_user, DIR_LOCAL);
-   DEBUG_INPT   yLOG_info    ("my.path"   , my.path);
+   /*---(build local dirs)---------------*/
+   if (a_scope == LOC_LOCAL) {
+      if      (my.user_mode == MODE_UNIT)    strlcpy  (my.f_path, DIR_UNIT_USER, LEN_PATH);
+      else if (strcmp (a_user, "root") == 0) strlcpy  (my.f_path, DIR_ROOT     , LEN_PATH);
+      else                                   snprintf (my.f_path, LEN_PATH, "/home/%s/%s", a_user, DIR_LOCAL);
+   }
+   /*---(build global dirs)--------------*/
+   else if (a_scope == LOC_CENTRAL) {
+      if      (my.user_mode == MODE_UNIT)    strlcpy  (my.f_path, DIR_UNIT_CENTRAL, LEN_PATH);
+      else                                   strlcpy  (my.f_path, DIR_CENTRAL     , LEN_PATH);
+   }
+   /*---(summary)------------------------*/
+   DEBUG_INPT   yLOG_info    ("f_path"    , my.f_path);
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -67,11 +76,16 @@ tabs_global        (cchar *a_user, cchar a_action)
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(set path)-----------------------*/
-   strlcpy (my.path, my.dir_central, LEN_PATH);
+   /*---(build dir name)-----------------*/
+   rc = tabs_set_path (a_user, LOC_CENTRAL);
+   DEBUG_INPT   yLOG_value   ("set path"  , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(open dir)-----------------------*/
-   DEBUG_INPT   yLOG_info    ("dir name"  , my.path);
-   x_dir = opendir (my.path);
+   DEBUG_INPT   yLOG_info    ("f_path"    , my.f_path);
+   x_dir = opendir (my.f_path);
    DEBUG_INPT   yLOG_point   ("x_dir"     , x_dir);
    --rce;  if (x_dir == NULL) {
       RUN_USER     printf ("fatal, can not open crontab directory\n");
@@ -83,15 +97,42 @@ tabs_global        (cchar *a_user, cchar a_action)
    x_file = readdir (x_dir);
    DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
    while (x_file  != NULL) {
-      /*---(check name)-------------------------*/
+      /*---(filter by name)---------------------*/
+      DEBUG_INPT   yLOG_info    ("name"      , x_file->d_name);
       rc = file_parse_name (x_file->d_name, LOC_CENTRAL);
       DEBUG_INPT   yLOG_value   ("parse"     , rc);
-      /*---(filter files)-----------------------*/
-      if (rc >= 0  && (strcmp (a_user, "ALL") == 0 || strcmp (my.f_user, a_user) == 0)) {
+      if (rc < 0) {
+         DEBUG_INPT   yLOG_note    ("not a crontab, SKIPPING");
+         ++x_total;
+         x_file = readdir (x_dir);
+         DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+         continue;
+      }
+      /*---(root/daemon actions)----------------*/
+      if (strcmp (a_user, "ALL") == 0) {
          switch (a_action) {
-         case ACT_PURGE :  tabs_delete (x_file->d_name);     break;
-         case ACT_LIST  :  printf ("%s\n", x_file->d_name);  break;
-         case ACT_NONE  :  break;
+         case ACT_PURGE : tabs_delete (x_file->d_name);       break;
+         case ACT_LIST  : printf ("%s\n", x_file->d_name);    break;
+         case ACT_NEW   : if (strcmp (my.f_ext, "NEW") != 0)
+                             break;
+                          tabs_rename  (a_action);
+                          file_request ();
+                          break;
+         case ACT_DEL   : if (strcmp (my.f_ext, "DEL") != 0)
+                             break;
+                          tabs_rename  (a_action);
+                          file_delete  ();
+                          break;
+         case ACT_NONE  : break;
+         }
+         ++x_count;
+      }
+      /*---(normal user actions)----------------*/
+      else if (strcmp (my.f_user, a_user) == 0) {
+         switch (a_action) {
+         case ACT_PURGE : tabs_delete (x_file->d_name);   break;
+         case ACT_LIST  : printf ("%s\n", x_file->d_name); break;
+         case ACT_NONE  : break;
          }
          ++x_count;
       }
@@ -142,14 +183,14 @@ tabs_local         (cchar *a_user, cchar a_action)
       return rce;
    }
    /*---(build dir name)-----------------*/
-   rc = tabs_set_path (a_user);
+   rc = tabs_set_path (a_user, LOC_LOCAL);
    DEBUG_INPT   yLOG_value   ("set path"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(open dir)-----------------------*/
-   x_dir = opendir (my.path);
+   x_dir = opendir (my.f_path);
    DEBUG_INPT   yLOG_point   ("x_dir"      , x_dir);
    --rce;  if (x_dir == NULL) {
       RUN_USER     printf ("fatal, can not open local crontab directory\n");
@@ -273,7 +314,7 @@ tabs__remove            (cchar *a_full)
 }
 
 char       /* PURPOSE : install a local crontab file -------------------------*/
-tabs__clear             (void)
+tabs_clear_extfiles     (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -334,7 +375,7 @@ tabs__notify            (cchar *a_full)
    }
    /*---(send update)------------------------*/
    DEBUG_INPT   yLOG_note    ("send HUP signal to khronos");
-   khronos_tabs_hup ();
+   tabs_hup ();
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -346,6 +387,44 @@ tabs__notify            (cchar *a_full)
 /*===----                       crontab actions                        ----===*/
 /*====================------------------------------------====================*/
 static void      o___ACTIONS_________________o (void) {;}
+
+char
+tabs_rename             (char a_ext)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   char        x_src       [LEN_RECD]  = "";
+   char        x_cmd       [LEN_RECD]  = "";
+   /*---(temp source name)---------------*/
+   if (a_ext == ACT_NEW) {
+      snprintf (x_src, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.f_user, my.f_desc);
+   } else {
+      snprintf (x_src, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.f_user, my.f_desc);
+   }
+   DEBUG_INPT   yLOG_info    ("x_src"     , x_src);
+   /*---(update naming)------------------*/
+   strlcpy  (my.f_ext , ""      , LEN_ACT);
+   snprintf (my.f_name, LEN_NAME, "%s.%s", my.f_user, my.f_desc);
+   snprintf (my.f_full, LEN_RECD, "%s%s.%s", my.dir_central, my.f_user, my.f_desc);
+   /*---(move file)--------------------------*/
+   snprintf (x_cmd, LEN_RECD, "mv %s %s", x_src, my.f_full);
+   DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
+   rc = system   (x_cmd);
+   DEBUG_INPT   yLOG_value   ("system"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_value   ("wifexited" , WIFEXITED(rc));
+   if (WIFEXITED(rc) <  0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
 
 char       /* PURPOSE : install a local crontab file -------------------------*/
 tabs_install            (cchar *a_name)
@@ -366,14 +445,14 @@ tabs_install            (cchar *a_name)
       return rce;
    }
    /*---(build dir name)-----------------*/
-   rc = tabs_set_path (my.who);
+   rc = tabs_set_path (my.who, LOC_LOCAL);
    DEBUG_INPT   yLOG_value   ("set path"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(verify source)------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s", my.path, my.f_name);
+   snprintf (x_name, LEN_RECD, "%s%s", my.f_path, my.f_name);
    DEBUG_INPT   yLOG_info    ("x_name"    , x_name);
    rc = tabs__verify  (x_name);
    DEBUG_INPT   yLOG_value   ("verify"    , rc);
@@ -384,7 +463,7 @@ tabs_install            (cchar *a_name)
    snprintf (x_full, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.who, my.f_desc);
    DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
    /*---(clear files)------------------------*/
-   rc = tabs__clear  ();
+   rc = tabs_clear_extfiles  ();
    DEBUG_INPT   yLOG_value   ("clear"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -438,7 +517,7 @@ tabs_delete             (cchar *a_name)
    snprintf (x_full, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.who, my.f_desc);
    DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
    /*---(clear files)------------------------*/
-   rc = tabs__clear  ();
+   rc = tabs_clear_extfiles  ();
    DEBUG_INPT   yLOG_value   ("clear"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -548,26 +627,42 @@ tabs_user               (cchar *a_user)
 }
 
 char
-khronos_tabs_hup        (void)
+tabs_hup                (void)
 {
    /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
    int         rc          =    0;
-   FILE       *f           = NULL;
-   int         crond_pid   =    0;
-   /*---(check for run file)--------------------*/
-   f = fopen (FILE_LOCK, "r");
-   if (f == NULL)   return -1;
-   /*---(read pid)------------------------------*/
-   rc = fscanf(f, "%d", &crond_pid);
-   if (rc < 1) {
-      printf("can not locate pid for crond\n");
-      return -1;
+   int         x_pid       =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(find khronos)--------------------------*/
+   rc = yEXEC_find ("khronos", &x_pid);
+   DEBUG_INPT   yLOG_value   ("find"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_note    ("could not execute yEXEC_find");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(close file)----------------------------*/
-   fclose(f);
+   --rce;  if (rc == 0) {
+      DEBUG_INPT   yLOG_note    ("khronos is not running in daemon mode");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   --rce;  if (x_pid <= 1) {
+      DEBUG_INPT   yLOG_note    ("did not find a valid pid for khronos");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(send signal)---------------------------*/
-   kill(crond_pid, SIGHUP);
+   rc = kill (x_pid, SIGHUP);
+   DEBUG_INPT   yLOG_value   ("sighup"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_note    ("signal could not be sent");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(complete)------------------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -615,30 +710,61 @@ static void      o___UNITTEST________________o (void) {;}
 
 char*            /*--> unit test accessor ------------------------------*/
 tabs__unit              (char *a_question, int a_num)
-{
+{ 
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   int         c           =    0;
+   DIR        *x_dir       = NULL;
+   tDIRENT    *x_file      = NULL;
+   int         x_count     =    0;
+   int         x_total     =    0;
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "TABS             : question not understood", LEN_TEXT);
    /*---(crontab name)-------------------*/
-   if      (strncmp(a_question, "file", 20)        == 0) {
+   if      (strcmp (a_question, "file"          )  == 0) {
       snprintf (unit_answer, LEN_TEXT, "TABS file        : %2d[%.35s]", strlen (my.f_name), my.f_name);
    }
-   else if (strncmp(a_question, "user", 20)        == 0) {
+   else if (strcmp (a_question, "user"          )  == 0) {
       snprintf (unit_answer, LEN_TEXT, "TABS user        : %2d[%.35s]", strlen (my.f_user), my.f_user);
    }
-   else if (strncmp(a_question, "desc", 20)        == 0) {
+   else if (strcmp (a_question, "desc"          )  == 0) {
       snprintf (unit_answer, LEN_TEXT, "TABS desc        : %2d[%.35s]", strlen (my.f_desc), my.f_desc);
    }
-   else if (strncmp(a_question, "ext" , 20)        == 0) {
+   else if (strcmp (a_question, "ext"           )  == 0) {
       snprintf (unit_answer, LEN_TEXT, "TABS ext         : %2d[%.35s]", strlen (my.f_ext), my.f_ext);
    }
-   else if (strncmp(a_question, "path", 20)        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS path        : %2d[%.35s]", strlen (my.path), my.path);
+   else if (strcmp (a_question, "path"          )  == 0) {
+      snprintf (unit_answer, LEN_TEXT, "TABS path        : %2d[%.35s]", strlen (my.f_path), my.f_path);
    }
-   else if (strncmp(a_question, "who" , 20)        == 0) {
+   else if (strcmp (a_question, "who"           )  == 0) {
       snprintf (unit_answer, LEN_TEXT, "TABS who         : %2d[%.35s]", strlen (my.who), my.who);
    }
-   else if (strncmp(a_question, "uid" , 20)        == 0) {
+   else if (strcmp (a_question, "uid"           )  == 0) {
       snprintf (unit_answer, LEN_TEXT, "TABS uid         : %d"        , my.uid);
+   }
+   else if (strcmp (a_question, "entry"         )  == 0) {
+      /*---(find entry)---------------------*/
+      x_dir  = opendir (my.dir_central);
+      if (x_dir == NULL) {
+         snprintf (unit_answer, LEN_TEXT, "TABS entry  (%2d) : can not open dir", a_num);
+         return unit_answer;
+      }
+      x_file = readdir (x_dir);
+      while (x_file != NULL) {
+         rc = file_parse_name (x_file->d_name, LOC_CENTRAL);
+         if (rc >= 0)  {
+            if (c >= a_num)  break;
+            ++c;
+         }
+         x_file = readdir (x_dir);
+      }
+      if (x_file != NULL) {
+         snprintf (unit_answer, LEN_TEXT, "TABS entry  (%2d) : [%s]"        , a_num, x_file->d_name);
+      } else {
+         snprintf (unit_answer, LEN_TEXT, "TABS entry  (%2d) : []"          , a_num);
+      }
+      rc = closedir (x_dir);
    }
    /*---(complete)-----------------------*/
    return unit_answer;

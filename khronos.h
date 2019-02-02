@@ -370,8 +370,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.4b"
-#define VER_TXT   "lines moved to yDLST including unit testing"
+#define VER_NUM   "1.4c"
+#define VER_TXT   "found brutal error in tabs_hup that blew up the system >:["
 
 
 
@@ -406,25 +406,25 @@
 #include  <ctype.h>
 
 /*---(communcation files)---------------------------------------*/
-#define     DIR_CONF         "/etc/"
-#define     DIR_RUN          "/var/run/"
-#define     DIR_LOG          "/var/log/"
-#define     DIR_YLOG         "/var/log/yLOG/"
-#define     DIR_YHIST        "/var/log/yLOG.historical/"
-#define     DIR_ROOT         "/home/machine/crontabs/"
-#define     DIR_LOCAL        "c_quani/crontabs/"
-#define     DIR_CENTRAL      "/var/spool/crontabs/"
+#define     DIR_CONF                "/etc/"
+#define     DIR_RUN                 "/var/run/"
+#define     DIR_LOG                 "/var/log/"
+#define     DIR_YLOG                "/var/log/yLOG/"
+#define     DIR_YHIST               "/var/log/yLOG.historical/"
+#define     DIR_ROOT                "/home/machine/crontabs/"
+#define     DIR_LOCAL               "c_quani/crontabs/"
+#define     DIR_CENTRAL             "/var/spool/crontabs/"
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 #define     DIR_UNIT_CENTRAL        "/tmp/khronos_test/"
 #define     DIR_UNIT_USER           "/tmp/khronos_test/user/"
 
 
-#define    FILE_LOCK     "khronos.pid"
-#define    FILE_PULSE    "khronos.heartbeat"
-#define    FILE_WATCH    "khronos.interrun_monitoring"
-#define    FILE_EXEC     "khronos.execution_feedback"
-#define    FILE_STATUS   "khronos.status_reporting"
+#define     FILE_LOCK               "khronos.pid"
+#define     FILE_PULSE              "khronos.heartbeat"
+#define     FILE_WATCH              "khronos.interrun_monitoring"
+#define     FILE_EXEC               "khronos.execution_feedback"
+#define     FILE_STATUS             "khronos.status_reporting"
 
 #define     LOC_CENTRAL     'C'
 #define     LOC_LOCAL       'L'
@@ -435,24 +435,39 @@
 #define     ACT_LIST        'l'
 #define     ACT_INST        'i'
 #define     ACT_NONE        '-'
-#define     ACT_ALL         "pli-"
+#define     ACT_NEW         'N'
+#define     ACT_DEL         'D'
+#define     ACT_ALL         "pliND-"
 
 /*---(work files and directories)-------------------------------*/
 #define    CRONTABS      "/var/spool/crontabs"
 #define    PATH          "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
 #define    SHELL         "/bin/dash"
 
-#define     LEN_TRACKER     16     /* max title field  */
+
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+
+#define     LEN_RECD          2000 /* heatherly standard to slow hacker BS    */
+
+#define     LEN_PATH           300 /* heatherly standard to slow hacker BS    */
+
+#define     LEN_NAME            78 /* max crontab name                        */
+#define     LEN_USER            21 /* max user field                          */
+#define     LEN_DESC            51 /* max desc field                          */
+#define     LEN_ACT              5 /* max desc field                          */
+
+#define     LEN_TRACKER         30 /* max tack title field                    */
+#define     LEN_COMMAND        250 /* heatherly standard to slow hacker BS    */
+#define     LEN_FLAGS           10 /* tracking and control flags              */
+
+
+
+
 #define     LEN_COMMENT     60     /* max comment field*/
-#define     LEN_USER        21     /* max user field   */
-#define     LEN_DESC        51     /* max desc field   */
-#define     LEN_NAME        72     /* max crontab name */
 #define     LEN_FIELD      100     /* max text field   */
 #define     LEN_LINE      2000     /* max crontab line */
 #define     LEN_CMD        500     /* max command len  */
 #define     LEN_TEXT      2000
-#define     LEN_RECD      2000
-#define     LEN_PATH       300
 #define     LEN_LONG       500
 #define     LEN_ACTION       5
 
@@ -466,6 +481,9 @@
 #define    RUN_DAEMON    if (my.user_mode == MODE_DAEMON) 
 #define    RUN_USER      if (my.user_mode == MODE_USER) 
 
+#define    FILE_ACTIVE   '-'
+#define    FILE_RETIRE   'y'
+#define    FILE_REPLACE  'R'
 
 
 
@@ -508,13 +526,13 @@ struct cACCESSOR
    char        updates;            /* bool : 0=normal, 1=quiet                */
    char        user_mode;          /* interactive, daemon, or unittest        */
    /*---(files)----------------*/
-   char        dir_central  [200]; /* crontabs global directory               */
-   char        dir_local    [200]; /* crontabs local directory                */
-   char        name_pulser  [200]; /* pulser file name                        */
-   char        name_watcher [200]; /* watcher file name                       */
-   char        name_locker  [200]; /* run lock file name                      */
-   char        name_exec    [200]; /* execution file name                     */
-   char        name_status  [200]; /* status update file name                 */
+   char        dir_central  [LEN_PATH]; /* crontabs global directory               */
+   char        dir_local    [LEN_PATH]; /* crontabs local directory                */
+   char        name_pulser  [LEN_PATH]; /* pulser file name                        */
+   char        name_watcher [LEN_PATH]; /* watcher file name                       */
+   char        name_locker  [LEN_PATH]; /* run lock file name                      */
+   char        name_exec    [LEN_PATH]; /* execution file name                     */
+   char        name_status  [LEN_PATH]; /* status update file name                 */
    /*---(pulse)----------------*/
    char        pulse_time   [ 50]; /* last time string written to pulse       */
    char        pulse_begin  [ 50]; /* start of this cron run as string        */
@@ -528,23 +546,25 @@ struct cACCESSOR
    int         ppid;               /* parent process id of khronos            */
    int         sid;                /* session id of khronos                   */
    /*---(files)----------------*/
-   char        name        [LEN_NAME];      /* name of the current crontab    */
-   char        path        [LEN_PATH];      /* crontab user local dir         */
+   char        f_path      [LEN_PATH];      /* crontab file path              */
    char        f_ready;                     /* crontab name checks out        */
    char        f_name      [LEN_NAME];      /* crontab file name              */
    char        f_user      [LEN_USER];      /* crontab user name              */
-   int         f_uid;                       /* user udi of person who called khronos   */
    char        f_desc      [LEN_DESC];      /* crontab description            */
-   char        f_ext       [LEN_ACTION];    /* crontab extention              */
+   int         f_uid;                       /* crontab execution uid          */
+   char        f_ext       [LEN_ACT];       /* crontab extention              */
+   char        f_full      [LEN_RECD];      /* crontab fully qualified name   */
+   /*---(file deprecated)------*/
+   char        name        [LEN_NAME];      /* name of the current crontab    */
    char        action      [LEN_ACTION];    /* crontab action requested       */
    char        full        [LEN_RECD];      /* full name (path and all)       */
    /*---(lines)----------------*/
    char        t_ready;                     /* task line checks out           */
    int         t_recdno;                    /* task line number in crontab    */
    char        t_schedule  [LEN_RECD];      /* task schedule requested        */
-   char        t_tracker   [LEN_NAME];      /* task name                      */
-   char        t_flags     [LEN_NAME];      /* task behavior flags            */
-   char        t_command   [LEN_RECD];      /* task command to execute        */
+   char        t_tracker   [LEN_TRACKER];   /* task name                      */
+   char        t_flags     [LEN_FLAGS];     /* task behavior flags            */
+   char        t_command   [LEN_COMMAND];   /* task command to execute        */
    /*---(working variables)----*/
    char        parsed      [LEN_FIELD];     /* representation of the results of parsing  */
    long        fast_beg;                    /* current fast list start        */
@@ -560,23 +580,39 @@ extern    struct cACCESSOR my;
 
 
 struct cFILE {
+   /*---(master)---------------*/
    char        title       [LEN_NAME];      /* name of the cronfile           */
    int         uid;                         /* execution user uid             */
+   /*---(working)--------------*/
    char        retire;                      /* marked for retirement          */
+   /*---(done)-----------------*/
 };
 
 struct cLINE {
+   /*---(master)---------------*/
    char        tracker     [LEN_NAME];      /* description of task            */
    int         recdno;                      /* line number in crontab         */
    tSCHED      sched;                       /* schedule structure             */
    char        command     [LEN_RECD];      /* shell command                  */
-   char        retire;                      /* marked for retirement          */
-   char        rpid;                        /* pid if executing               */
+   /*---(working)--------------*/
+   int         dur;                         /* duration from ysched           */
+   int         dur_min;                     /* calculated min duration        */
+   int         dur_max;                     /* calculated max duration        */
+   int         rpid;                        /* pid if executing               */
+   int         start;                       /* time started                   */
+   /*---(flags)----------------*/
    char        importance;                  /* on a H-M-L scale               */
-   char        limit;                       /* time limit for run             */
-   char        flag3;                       /* tbd                            */
-   char        flag4;                       /* tbd                            */
-   char        flag5;                       /* tbd                            */
+   char        concern;                     /* notify after ? failures        */
+   char        lower;                       /* lower limit on duration        */
+   char        upper;                       /* upper limit on duration        */
+   char        delay;                       /* delay handling flag            */
+   /*---(feedback)-------------*/
+   int         attempts;                    /* number of times launched       */
+   int         failures;                    /* number of times ended well     */
+   int         last_rpid;                   /* last rpid used                 */
+   long        last_time;                   /* timestamp of last run          */
+   int         last_exit;                   /* return code of last run        */
+   /*---(done)-----------------*/
 };
 
 
@@ -762,7 +798,7 @@ char*     unit_accessor (char*, int);
 
 /*===[[ KHRONOS_TABS.C ]]======================================*/
 /*---(names)-----------*/
-char        tabs_set_path           (cchar *a_user);
+char        tabs_set_path           (cchar *a_user, char a_scope);
 /*---(review)----------*/
 char        tabs_global             (cchar* a_user, cchar a_action);
 char        tabs_local              (cchar* a_user, cchar a_action);
@@ -770,14 +806,15 @@ char        tabs_local              (cchar* a_user, cchar a_action);
 char        tabs__verify            (cchar *a_full);
 char        tabs__remove            (cchar *a_full);
 /*---actions-----------*/
+char        tabs_rename             (char a_ext);
+char        tabs_clear_extfiles     (void);
 char        tabs_user               (cchar *a_user);
 char        tabs_install            (cchar *a_name);
 char        tabs_delete             (cchar *a_name);
 char        crontab_test       (cchar*);
+char        tabs_hup                (void);
 /*---specialty---------*/
 char        crontab_help       (void);
-char        crontab_user       (cchar*);
-char        khronos_tabs_hup        (void);
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---stubs-------------*/
 char        tabs_cat_stub           (void);
@@ -793,6 +830,8 @@ char        data_retire             (void);
 
 tFILE*      file__new               (void);
 char        file_create             (void);
+char        file_destroy            (void);
+char        file_assimilate         (void);
 char        file_check_user         (cchar *a_user, cchar a_loc);
 char        file_check_desc         (cchar *a_desc);
 char        file_check_ext          (cchar *a_ext, cchar a_loc);
