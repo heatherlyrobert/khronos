@@ -4,7 +4,8 @@
 
  *   focus         : (SA) system_admin
  *   niche         : (js) job_scheduler
- *   heritage      : khronos-ageraton  (primeval god of time, not titan cronos)
+ *   heritage      : khronos-ageraton  (protogenoi of creation and unyielding time)
+ *   imagery       : winged serpent (drakon) with three heads -- bull, lion, man
  *   purpose       : provide consistent, reliable, time-based job scheduling
  *
  *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
@@ -370,8 +371,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.4c"
-#define VER_TXT   "found brutal error in tabs_hup that blew up the system >:["
+#define VER_NUM   "1.4d"
+#define VER_TXT   "retirements working as well as NEW and DEL in unit testing"
 
 
 
@@ -435,9 +436,11 @@
 #define     ACT_LIST        'l'
 #define     ACT_INST        'i'
 #define     ACT_NONE        '-'
+#define     ACT_HUP         'H'
+#define     ACT_ALL         "pliH-"
+
 #define     ACT_NEW         'N'
 #define     ACT_DEL         'D'
-#define     ACT_ALL         "pliND-"
 
 /*---(work files and directories)-------------------------------*/
 #define    CRONTABS      "/var/spool/crontabs"
@@ -600,6 +603,7 @@ struct cLINE {
    int         dur_max;                     /* calculated max duration        */
    int         rpid;                        /* pid if executing               */
    int         start;                       /* time started                   */
+   char        retire;                      /* marked for retirement          */
    /*---(flags)----------------*/
    char        importance;                  /* on a H-M-L scale               */
    char        concern;                     /* notify after ? failures        */
@@ -831,7 +835,8 @@ char        data_retire             (void);
 tFILE*      file__new               (void);
 char        file_create             (void);
 char        file_destroy            (void);
-char        file_assimilate         (void);
+char        file_retire_scan        (void);
+char        file_retire             (void);
 char        file_check_user         (cchar *a_user, cchar a_loc);
 char        file_check_desc         (cchar *a_desc);
 char        file_check_ext          (cchar *a_ext, cchar a_loc);
@@ -841,6 +846,9 @@ tLINE*      line__new               (void);
 char        line__populate          (tLINE *a_line);
 char        line_create             (void);
 char        line_parse              (void);
+char        line_assimilate         (void);
+int         line_prune              (void);
+char        line__unit_rpid         (char *a_file, char *a_line, int a_rpid);
 
 
 

@@ -41,6 +41,7 @@ line__new               (void)
    x_new->dur_max     = 1000;    
    x_new->rpid        =   -1;
    x_new->start       =    0;
+   x_new->retire      =  '-';
    /*---(flags)----------------*/
    DEBUG_INPT   yLOG_snote   ("flags");
    x_new->importance  =  '-';
@@ -276,6 +277,114 @@ line_parse              (void)
 
 
 /*====================------------------------------------====================*/
+/*===----                      handling employment                     ----===*/
+/*====================------------------------------------====================*/
+static void  o___EMPLOYMENT______o () { return; }
+
+char
+line_assimilate         (void)
+{
+   /*---(locals)-----------+-----------+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(create file)--------------------*/
+   rc = file_create ();
+   DEBUG_INPT   yLOG_value   ("file"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(open file)----------------------*/
+   DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
+   rc = yPARSE_open_in (my.f_full);
+   DEBUG_INPT   yLOG_value   ("open"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(lines)--------------------------*/
+   while (rc >= 0) {
+      rc = yPARSE_read (&my.t_recdno, NULL);
+      DEBUG_INPT   yLOG_value   ("yparse"    , rc);
+      if (rc == 0) {
+         DEBUG_INPT  yLOG_note    ("end-of-file");
+         break;
+      }
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      rc = line_parse  ();
+      DEBUG_INPT   yLOG_value   ("parse"     , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      rc = line_create  ();
+      DEBUG_INPT   yLOG_value   ("data"      , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(close file)---------------------*/
+   rc = yPARSE_close_in ();
+   DEBUG_INPT   yLOG_value   ("close"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+int
+line_prune              (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   int         x_running   =    0;
+   tLINE      *x_line      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check all lines)----------------*/
+   x_line = yDLST_line_seek (YDLST_HEAD);
+   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+   while (x_line != NULL) {
+      /*---(mark retired)----------------*/
+      x_line->retire = 'y';
+      /*---(check running)---------------*/
+      if (x_line->rpid > 1) {
+         DEBUG_INPT   yLOG_note    ("found running process");
+         ++x_running;
+         x_line = yDLST_line_seek (YDLST_NEXT);
+         DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+         continue;
+      }
+      /*---(destroy inactive)------------*/
+      rc = yDLST_line_destroy (x_line->tracker);
+      DEBUG_INPT   yLOG_value   ("destroy"   , rc);
+      if (rc < 0) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(start fresh)-----------------*/
+      x_running = 0;
+      x_line = yDLST_line_seek (YDLST_HEAD);
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return x_running;
+}
+
+
+
+/*====================------------------------------------====================*/
 /*===----                      unit test accessor                      ----===*/
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
@@ -336,6 +445,50 @@ line__unit              (char *a_question, int a_num)
    }
    /*---(complete)-----------------------*/
    return unit_answer;
+}
+
+char
+line__unit_rpid        (char *a_file, char *a_line, int a_rpid)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_running   =    0;
+   tFILE      *x_file      = NULL;
+   tLINE      *x_line      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defenses)-----------------------*/
+   DEBUG_INPT   yLOG_point   ("a_file"    , a_file);
+   --rce;  if (a_file == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_point   ("a_line"    , a_line);
+   --rce;  if (a_line == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(find list)----------------------*/
+   x_file = yDLST_list_find (a_file);
+   DEBUG_INPT   yLOG_point   ("find"      , x_file);
+   if (x_file == NULL) {
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(find list)----------------------*/
+   x_line = yDLST_line_find (a_line);
+   DEBUG_INPT   yLOG_point   ("find"      , x_line);
+   if (x_line == NULL) {
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(update rpid)--------------------*/
+   DEBUG_INPT   yLOG_value   ("a_rpid"    , a_rpid);
+   x_line->rpid = a_rpid;
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return x_running;
 }
 
 

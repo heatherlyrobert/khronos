@@ -113,15 +113,17 @@ tabs_global        (cchar *a_user, cchar a_action)
          switch (a_action) {
          case ACT_PURGE : tabs_delete (x_file->d_name);       break;
          case ACT_LIST  : printf ("%s\n", x_file->d_name);    break;
-         case ACT_NEW   : if (strcmp (my.f_ext, "NEW") != 0)
-                             break;
-                          tabs_rename  (a_action);
-                          file_request ();
-                          break;
-         case ACT_DEL   : if (strcmp (my.f_ext, "DEL") != 0)
-                             break;
-                          tabs_rename  (a_action);
-                          file_delete  ();
+         case ACT_HUP   : if (strcmp (my.f_ext, "NEW") == 0) {
+                             tabs_rename  (ACT_NEW);
+                             file_request ();
+                          }
+                          else if (strcmp (my.f_ext, "DEL") == 0) {
+                             tabs_rename  (ACT_DEL);
+                             file_retire  ();
+                          }
+                          else {
+                             --x_count;
+                          }
                           break;
          case ACT_NONE  : break;
          }
@@ -396,11 +398,17 @@ tabs_rename             (char a_ext)
    int         rc          =    0;
    char        x_src       [LEN_RECD]  = "";
    char        x_cmd       [LEN_RECD]  = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(temp source name)---------------*/
-   if (a_ext == ACT_NEW) {
+   DEBUG_INPT   yLOG_char    ("a_ext"     , a_ext);
+   --rce;  if (a_ext == ACT_NEW) {
       snprintf (x_src, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.f_user, my.f_desc);
-   } else {
+   } else if (a_ext == ACT_DEL) {
       snprintf (x_src, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.f_user, my.f_desc);
+   } else {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
    DEBUG_INPT   yLOG_info    ("x_src"     , x_src);
    /*---(update naming)------------------*/
@@ -408,7 +416,11 @@ tabs_rename             (char a_ext)
    snprintf (my.f_name, LEN_NAME, "%s.%s", my.f_user, my.f_desc);
    snprintf (my.f_full, LEN_RECD, "%s%s.%s", my.dir_central, my.f_user, my.f_desc);
    /*---(move file)--------------------------*/
-   snprintf (x_cmd, LEN_RECD, "mv %s %s", x_src, my.f_full);
+   if (a_ext == ACT_NEW) {
+      snprintf (x_cmd, LEN_RECD, "mv %s %s", x_src, my.f_full);
+   } else {
+      snprintf (x_cmd, LEN_RECD, "rm %s", x_src);
+   }
    DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
    rc = system   (x_cmd);
    DEBUG_INPT   yLOG_value   ("system"    , rc);
