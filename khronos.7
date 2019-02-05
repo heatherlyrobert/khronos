@@ -1,0 +1,109 @@
+.TH khronos 7 2010-dec "linux" "heatherly custom tools manual"
+.na
+
+.SH NAME
+khronos-ageraton - decision rationale, objectives, and overview
+
+.SH SUMMARY
+khronos is a simplified, reliable, trackable, and focused version of the
+classic posix-defined crond time-based job scheduler that strips away
+modern cruftiness and adds more visibility and maintainability.
+
+.SH SCOPE, REASONING and DECISION
+
+.B situation (S).  
+modern desktop (and many server) environments are sized for interactive peak
+loads and therefore wildly underutilized ninety-five percent of the time,
+likely fully idle over half the time.
+
+.B complication (C).  
+most system designers are not computer scientists and so tend to design
+complicated systems for interactive human use that waste a huge amount of
+resources, capability, and potential.
+
+.B answer (A).  
+deeply understand cron (and batch systems) by rebuilding it.  own it.
+expand it.  adapt it.  get dirty and figure out better ways of tracking and
+maintaining higher visibility.
+
+.B drawbacks...
+   -- many cron variations are already built, why waste the time
+   -- another system i must personally maintain
+   -- potential for broken backward compatability (at least partial)
+   -- impossible to release to others due to all my libraries
+
+.B benefits...
+   -- stay with one, rather than keep changing flavors of cron
+   -- improve daemon coding skills on a critical service
+   -- learn a ton about batch processing, and keep learning
+   -- gain the abilty to adapt rather that accept existing features
+
+.B universal technical requirements...
+   -- stay focused, small, tight, reliable, and secure
+   -- always glibc/ansi-c (can be ported and complied anywhere)
+   -- no dependencies on external code libraries, like boost
+   -- only use human maintainable, 7-bit safe, ascii streams
+   -- clear, not clever, code (maintenance after long absences)
+   -- have dedicated, maintained, automated unit testing
+   -- integrated debugging for fast problem resolution
+   -- verbose logging and status updates (never have to guess)
+   -- use secure communications between systems where required
+   -- no international, multi-language, multi-byte support (ever)
+
+.B traditional requirements accepted...
+   -- simple, ascii, human editable crontab and cron line framework
+   -- use of a /var/spool/crontabs directory to keep crontabs
+   -- elegant kerrnighan scheduling grammar (but expanded)
+   -- near posix compatibility (can do the full job on core features)
+   -- combination of interactive (crontab) and daemon (crond)
+
+.B added requirements...
+   -- short titles for jobs to help tracking
+   -- add importance to decide what to run in recovery situations
+   -- add duration expectations to control behaviour (min/max/exp)
+   -- accumulate run statistics to help adapt and tune jobs
+   -- expanded tracking details for more complex jobs
+   -- fast and efficient (we want to enable tons of automation)
+   -- ability to test/verify crontabs before actual installation
+
+.B traditional requirements rejected...
+   -- automatic email, everyone ultimately hates it (security risk)
+   -- alternate shells (we're gonna run pure posix dash)
+   -- extended shell variables (use a spartan shell environment)
+   -- run-time configuration (no, its only for us, we can update code)
+   -- special symbols for easily expressible things (@hourly, @weekly)
+   -- no -c, -e or - options to edit crontabs (untraceable)
+
+.B expanded requirements rejected...
+   -- dependency-based scheduling (like init systems provide)
+   -- event-based launches like @reboot (daemons should do this)
+   -- resource-based changes to schedules (system load or avail)
+
+.SH HERITAGE
+khronos-ageraton (unaging) is the primeval, protogenoi god of time who emerged
+self-formed at the beginning of everything.  khronos is an incorporial god
+in serpentine form (drakon) with wings on its shoulders and three heads --
+that of a man, a bull, and a lion.
+
+khronos' consort is ananke (inevitability and compulsion) who was also
+serpentine.  together they created the ordered universe and continue to
+circle it in their coils thereby driving the movement of the heavens and the
+wind/passage of time.
+
+khronos and ananke gave birth to aither (light), unbounded khaos (chasm),
+and erebos (darkness).  khronos and ananke also created the world-egg and
+split it into earth (gaia), sea (hydros), and sky (ouranos).
+
+khronos must not be confused with the titan cronos, zeus' father.
+
+.SH SEE ALSO
+this documentation is layered to provide easier navigation.
+   polymnia (6), interactive system usage and navigation
+   polymnia (7), decision rationale, objectives, and overview
+
+.SH AUTHOR
+jelloshrike at gmail dot com
+
+.SH COLOPHON
+this page is part of a documentation package meant to make use of the
+heatherly tools easier and faster.

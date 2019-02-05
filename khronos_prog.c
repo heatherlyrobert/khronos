@@ -18,7 +18,6 @@
 
 #include   "khronos.h"
 
-#define   MIN         60
 
 char          unit_answer [ LEN_TEXT ];
 
@@ -29,83 +28,41 @@ char          unit_answer [ LEN_TEXT ];
 /*====================------------------------------------====================*/
 static void      o___UTILITY_________________o (void) {;}
 
-char        /* PURPOSE : reliably wait until the next crond trigger moment    */
-wait_minute   (void)
-{
-   /* this function is impemented to perform even when signals interrupt      */
-   /*---(locals)--------------------------------*/
-   long      now       = 0;                       /* present time             */
-   long      inc       = 0;                       /* seconds to sleep         */
-   long      targ      = 0;                       /* time to reach            */
-   /*---(process)-------------------------------*/
-   now       = time(NULL);
-   while (1) {
-      inc   = MIN - (now % MIN) + 1;
-      if (inc > MIN)         break;               /* solve SIGHUP after sleep */
-      targ  = now + inc;
-      DEBUG_LOOP   yLOG_value ("sleep (s)", inc);
-      sleep(inc);
-      now       = time(NULL);
-      if (now >= targ)       break;               /* solve SIGHUP during sleep*/
-   }
-   /*---(complete)------------------------------*/
-   return 0;
-}
 
-long        /* PURPOSE : return the time at the beginning of the current hour */
-curr_hours    (void)
-{
-   long      now;
-   long      curr;
-   tTIME    *cbroke;       /* current unix broke-down date                */
-   /*> int       cyrs;         /+ current year                                +/      <* 
-    *> int       cwks;         /+ current week in the year                    +/      <* 
-    *> int       cmon;         /+ current month in the year                   +/      <* 
-    *> int       cday;         /+ current day in the month                    +/      <* 
-    *> int       cdow;         /+ current dow of the week                     +/      <*/
-   /*---(adjust for offset)--------------*/
-   now       = time(NULL);
-   curr      = now - (now % 3600);
-   cbroke    = localtime(&now);
-   /*---(set the date)-------------------*/
-   ySCHED_setdate (cbroke->tm_year - 100, cbroke->tm_mon + 1, cbroke->tm_mday);
-   return curr;
-}
-
-char
-catchup       (void)
-{
-   DEBUG_LOOP   yLOG_enter (__FUNCTION__);
-   /*---(locals)--------------------------------*/
-   long      curr      = 0;                       /* curr hour                */
-   int       min       = 0;                       /* curr minute              */
-   /*---(init)----------------------------------*/
-   my.silent = 'y';
-   /*---(main loop)-----------------------------*/
-   DEBUG_LOOP   yLOG_note ("catchup specially flagged missed jobs");
-   min       = ((my.last_end / 60) % 60) + 1;     /* start right after last   */
-   DEBUG_LOOP   yLOG_value ("first min", min);
-   /*> curr      = my.last_end - (my.last_end % (60 * 60));                           <*/
-   curr      = my.last_end;
-   while (curr < my.this_start) {
-      BASE_fast (curr);                           /* id jobs for this hour    */
-      /*---(cycle minutes)----------------------*/
-      while (min < 60 && curr <  my.this_start) {
-         DEBUG_LOOP   yLOG_value ("minute", min);
-         BASE_dispatch (min);
-         min      += 1;
-         curr     += 60;
-      }
-      if (curr >=  my.this_start) break;
-      min       = 0;
-   }
-   DEBUG_LOOP   yLOG_value ("last min", min - 1);
-   /*---(reset)---------------------------------*/
-   my.silent = 'n';
-   /*---(complete)------------------------------*/
-   DEBUG_LOOP   yLOG_exit  (__FUNCTION__);
-   return 0;
-}
+/*> char                                                                                         <* 
+ *> catchup       (void)                                                                         <* 
+ *> {                                                                                            <* 
+ *>    DEBUG_LOOP   yLOG_enter (__FUNCTION__);                                                   <* 
+ *>    /+---(locals)--------------------------------+/                                           <* 
+ *>    long      curr      = 0;                       /+ curr hour                +/             <* 
+ *>    int       min       = 0;                       /+ curr minute              +/             <* 
+ *>    /+---(init)----------------------------------+/                                           <* 
+ *>    my.silent = 'y';                                                                          <* 
+ *>    /+---(main loop)-----------------------------+/                                           <* 
+ *>    DEBUG_LOOP   yLOG_note ("catchup specially flagged missed jobs");                         <* 
+ *>    min       = ((my.last_end / 60) % 60) + 1;     /+ start right after last   +/             <* 
+ *>    DEBUG_LOOP   yLOG_value ("first min", min);                                               <* 
+ *>    /+> curr      = my.last_end - (my.last_end % (60 * 60));                           <+/    <* 
+ *>    curr      = my.last_end;                                                                  <* 
+ *>    while (curr < my.this_start) {                                                            <* 
+ *>       /+> BASE_fast (curr);                           /+ id jobs for this hour    +/   <+/   <* 
+ *>       /+---(cycle minutes)----------------------+/                                           <* 
+ *>       while (min < 60 && curr <  my.this_start) {                                            <* 
+ *>          DEBUG_LOOP   yLOG_value ("minute", min);                                            <* 
+ *>          /+> BASE_dispatch (min);                                                     <+/    <* 
+ *>          min      += 1;                                                                      <* 
+ *>          curr     += 60;                                                                     <* 
+ *>       }                                                                                      <* 
+ *>       if (curr >=  my.this_start) break;                                                     <* 
+ *>       min       = 0;                                                                         <* 
+ *>    }                                                                                         <* 
+ *>    DEBUG_LOOP   yLOG_value ("last min", min - 1);                                            <* 
+ *>    /+---(reset)---------------------------------+/                                           <* 
+ *>    my.silent = 'n';                                                                          <* 
+ *>    /+---(complete)------------------------------+/                                           <* 
+ *>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                   <* 
+ *>    return 0;                                                                                 <* 
+ *> }                                                                                            <*/
 
 
 
@@ -121,13 +78,13 @@ PROG_version       (void)
 {
    char    t [20] = "";
 #if    __TINYC__ > 0
-   strlcpy (t, "[tcc built]", 15);
+   strlcpy (t, "[tcc built  ]", 15);
 #elif  __GNUC__  > 0
-   strlcpy (t, "[gnu gcc  ]", 15);
+   strlcpy (t, "[gnu gcc    ]", 15);
 #elif  __CBANG__  > 0
-   strlcpy (t, "[cbang    ]", 15);
+   strlcpy (t, "[cbang      ]", 15);
 #else
-   strlcpy (t, "[unknown  ]", 15);
+   strlcpy (t, "[unknown    ]", 15);
 #endif
    snprintf (verstring, 100, "%s   %s : %s", t, VER_NUM, VER_TXT);
    return verstring;
@@ -152,20 +109,13 @@ PROG_init          (void)
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(begin)--------------------------*/
-   my.uid = getuid();
-   snprintf (my.dir_central , 200, "%s"  , DIR_CENTRAL);
-   snprintf (my.name_pulser , 200, "%s%s", DIR_YLOG , FILE_PULSE);
-   snprintf (my.name_watcher, 200, "%s%s", DIR_YHIST, FILE_WATCH);
-   snprintf (my.name_locker , 200, "%s%s", DIR_RUN  , FILE_LOCK);
-   snprintf (my.name_exec   , 200, "%s%s", DIR_YLOG , FILE_EXEC);
-   snprintf (my.name_status , 200, "%s%s", DIR_YLOG , FILE_STATUS);
+   snprintf (my.dir_central   , 200, "%s"  , DIR_CENTRAL);
+   snprintf (my.name_heartbeat, 200, "%s%s", DIR_YLOG , FILE_HEARTBEAT);
+   snprintf (my.name_watcher  , 200, "%s%s", DIR_YHIST, FILE_WATCH);
+   snprintf (my.name_locker   , 200, "%s%s", DIR_RUN  , FILE_LOCK);
+   snprintf (my.name_exec     , 200, "%s%s", DIR_YLOG , FILE_EXEC);
+   snprintf (my.name_status   , 200, "%s%s", DIR_YLOG , FILE_STATUS);
    my.silent  = 'n';
-   m_cfile  = 0;
-   n_cfile  = 0;
-   m_cline  = 0;
-   n_cline  = 0;
-   nfast    = 0;
-   nproc    = 0;
    my.user_mode = MODE_DAEMON;
    rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
@@ -178,52 +128,60 @@ PROG_init          (void)
 char       /* PURPOSE : figure out who launched us and how -------------------*/
 PROG_whoami        (void)
 {
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(locals)-------------------------*/
+   char        rce         =  -10;
+   int         rc          = 0;            /* generic return code                 */
    tPASSWD    *x_pass      = NULL;         /* passwd data structure               */
    int         x_len       = 0;            /* user name length                    */
-   int         rc          = 0;            /* generic return code                 */
-   /*---(begin)--------------------------*/
-   DEBUG_ARGS   printf("PROG_whoami()...\n");
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(get real uid)-------------------*/
    my.uid    = getuid();
-   DEBUG_ARGS   printf("   caller uid   = %d\n",    my.uid);
+   DEBUG_TOPS   yLOG_value   ("uid"       , my.uid);
    /*---(pull user name)-----------------*/
-   x_pass    = getpwuid(my.uid);
-   if (x_pass == NULL) {
+   x_pass    = getpwuid (my.uid);
+   DEBUG_TOPS   yLOG_point   ("x_pass"    , x_pass);
+   --rce;  if (x_pass == NULL) {
       printf("can not retreive your user information from the system\n");
-      PROG_term();
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   DEBUG_ARGS   printf("   caller name  = <<%s>>\n",    x_pass->pw_name);
+   DEBUG_TOPS   yLOG_info    ("->name"    , x_pass->pw_name);
    /*---(check user name)----------------*/
    x_len      = strllen (x_pass->pw_name, 20);
-   if (x_len < 1) {
+   DEBUG_TOPS   yLOG_value   ("x_len"     , x_len);
+   --rce;  if (x_len < 1) {
       printf("your user name can not be empty\n");
-      PROG_term();
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   if (x_len > 20) {
+   --rce;  if (x_len > 20) {
       printf("user name is too long\n");
-      PROG_term();
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
    strlcpy(my.who, x_pass->pw_name, 20);
    /*---(check for root user)--------------*/
    my.am_root = 'n';
    if (my.uid == 0)   my.am_root = 'y';
-   DEBUG_ARGS   printf("   am i root    = %c\n",    my.am_root);
+   DEBUG_TOPS   yLOG_char    ("am_root"   , my.am_root);
    /*---(change uid/permissions)-----------*/
-   if (my.am_root != 'y') {
+   --rce;  if (my.am_root != 'y') {
+      DEBUG_TOPS   yLOG_note    ("attempt to gain root (legally;)");
       rc = setuid(0);
+      DEBUG_TOPS   yLOG_value   ("setuid"    , rc);
       if (rc != 0) {
          printf("could not gain root authority\n");
-         PROG_term();
+         DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
       }
-      DEBUG_ARGS   printf("   successfully changed to root\n");
+      DEBUG_TOPS   yLOG_note    ("successfully gained root");
    }
    /*---(log pid info)---------------------*/
    my.pid  = getpid();
-   DEBUG_ARGS   printf("   current pid  = %d\n",    my.pid);
+   DEBUG_TOPS   yLOG_value   ("pid"       , my.pid);
    my.ppid = getppid();
-   DEBUG_ARGS   printf("   current ppid = %d\n",    my.ppid);
+   DEBUG_TOPS   yLOG_value   ("ppid"      , my.ppid);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -241,15 +199,14 @@ PROG_args          (int argc, char *argv[])
    char      two_arg   = 0;
    /*---(begin)--------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   DEBUG_ARGS   printf("PROG_args()...\n");
-   DEBUG_ARGS   printf("   processing %d args\n", argc);
+   DEBUG_TOPS   yLOG_value   ("argc"      , argc);
    if (argc == 1) {
-      DEBUG_ARGS   printf("   calling without args invokes the daemon\n");
+      DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
       return 0;
    }
    /*---(program name)--------------------------*/
    strlcpy(my.prog, argv[0], LEN_USER);
-   DEBUG_ARGS   printf("   prog name = <<%s>>\n\n", my.prog);
+   DEBUG_TOPS   yLOG_value   ("prog name" , my.prog);
    /*---(process)------------------------*/
    for (i = 1; i < argc; ++i) {
       a = argv[i];
@@ -273,7 +230,7 @@ PROG_args          (int argc, char *argv[])
       else if (strcmp(a, "--here"    ) == 0)    tabs_local   (my.who, 'l');
       /*---(installing)------------------*/
       else if (a[0] != '-'           )          tabs_install (a);
-      else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }
+      /*> else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }   <*/
       else if (strcmp(a, "--reload"  ) == 0)    tabs_local   (my.who, 'i');
       /*---(removing)--------------------*/
       else if (strcmp(a, "-d"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
@@ -409,31 +366,31 @@ PROG_end           (void)
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
 
-char*            /* [------] unit test accessor ------------------------------*/
-PROG_getter        (char *a_question, int a_num)
-{
-   /*---(locals)-------------------------*/
-   int       xfore  = 0, xback  = 0;  /* counts to verify doubly-linked list */
-   tCFILE   *xlist    = NULL;
-   /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "PROG_getter      : question not understood", LEN_TEXT);
-   /*---(pulser)-------------------------*/
-   if        (strncmp(a_question, "pulse_name"     , 20)   == 0) {
-      snprintf (unit_answer, LEN_TEXT, "PROG pulse name  : %.35s", my.name_pulser);
-   }
-   /*---(complete)-----------------------*/
-   return unit_answer;
-}
+/*> char*            /+ [------] unit test accessor ------------------------------+/      <* 
+ *> PROG_getter        (char *a_question, int a_num)                                      <* 
+ *> {                                                                                     <* 
+ *>    /+---(locals)-------------------------+/                                           <* 
+ *>    int       xfore  = 0, xback  = 0;  /+ counts to verify doubly-linked list +/       <* 
+ *>    tCFILE   *xlist    = NULL;                                                         <* 
+ *>    /+---(prepare)------------------------+/                                           <* 
+ *>    strlcpy  (unit_answer, "PROG_getter      : question not understood", LEN_TEXT);    <* 
+ *>    /+---(pulser)-------------------------+/                                           <* 
+ *>    if        (strncmp(a_question, "pulse_name"     , 20)   == 0) {                    <* 
+ *>       snprintf (unit_answer, LEN_TEXT, "PROG pulse name  : %.35s", my.name_pulser);   <* 
+ *>    }                                                                                  <* 
+ *>    /+---(complete)-----------------------+/                                           <* 
+ *>    return unit_answer;                                                                <* 
+ *> }                                                                                     <*/
 
 char       /*----: set up program test file locations ------------------------*/
 prog__unit_files   (void)
 {
    char        x_cmd       [LEN_RECD];
-   snprintf (my.name_pulser , 200, "%s%s", "/tmp/" , FILE_PULSE);
-   snprintf (my.name_watcher, 200, "%s%s", "/tmp/" , FILE_WATCH);
-   snprintf (my.name_locker , 200, "%s%s", "/tmp/" , FILE_LOCK);
-   snprintf (my.name_exec   , 200, "%s%s", "/tmp/" , FILE_EXEC);
-   snprintf (my.name_status , 200, "%s%s", "/tmp/" , FILE_STATUS);
+   snprintf (my.name_heartbeat, 200, "%s%s", "/tmp/" , FILE_HEARTBEAT);
+   snprintf (my.name_watcher  , 200, "%s%s", "/tmp/" , FILE_WATCH);
+   snprintf (my.name_locker   , 200, "%s%s", "/tmp/" , FILE_LOCK);
+   snprintf (my.name_exec     , 200, "%s%s", "/tmp/" , FILE_EXEC);
+   snprintf (my.name_status   , 200, "%s%s", "/tmp/" , FILE_STATUS);
    chdir  ("/tmp");
    sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_USER   );
    system  (x_cmd);

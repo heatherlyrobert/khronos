@@ -32,30 +32,38 @@ line__new               (void)
    /*---(master)-------------------------*/
    DEBUG_INPT   yLOG_snote   ("master");
    strlcpy (x_new->tracker, "n/a", LEN_NAME);
-   x_new->recdno      =    0;
+   x_new->recdno      =  my.t_recdno;
    strlcpy (x_new->command, ""   , LEN_NAME);
    /*---(working)--------------*/
    DEBUG_INPT   yLOG_snote   ("working");
    x_new->dur         =    0;
    x_new->dur_min     =    0;
-   x_new->dur_max     = 1000;    
-   x_new->rpid        =   -1;
+   x_new->dur_max     =  999;    
+   x_new->rpid        =    0;
    x_new->start       =    0;
    x_new->retire      =  '-';
    /*---(flags)----------------*/
    DEBUG_INPT   yLOG_snote   ("flags");
    x_new->importance  =  '-';
-   x_new->concern     =  '-';
+   x_new->tracking    =  '-';
    x_new->lower       =  '-';
    x_new->upper       =  '-';
    x_new->delay       =  '-';
    /*---(feedback)-------------*/
    DEBUG_INPT   yLOG_snote   ("feedback");
+   x_new->first_time  =    0;
+   x_new->since_time  =    0;
    x_new->attempts    =    0;
+   x_new->errors      =    0;
+   x_new->complete    =    0;
+   x_new->kills       =    0;
    x_new->failures    =    0;
-   x_new->last_rpid   =   -1;
+   x_new->earlies     =    0;
+   x_new->lates       =    0;
+   x_new->last_rpid   =    0;
    x_new->last_time   =    0;
-   x_new->last_exit   =    0;
+   x_new->last_dur    =    0;
+   x_new->last_rc     =    0;
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_sexit   (__FUNCTION__);
    return x_new;
@@ -82,7 +90,7 @@ line__populate          (tLINE *a_line)
    }
    /*---(flags)-----------------------*/
    a_line->importance = my.t_flags [0];
-   a_line->concern    = my.t_flags [2];
+   a_line->tracking   = my.t_flags [2];
    a_line->lower      = my.t_flags [4];
    a_line->upper      = my.t_flags [6];
    a_line->delay      = my.t_flags [8];
@@ -104,8 +112,7 @@ line__populate          (tLINE *a_line)
       case 'h' :  a_line->dur_min = a_line->dur *  0.50;   break;
       case 'q' :  a_line->dur_min = a_line->dur *  0.25;   break;
       case 't' :  a_line->dur_min = a_line->dur *  0.10;   break;
-      case '-' :  a_line->dur_min = 0;                     break;
-      default  :  a_line->dur_min = 0;                     break;
+      default  :  a_line->dur_min = a_line->dur *  0.50;   break;
       }
       switch (a_line->upper) {
       case '1' :  a_line->dur_max = a_line->dur *  1.10;   break;
@@ -117,8 +124,7 @@ line__populate          (tLINE *a_line)
       case 'T' :  a_line->dur_max = a_line->dur *  3.00;   break;
       case 'Q' :  a_line->dur_max = a_line->dur *  4.00;   break;
       case 'X' :  a_line->dur_max = a_line->dur * 10.00;   break;
-      case '-' :  a_line->dur_max = 1000;                  break;
-      default  :  a_line->dur_max = 1000;                  break;
+      default  :  a_line->dur_max = a_line->dur *  2.00;   break;
       }
    }
    DEBUG_INPT   yLOG_value   ("dur_min"   , a_line->dur_min);
@@ -382,6 +388,59 @@ line_prune              (void)
    return x_running;
 }
 
+char
+line_kill              (char *a_file, char *a_line)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   tLINE      *x_line      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defenses)-----------------------*/
+   DEBUG_INPT   yLOG_point   ("a_file"    , a_file);
+   --rce;  if (a_file == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_point   ("a_line"    , a_line);
+   --rce;  if (a_line == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(find list)----------------------*/
+   x_file = yDLST_list_find (a_file);
+   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+   if (x_file == NULL) {
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(find list)----------------------*/
+   x_line = yDLST_line_find (a_line);
+   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+   if (x_line == NULL) {
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(check rpid)---------------------*/
+   DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
+   --rce;  if (x_line->rpid <= 1) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(kill)---------------------------*/
+   rc = kill (x_line->rpid, SIGKILL);
+   DEBUG_INPT   yLOG_value   ("kill"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
 
 
 /*====================------------------------------------====================*/
@@ -443,6 +502,24 @@ line__unit              (char *a_question, int a_num)
          snprintf (unit_answer, LEN_TEXT, "LINE entry  (%2d) : []                                           -1", a_num);
       }
    }
+   else if (strcmp (a_question, "runs"    )        == 0) {
+      x_line = (tLINE *) yDLST_line_entry (a_num, &x_void);
+      if (x_line != NULL) {
+         sprintf (t, "[%s]", x_line->tracker);
+         snprintf (unit_answer, LEN_TEXT, "LINE runs   (%2d) : %-17.17s  %2da %2do %2de %2dc %2dk %2df  %3dr", a_num, t, x_line->attempts, x_line->overlaps, x_line->errors, x_line->complete, x_line->kills, x_line->failures, x_line->last_rc);
+      } else {
+         snprintf (unit_answer, LEN_TEXT, "LINE runs   (%2d) : []                   a   o   e   c   k   f     r", a_num);
+      }
+   }
+   else if (strcmp (a_question, "durs"    )        == 0) {
+      x_line = (tLINE *) yDLST_line_entry (a_num, &x_void);
+      if (x_line != NULL) {
+         sprintf (t, "[%s]", x_line->tracker);
+         snprintf (unit_answer, LEN_TEXT, "LINE durs   (%2d) : %-17.17s  %3dd %3dm %3dx %3dl %2de %2dl", a_num, t, x_line->dur, x_line->dur_min, x_line->dur_max, x_line->last_dur, x_line->earlies, x_line->lates);
+      } else {
+         snprintf (unit_answer, LEN_TEXT, "LINE durs   (%2d) : []                   a   o   e   c   k   f     r", a_num);
+      }
+   }
    /*---(complete)-----------------------*/
    return unit_answer;
 }
@@ -453,7 +530,6 @@ line__unit_rpid        (char *a_file, char *a_line, int a_rpid)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   int         x_running   =    0;
    tFILE      *x_file      = NULL;
    tLINE      *x_line      = NULL;
    /*---(header)-------------------------*/
@@ -488,7 +564,7 @@ line__unit_rpid        (char *a_file, char *a_line, int a_rpid)
    x_line->rpid = a_rpid;
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return x_running;
+   return 0;
 }
 
 

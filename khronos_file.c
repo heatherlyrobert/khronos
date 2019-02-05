@@ -32,6 +32,7 @@ file__new               (void)
    /*---(wipe)---------------------------*/
    DEBUG_INPT   yLOG_snote   ("wipe");
    x_new->title [0] = '\0';
+   x_new->user  [0] = '\0';
    x_new->uid       =    0;
    x_new->retire    =  '-';
    /*---(complete)-----------------------*/
@@ -71,6 +72,8 @@ file_create             (void)
    /*---(populate)-----------------------*/
    DEBUG_INPT   yLOG_info    ("file"      , my.f_name);
    strlcpy (x_file->title, my.f_name, LEN_NAME);
+   DEBUG_INPT   yLOG_info    ("user"      , my.f_user);
+   strlcpy (x_file->user , my.f_user, LEN_USER);
    DEBUG_INPT   yLOG_value   ("uid"       , my.f_uid);
    x_file->uid   = my.f_uid;
    /*---(create list)--------------------*/
@@ -576,6 +579,8 @@ file_parse_name     (cchar *a_file, cchar a_loc)
 /*===----                      unit test accessor                      ----===*/
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
+
+char          unit_answer [ LEN_TEXT ];
 
 char*            /*--> unit test accessor ------------------------------*/
 file__unit              (char *a_question, int a_num)

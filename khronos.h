@@ -3,23 +3,24 @@
 /*===[[ HEADER ]]=============================================================#
 
  *   focus         : (SA) system_admin
- *   niche         : (js) job_scheduler
- *   heritage      : khronos-ageraton  (protogenoi of creation and unyielding time)
+ *   niche         : (bp) batch_processing
+ *   purpose       : reliable, trackable, and focused time-based job scheduling
+ *
+ *   patron        : khronos-ageraton (unaging)
+ *   heritage      : incorporeal protogenoi god of creation and unyielding time
  *   imagery       : winged serpent (drakon) with three heads -- bull, lion, man
- *   purpose       : provide consistent, reliable, time-based job scheduling
  *
  *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
- *   lang_name     : ansi-c      (righteous, limitless, universal, and forever)
- *   dependencies  : ySCHED* (must), yLOG+ (optional), dash (shell)
- *   size          : moderate    (less than 5,000 slocL)
- * 
+ *   lang_name     : ansi-c      (wicked, limitless, universal, and everlasting)
+ *   dependencies  : ySCHED, yEXEC, yPARSE, yDLST
+ *
  *   author        : the_heatherlys
  *   created       : 2010-05
- *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
- *   end goal      : loosely coupled, strict interface, maintainable, portable
+ *   size          : moderate    (less than 5,000 slocL)
  *
- *   simplicity is prerequisite for reliability and security, but logging
- *   and unit testing can not be neglected
+ *   top of mind   : single maintainer for a huge code base
+ *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
+ *   end goal      : loosely coupled, strict interface, maintainable, traceable
  * 
  */
 /*===[[ SUMMARY ]]=============================================================*
@@ -371,8 +372,8 @@
 
 
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define VER_NUM   "1.4d"
-#define VER_TXT   "retirements working as well as NEW and DEL in unit testing"
+#define VER_NUM   "1.4e"
+#define VER_TXT   "khronos working again with improved status reporting"
 
 
 
@@ -422,7 +423,7 @@
 
 
 #define     FILE_LOCK               "khronos.pid"
-#define     FILE_PULSE              "khronos.heartbeat"
+#define     FILE_HEARTBEAT          "khronos.heartbeat"
 #define     FILE_WATCH              "khronos.interrun_monitoring"
 #define     FILE_EXEC               "khronos.execution_feedback"
 #define     FILE_STATUS             "khronos.status_reporting"
@@ -435,9 +436,10 @@
 #define     ACT_PURGE       'p'
 #define     ACT_LIST        'l'
 #define     ACT_INST        'i'
-#define     ACT_NONE        '-'
+#define     ACT_LOAD        'L'
 #define     ACT_HUP         'H'
-#define     ACT_ALL         "pliH-"
+#define     ACT_NONE        '-'
+#define     ACT_ALL         "pliLH-"
 
 #define     ACT_NEW         'N'
 #define     ACT_DEL         'D'
@@ -507,13 +509,10 @@ typedef const long       clong;
 typedef const char       cchar;
 
 /*---(structure short names)------------------------------------*/
-typedef struct cCFILE    tCFILE;
-typedef struct cCLINE    tCLINE;
 typedef struct stat      tSTAT;
 typedef struct passwd    tPASSWD;
 typedef struct tm        tTIME;
 typedef struct dirent    tDIRENT;
-typedef struct flock     tFLOCK;
 
 
 typedef struct cFILE     tFILE;
@@ -528,14 +527,25 @@ struct cACCESSOR
    char        quiet;              /* bool : 0=normal, 1=quiet                */
    char        updates;            /* bool : 0=normal, 1=quiet                */
    char        user_mode;          /* interactive, daemon, or unittest        */
+   /*---(warnings)-------------*/
+   char        alt_dir;                     /* use of dir central             */
+   /*---(current time)---------*/
+   long        now;                         /* current epoch                  */
+   long        clean;                       /* current epoch (start of hour)  */
+   int         year;                        /* current year                   */
+   int         month;                       /* current month                  */
+   int         day;                         /* current day                    */
+   int         hour;                        /* current hour                   */
+   int         minute;                      /* current minute                 */
+   char        heartbeat      [LEN_FIELD];  /* latest heartbeat               */
    /*---(files)----------------*/
-   char        dir_central  [LEN_PATH]; /* crontabs global directory               */
-   char        dir_local    [LEN_PATH]; /* crontabs local directory                */
-   char        name_pulser  [LEN_PATH]; /* pulser file name                        */
-   char        name_watcher [LEN_PATH]; /* watcher file name                       */
-   char        name_locker  [LEN_PATH]; /* run lock file name                      */
-   char        name_exec    [LEN_PATH]; /* execution file name                     */
-   char        name_status  [LEN_PATH]; /* status update file name                 */
+   char        dir_central    [LEN_PATH]; /* crontabs global directory               */
+   char        dir_local      [LEN_PATH]; /* crontabs local directory                */
+   char        name_heartbeat [LEN_PATH]; /* pulser file name                        */
+   char        name_watcher   [LEN_PATH]; /* watcher file name                       */
+   char        name_locker    [LEN_PATH]; /* run lock file name                      */
+   char        name_exec      [LEN_PATH]; /* execution file name                     */
+   char        name_status    [LEN_PATH]; /* status update file name                 */
    /*---(pulse)----------------*/
    char        pulse_time   [ 50]; /* last time string written to pulse       */
    char        pulse_begin  [ 50]; /* start of this cron run as string        */
@@ -585,6 +595,7 @@ extern    struct cACCESSOR my;
 struct cFILE {
    /*---(master)---------------*/
    char        title       [LEN_NAME];      /* name of the cronfile           */
+   char        user        [LEN_USER];      /* execution user name            */
    int         uid;                         /* execution user uid             */
    /*---(working)--------------*/
    char        retire;                      /* marked for retirement          */
@@ -606,95 +617,30 @@ struct cLINE {
    char        retire;                      /* marked for retirement          */
    /*---(flags)----------------*/
    char        importance;                  /* on a H-M-L scale               */
-   char        concern;                     /* notify after ? failures        */
+   char        tracking;                    /* whether to use scythe to track */
    char        lower;                       /* lower limit on duration        */
    char        upper;                       /* upper limit on duration        */
    char        delay;                       /* delay handling flag            */
    /*---(feedback)-------------*/
+   long        first_time;                  /* timestamp of first run         */
+   long        since_time;                  /* timestamp of last data cleanse */
    int         attempts;                    /* number of times launched       */
-   int         failures;                    /* number of times ended well     */
+   int         overlaps;                    /* attempts to run while active   */
+   int         errors;                      /* number of failures to launch   */
+   int         complete;                    /* number of times completed      */
+   int         kills;                       /* number of terminations         */
+   int         failures;                    /* number of bad launches         */
+   int         earlies;                     /* successes that finished early  */
+   int         lates;                       /* successes that finished late   */
    int         last_rpid;                   /* last rpid used                 */
    long        last_time;                   /* timestamp of last run          */
-   int         last_exit;                   /* return code of last run        */
+   int         last_dur;                    /* duration of last run           */
+   int         last_rc;                     /* return code of last run        */
    /*---(done)-----------------*/
 };
 
 
-struct cCFILE {
-   /*---(context)------------------------*/
-   char        user        [LEN_USER];      /* username to execute jobs       */
-   char        name        [LEN_NAME];      /* name of cronfile               */
-   /*---(working)------------------------*/
-   int         uid;                         /* uid of user to execute jobs    */
-   char        retire;                      /* file retired, but lines running*/
-   int         nlines;                      /* number of lines in file        */
-   /*---(linked lists)-------------------*/
-   tCLINE     *head;                        /* head of line linked list       */
-   tCLINE     *tail;                        /* tail of line linked list       */
-   tCFILE     *prev;                        /* next file doubly linked list   */
-   tCFILE     *next;                        /* next file doubly linked list   */
-   /*---(done)---------------------------*/
-};
 
-
-
-struct cCLINE {
-   /*---(link to file)-------------------*/
-   tCFILE     *file;                        /* link back up to the parent          */
-   /*---(basics)-------------------------*/
-   tSCHED      sched;                       /* schedule structure                  */
-   char        command     [LEN_CMD];       /* shell command                       */
-   /*---(context)------------------------*/
-   int         recd;                        /* crontab record number               */
-   char        tracker     [LEN_TRACKER];   /* long-term reference for entry  */
-   char        comment     [LEN_COMMENT];   /* descriptive text               */
-   /*---(execution)----------------------*/
-   char        active;                      /* line is on the fast list            */
-   char        deleted;                     /* line should be retired, but running */
-   int         rpid;                        /* running=pid, ready=0                */
-   /*---(profile)------------------------*/
-   int         dur_exp;                     /* expected duration                   */
-   int         dur_min;                     /* minimum duration                    */
-   int         dur_max;                     /* maximum duration                    */
-   /*---(controls)-----------------------*/
-   char        importance;                  /* 0-5 levels of importance            */
-   char        monitoring;                  /* should its status be reported       */
-   char        catchup;                     /* must khronos rerun a miss           */
-   char        busy_delay;                  /* delay start time if system is busy  */
-   char        busy_skip;                   /* skip a run if the system is busy    */
-   char        busy_kill;                   /* kill running job if system is busy  */
-   /*---(historical)---------------------*/
-   int         attempts;                    /* number of times it has been launched        */
-   int         failures;                    /* number of times it has not ended well       */
-   long        lasttime;                    /* timestamp of last run                       */
-   char        lastexit;                    /* return code of last run                     */
-   /*---(linked lists)-------------------*/
-   tCLINE     *next;                        /* next line in line's doubly linked list      */
-   tCLINE     *prev;                        /* next line in line's doubly linked list      */
-   tCLINE     *fnext;                       /* next line in the fast path linked list      */
-   tCLINE     *fprev;                       /* prev line in the fast path linked list      */
-   tCLINE     *pnext;                       /* next line in the processing linked list     */
-   tCLINE     *pprev;                       /* prev line in the processing linked list     */
-};
-
-/*---(file linked list)--------*/
-extern    tCFILE   *h_cfile;   /* head cfile                                  */
-extern    tCFILE   *t_cfile;   /* tail cfile                                  */
-extern    tCFILE   *c_cfile;   /* current cfile                               */
-extern    int       m_cfile;   /* total malloc'd cfile structures             */
-extern    int       n_cfile;   /* total linked cfile structures               */
-extern    int       m_cline;   /* total malloc'd cline structures             */
-extern    int       n_cline;   /* total linked cline structures               */
-
-/*---(fast path linked list)---*/
-extern    tCLINE   *fasthead;
-extern    tCLINE   *fasttail;
-extern    int       nfast;
-
-/*---(processing linked list)--*/
-extern    tCLINE   *prochead;
-extern    tCLINE   *proctail;
-extern    int       nproc;
 
 
 /*---(prototypes)-----------------------------------------------*/
@@ -705,8 +651,7 @@ int         main               (int argc, char *argv[]);
 /*===[[ KHRONOS_PROG.C ]]=====================================================*/
 /*---(utility)--------------*/
 char        wait_minute        (void);
-long        curr_hours         (void);
-char        catchup            (void);
+/*> char        catchup            (void);                                            <*/
 /*---(program)--------------*/
 char*       PROG_version       (void);
 char        PROG_init          (void);
@@ -718,7 +663,7 @@ char        PROG_final         (void);
 char        PROG_term          (void);
 char        PROG_end           (void);
 /*---(unit testing)---------*/
-char*       PROG_getter        (char *a_question, int a_num);
+/*> char*       PROG_getter        (char *a_question, int a_num);                     <*/
 
 char        prog__unit_files   (void);
 char        prog__unit_quiet   (void);
@@ -726,77 +671,22 @@ char        prog__unit_loud    (void);
 char        prog__unit_end     (void);
 
 
-char      terminate     (cchar*, cint);;
-void      communicate   (cint);
-char      signals       (void);
-char      daemonize     (void);
-char      lock          (void);
-char      pulse         (void);
-char      BASE_status   (void);
-char      BASE_begwatch (void);
-char      BASE_endwatch (void);
-char      prepare       (void);
 
-long        BASE_lastpulse     (void);
-char        BASE_timestamp     (void);
-long      lastrun       (void);
 
-char        search             (cchar);
-char        assimilate         (cchar*);
 char        BASE_purge         (void);
-char        BASE_retire        (cchar*);
-char        BASE_create        (cchar*, cchar*, tCFILE**);
-char        BASE_inventory     (tCFILE*, FILE*);
 char        context            (int, cchar*);
 char        parse              (char*, char *, int, int, char*);
 int         convert            (cchar*, cchar*, cint, cint);
-char*       BASE_unit          (char*, int);
 char        BASE_unitfile      (void);
 char        BASE_unitproc      (void);
 char        BASE_unitfast      (void);
 char        BASE_unitshape     (char*);
 
-char        BASE_fast          (clong);
-char        BASE_dispatch      (cint);
-char      run           (tCFILE*, tCLINE*);
-char      check         (void);
 
 
 
 
 
-/*===[[ KHRONOS_LIST.C ]]======================================*/
-#define     UNLINKED       '-'
-#define     LINKED         'y'
-/*---(overall)---------*/
-char        LIST_purge         (void);
-/*---(cronfiles)-------*/
-tCFILE*     CFILE_create       (char    a_linked);
-char        CFILE_link         (tCFILE* a_cfile);
-char        CFILE_unlink       (tCFILE* a_cfile);
-tCFILE*     CFILE_delete       (tCFILE* a_cfile);
-tCFILE*     CFILE_purge        (tCFILE* a_cfile);
-tCFILE*     CFILE_find         (char*   a_name);
-/*---(cronlines)-------*/
-tCLINE*     CLINE_create       (tCFILE* a_cfile);
-char        CLINE_link         (tCFILE* a_cfile, tCLINE* a_cline);
-char        CLINE_unlink       (tCLINE* a_cline);
-tCLINE*     CLINE_delete       (tCLINE* a_cline);
-char        CLINE_show         (tCLINE *a_cline);
-/*---(unittest)--------*/
-char*       LIST_unit          (char *a_question, void *a_file);
-char        LIST_list          (void);
-
-
-char      proclist_add  (tCLINE*);
-char      proclist_del  (tCLINE*);
-
-
-char*     unit_accessor (char*, int);
-/*> char      shape         (char*);                                                  <* 
- *> char      list_cron     (void);                                                   <* 
- *> char      list_fast     (void);                                                   <* 
- *> char      list_proc     (void);                                                   <*/
 
 
 
@@ -815,7 +705,7 @@ char        tabs_clear_extfiles     (void);
 char        tabs_user               (cchar *a_user);
 char        tabs_install            (cchar *a_name);
 char        tabs_delete             (cchar *a_name);
-char        crontab_test       (cchar*);
+/*> char        crontab_test       (cchar*);                                          <*/
 char        tabs_hup                (void);
 /*---specialty---------*/
 char        crontab_help       (void);
@@ -848,11 +738,28 @@ char        line_create             (void);
 char        line_parse              (void);
 char        line_assimilate         (void);
 int         line_prune              (void);
+char        line_kill               (char *a_file, char *a_line);
 char        line__unit_rpid         (char *a_file, char *a_line, int a_rpid);
 
 
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+long        exec_time               (long a_now);
+char        exec_wait_min           (void);
+int         exec_focus              (void);
+char        exec_dispatch           (int a_min);
+int         exec_check              (void);
+char*       exec__unit              (char *a_question, int a_num);
 
-void      PROG_signal       (int a_signal, siginfo_t *a_info, void *a_nada);
+char        base_daemon_mode        (void);
+char        base_check_dir          (void);
+char        base_daemon             (void);
+
+char        rptg_heartbeat          (void);
+char        rptg_beg_watch          (void);
+char        rptg_end_watch          (void);
+char        rptg_status             (void);
+char*       rptg__unit              (char *a_question, int a_num);
+
 
 #endif
 /*=============================[[ end-of-code ]]==============================*/

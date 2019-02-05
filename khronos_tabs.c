@@ -113,6 +113,7 @@ tabs_global        (cchar *a_user, cchar a_action)
          switch (a_action) {
          case ACT_PURGE : tabs_delete (x_file->d_name);       break;
          case ACT_LIST  : printf ("%s\n", x_file->d_name);    break;
+         case ACT_LOAD  : 
          case ACT_HUP   : if (strcmp (my.f_ext, "NEW") == 0) {
                              tabs_rename  (ACT_NEW);
                              file_request ();
@@ -122,8 +123,10 @@ tabs_global        (cchar *a_user, cchar a_action)
                              file_retire  ();
                           }
                           else {
-                             --x_count;
+                             if (a_action == ACT_LOAD)  file_request ();
+                             else                       --x_count;
                           }
+                          my.resync = '-';
                           break;
          case ACT_NONE  : break;
          }
@@ -561,49 +564,49 @@ tabs_delete             (cchar *a_name)
    return 0;
 }
 
-char       /* PURPOSE : test the contents of a crontab file ------------------*/
-crontab_test       (cchar *a_source)
-{
-   /*---(locals)--------------------------------*/
-   char      dir_name[LEN_PATH] = "";
-   int       rc        = 0;
-   char      x_file[500]= "";          /* file name                           */
-   /*---(begin)---------------------------------*/
-   DEBUG_INPT   printf("crontab_test()...\n");
-   testing = 'y';
-   failed  = 0;
-   /*---(set source directory)------------------*/
-   if (strcmp(my.who, "root") == 0) snprintf(dir_name, LEN_PATH, "/home/machine/crontabs/");
-   else                             snprintf(dir_name, LEN_PATH, "/home/%s/c_quani/crontabs/", my.who);
-   /*---(move to local directory)--------*/
-   DEBUG_INPT   printf("   moved to local crontab directory\n");
-   if (chdir(dir_name) < 0) {
-      DEBUG_INPT   printf("   ");
-      printf("could not move to crontab directory\n\n");
-      return -4;
-   }
-   /*---(break up the file name)-------------*/
-   snprintf (x_file, 500, "%s.%s", "crontab", a_source);
-   DEBUG_INPT   printf("   starting with <<%s>>\n", x_file);
-   rc = file_parse_name (x_file, '-');
-   if (rc <  0) {
-      DEBUG_INPT   printf("   ");
-      printf("crontab name is found, but format is not valid [%d]\n\n", rc);
-      return -2;
-   }
-   DEBUG_INPT   printf("   found properly named file\n");
-   /*---(verify source file)-----------------*/
-   rc = tabs__verify (x_file);
-   if (rc != 1) {
-      DEBUG_INPT   printf("   ");
-      printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);
-      return -1;
-   }
-   /*---(assimilate)-------------------------*/
-   assimilate(x_file);
-   /*---(complete)------------------------------*/
-   return 0;
-}
+/*> char       /+ PURPOSE : test the contents of a crontab file ------------------+/                          <* 
+ *> crontab_test       (cchar *a_source)                                                                      <* 
+ *> {                                                                                                         <* 
+ *>    /+---(locals)--------------------------------+/                                                        <* 
+ *>    char      dir_name[LEN_PATH] = "";                                                                     <* 
+ *>    int       rc        = 0;                                                                               <* 
+ *>    char      x_file[500]= "";          /+ file name                           +/                          <* 
+ *>    /+---(begin)---------------------------------+/                                                        <* 
+ *>    DEBUG_INPT   printf("crontab_test()...\n");                                                            <* 
+ *>    testing = 'y';                                                                                         <* 
+ *>    failed  = 0;                                                                                           <* 
+ *>    /+---(set source directory)------------------+/                                                        <* 
+ *>    if (strcmp(my.who, "root") == 0) snprintf(dir_name, LEN_PATH, "/home/machine/crontabs/");              <* 
+ *>    else                             snprintf(dir_name, LEN_PATH, "/home/%s/c_quani/crontabs/", my.who);   <* 
+ *>    /+---(move to local directory)--------+/                                                               <* 
+ *>    DEBUG_INPT   printf("   moved to local crontab directory\n");                                          <* 
+ *>    if (chdir(dir_name) < 0) {                                                                             <* 
+ *>       DEBUG_INPT   printf("   ");                                                                         <* 
+ *>       printf("could not move to crontab directory\n\n");                                                  <* 
+ *>       return -4;                                                                                          <* 
+ *>    }                                                                                                      <* 
+ *>    /+---(break up the file name)-------------+/                                                           <* 
+ *>    snprintf (x_file, 500, "%s.%s", "crontab", a_source);                                                  <* 
+ *>    DEBUG_INPT   printf("   starting with <<%s>>\n", x_file);                                              <* 
+ *>    rc = file_parse_name (x_file, '-');                                                                    <* 
+ *>    if (rc <  0) {                                                                                         <* 
+ *>       DEBUG_INPT   printf("   ");                                                                         <* 
+ *>       printf("crontab name is found, but format is not valid [%d]\n\n", rc);                              <* 
+ *>       return -2;                                                                                          <* 
+ *>    }                                                                                                      <* 
+ *>    DEBUG_INPT   printf("   found properly named file\n");                                                 <* 
+ *>    /+---(verify source file)-----------------+/                                                           <* 
+ *>    rc = tabs__verify (x_file);                                                                            <* 
+ *>    if (rc != 1) {                                                                                         <* 
+ *>       DEBUG_INPT   printf("   ");                                                                         <* 
+ *>       printf("crontab source file (%s) not found [%d]\n\n", x_file, rc);                                  <* 
+ *>       return -1;                                                                                          <* 
+ *>    }                                                                                                      <* 
+ *>    /+---(assimilate)-------------------------+/                                                           <* 
+ *>    /+> assimilate(x_file);                                                            <+/                 <* 
+ *>    /+---(complete)------------------------------+/                                                        <* 
+ *>    return 0;                                                                                              <* 
+ *> }                                                                                                         <*/
 
 
 

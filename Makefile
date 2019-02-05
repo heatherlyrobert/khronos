@@ -43,6 +43,9 @@ install_post       :
 	@sha1sum  /usr/sbin/crond
 	ln --force --physical /usr/sbin/khronos  /usr/bin/crontab
 	@sha1sum  /usr/bin/crontab
+	cp scythe.sh /usr/sbin/scythe
+	chown root   /usr/sbin/scythe
+	chmod 0755   /usr/sbin/scythe
 
 remove_post        :
 	rm -f  /usr/sbin/crond
