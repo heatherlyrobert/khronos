@@ -122,7 +122,7 @@ base_daemon_mode        (void)
    }
    /*---(startup)------------------------*/
    x_hour  = exec_time (0);
-   rc      = rptg_beg_watch ();
+   /*> rc      = rptg_beg_watch ();                                                   <*/
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
    tabs_global ("ALL", ACT_LOAD);
    rptg_status ();
@@ -166,17 +166,17 @@ base_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
       break;
    case  SIGTERM:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGTERM means terminate daemon");
-      rptg_end_watch ("SIGTERM");
+      /*> rptg_end_watch ("SIGTERM");                                                 <*/
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGSEGV:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGSEGV means daemon blew up");
-      rptg_end_watch ("SEGSEGV");
+      /*> rptg_end_watch ("SEGSEGV");                                                 <*/
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGABRT:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGABRT means daemon blew up");
-      rptg_end_watch ("SIGABRT");
+      /*> rptg_end_watch ("SIGABRT");                                                 <*/
       yEXEC_term    ("EXITING", 99);
       break;
    default      :

@@ -34,7 +34,7 @@ main (int argc, char *argv[])
    switch (my.user_mode) {
    case MODE_DAEMON :
       base_daemon_mode ();
-      rptg_end_watch ("normal end");
+      /*> rptg_end_watch ("normal end");                                              <*/
       break;
    case MODE_USER   :
    default          :

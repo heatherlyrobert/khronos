@@ -81,7 +81,7 @@ rptg__unit_heartbeat   (char *a_heartbeat)
 static void      o___WATCH___________________o (void) {;};
 
 char
-rptg_track              (char *a_message, char *a_reason)
+rptg_track              (tLINE *a_line, char a_reason, int a_dur)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -99,11 +99,11 @@ rptg_track              (char *a_message, char *a_reason)
       return rce;
    }
    /*---(write)--------------------------*/
-   if (strcmp (a_message, "end") == 0)   sprintf  (t, "%s %s\n", my.heartbeat, a_reason);
-   else                                  sprintf  (t, "%s\n"   , my.heartbeat, a_reason);
-   strlrepl (t, "now", a_message, 1, LEN_HUND);
-   DEBUG_RPTG   yLOG_info    ("watch"     , t);
-   fputs (t, f);
+   /*> if (strcmp (a_message, "end") == 0)   sprintf  (t, "%s %s\n", my.heartbeat, a_reason);   <* 
+    *> else                                  sprintf  (t, "%s\n"   , my.heartbeat, a_reason);   <* 
+    *> strlrepl (t, "now", a_message, 1, LEN_HUND);                                             <* 
+    *> DEBUG_RPTG   yLOG_info    ("watch"     , t);                                             <* 
+    *> fputs (t, f);                                                                            <*/
    /*---(close)--------------------------*/
    rc = fclose (f);
    DEBUG_RPTG   yLOG_value   ("close"     , rc);
@@ -116,8 +116,8 @@ rptg_track              (char *a_message, char *a_reason)
    return 0;
 }
 
-char rptg_beg_watch   (void)            { return rptg_track ("BEG", ""); }
-char rptg_end_watch   (char *a_reason)  { return rptg_track ("end", a_reason); }
+/*> char rptg_beg_watch   (void)            { return rptg_track ("BEG", ""); }        <*/
+/*> char rptg_end_watch   (char *a_reason)  { return rptg_track ("end", a_reason); }   <*/
 
 char
 rptg_status             (void)
@@ -131,6 +131,7 @@ rptg_status             (void)
    tLINE      *x_line      = NULL;
    char        x_active    =  '-';
    char        x_focus     =  '-';
+   char        t           [LEN_RECD]  = "";
    /*---(header)-------------------------*/
    DEBUG_RPTG   yLOG_enter   (__FUNCTION__);
    /*---(open)---------------------------*/
@@ -160,14 +161,13 @@ rptg_status             (void)
       x_active = (yDLST_active_check (x_line->tracker) > 0) ? 'y' : '-';
       x_focus  = (yDLST_focus_check  (x_line->tracker) > 0) ? 'y' : '-';
       if (c %  5 == 0)  fprintf (f, "\n");
-      fprintf (f, "%-30.30s  %4d  %-30.30s   %c %c %c %c %c   %c %c %c %5d   %3d %3d %3d %3d %3d %3d   %3d %3d %3d %3d %3d\n",
-            x_file->title, x_line->recdno, x_line->tracker,
-            x_line->value, x_line->track, x_line->lower, x_line->upper, x_line->remedy,
-            '?', x_focus, x_active, x_line->rpid,
-            x_line->attempts, x_line->overlaps, x_line->errors,
-            x_line->complete, x_line->kills, x_line->failures,
-            x_line->est, x_line->est_min, x_line->est_max,
-            x_line->earlies, x_line->lates);
+      fprintf (f, "%-30.30s  %4d  %-30.30s   ",
+            x_file->title, x_line->recdno, x_line->tracker);
+      fprintf (f, "%c %c %c %c %c %c %c   %c %c %c %5d   %3d %3d %3d %3d %3d %3d   %3d %3d %3d %3d %3d\n",
+            x_line->value, x_line->track, x_line->handoff, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
+      fprintf (f, "%c %c %5d   %3d %3d %3d\n",
+            x_focus, x_active, x_line->rpid,
+            x_line->est, x_line->est_min, x_line->est_max);
       ++c;
       rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_NEXT, NULL, &x_line);
    }

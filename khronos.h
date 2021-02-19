@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  ""
 #define     P_VERMINOR  ""
-#define     P_VERNUM    "1.4f"
-#define     P_VERTXT    "FILE updated, simplified, cleaned, and unit tested"
+#define     P_VERNUM    "1.4g"
+#define     P_VERTXT    "stripped extra statistics out of lines and code"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -640,18 +640,9 @@ struct cLINE {
    char        track;                       /* how tightly to monitor         */
    char        handoff;                     /* handoff to kharon/haides       */
    char        strict;                      /* strictness of limits           */
-   char        lower;                       /* lower limit on duration        */
-   char        upper;                       /* upper limit on duration        */
+   char        lower;
+   char        upper;
    char        remedy;                      /* limit violation remedy         */
-   /*---(feedback)-------------*/
-   int         attempts;                    /* number of times launched       */
-   int         overlaps;                    /* attempts to run while active   */
-   int         errors;                      /* number of failures to launch   */
-   int         complete;                    /* number of times completed      */
-   int         kills;                       /* number of terminations         */
-   int         failures;                    /* number of bad launches         */
-   int         earlies;                     /* successes that finished early  */
-   int         lates;                       /* successes that finished late   */
    /*---(done)-----------------*/
 };
 
@@ -770,7 +761,7 @@ char        LINE__prepare           (void);
 char        LINE__original          (int n, uchar *a_verb);
 char        LINE__revised           (int n, uchar *a_verb, int c);
 char        LINE__handler           (int n, uchar *a_verb, char a_exist, void *a_handler);
-char        line__populate          (tLINE *a_line);
+char        LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
 char        line_create             (void);
 char        LINE__parse             (void);
 char        LINE_assimilate         (void);
@@ -792,7 +783,7 @@ char        base_check_dir          (void);
 char        base_daemon             (void);
 
 char        rptg_heartbeat          (void);
-char        rptg_track              (char *a_message, char *a_reason);
+char        rptg_track              (tLINE* a_line, char a_reason, int a_dur);
 char        rptg_beg_watch          (void);
 char        rptg_end_watch          (char *a_reason);
 char        rptg_status             (void);

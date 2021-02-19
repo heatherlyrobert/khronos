@@ -162,11 +162,10 @@ exec_dispatch           (int a_min)
       }
       DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
       /*---(check for running)-----------*/
-      ++x_line->attempts;
       DEBUG_INPT   yLOG_value   ("rpid"      , x_line->rpid);
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");
-         ++x_line->overlaps;
+         rptg_track (x_line, YEXEC_ALREADY, 0);
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -177,14 +176,15 @@ exec_dispatch           (int a_min)
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
       DEBUG_INPT   yLOG_info    ("->track", x_line->track);
-      if (x_line->track != 'y')    sprintf (x_cmd, "%s", x_line->command);
-      else                            sprintf (x_cmd, "scythe %s", x_line->command);
+      sprintf (x_cmd, "%s", x_line->command);
+      /*> if (x_line->track != 'y')    sprintf (x_cmd, "%s", x_line->command);          <* 
+       *> else                         sprintf (x_cmd, "scythe %s", x_line->command);   <*/
       DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
       x_rpid = yEXEC_full (t, x_file->user, x_cmd, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.name_exec);
       DEBUG_INPT   yLOG_value   ("x_rpid"    , x_rpid);
       if (x_rpid <  0) {
-         DEBUG_INPT  yLOG_note    ("could not launch");
-         ++x_line->errors;
+         DEBUG_INPT  yLOG_note    ("line/process could not launch");
+         rptg_track (x_line, 0, 0);
          x_line->rpid       = -2;
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
@@ -244,33 +244,12 @@ exec_check              (void)
          rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
-      ++x_line->complete;
       /*---(log results)-----------------*/
-      switch (rc) {
-      case YEXEC_ERROR   :
-         DEBUG_INPT  yLOG_note    ("error, failed to launch");
-         --x_line->complete;
-         ++x_line->errors;
-         break;
-      case YEXEC_KILLED  :
-         DEBUG_INPT  yLOG_note    ("terminated early");
-         ++x_line->kills;
-         break;
-      case YEXEC_NORMAL  :
-         DEBUG_INPT  yLOG_note    ("normal ending");
-         break;
-      case YEXEC_WARNING :
-         DEBUG_INPT  yLOG_note    ("ended ok, but with warning");
-         break;
-      case YEXEC_FAILURE :
-         DEBUG_INPT  yLOG_note    ("ended badly");
-         ++x_line->failures;
-         break;
-      }
+      x_dur  = (my.now - x_line->start) / 60;
+      rptg_track (x_line, rc, x_dur);
       /*---(early/late)------------------*/
-      x_dur              = (my.now - x_line->start) / 60;
-      if      (x_dur < x_line->est_min)  ++x_line->earlies;
-      else if (x_dur > x_line->est_max)  ++x_line->lates;
+      /*> if      (x_dur < x_line->est_min)  ++x_line->earlies;                       <* 
+       *> else if (x_dur > x_line->est_max)  ++x_line->lates;                         <*/
       /*---(set last data)---------------*/
       /*> x_line->last_rpid  = x_line->rpid;                                          <* 
        *> x_line->last_time  = x_line->start;                                         <* 

@@ -37,14 +37,6 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->lower       =  '-';
    a_cur->upper       =  '-';
    a_cur->remedy      =  '-';
-   /*---(feedback)-------------*/
-   a_cur->attempts    =    0;
-   a_cur->errors      =    0;
-   a_cur->complete    =    0;
-   a_cur->kills       =    0;
-   a_cur->failures    =    0;
-   a_cur->earlies     =    0;
-   a_cur->lates       =    0;
    /*---(complete)-------------*/
    return 1;
 }
@@ -53,7 +45,7 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "[____.__.___._______._______]", LEN_RECD);
+   strlcpy (s_print, "[____.__.___._______]", LEN_RECD);
    ++n;  if (a_cur->tracker [0] != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->recdno      >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->sched       != NULL)        s_print [n] = 'X';
@@ -68,19 +60,11 @@ LINE__memory            (tLINE *a_cur)
    ++n;
    ++n;  if (a_cur->value       != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->track       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->handoff     != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->handoff     != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->strict      != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->lower       != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->upper       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->remedy      != '-')         s_print [n] = 'X';
-   ++n;
-   ++n;  if (a_cur->attempts    >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->errors      >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->complete    >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->kills       >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->failures    >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->earlies     >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->lates       >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->remedy      != '·')         s_print [n] = 'X';
    return s_print;
 }
 
@@ -184,7 +168,7 @@ LINE__free              (tLINE **a_old)
 static void  o___PARSE___________o () { return; }
 
 char
-LINE__populate          (tLINE *a_new)
+LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command)
 {
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
@@ -192,73 +176,53 @@ LINE__populate          (tLINE *a_new)
    int         x_floor     =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT   yLOG_point   ("sched"     , a_schedule);
+   --rce;  if (a_schedule == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_point   ("command"   , a_command);
+   --rce;  if (a_command == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(line number)--------------------*/
-   DEBUG_INPT   yLOG_info    ("line"      , my.t_recdno);
-   a_new->recdno      =  my.t_recdno;
-   /*---(tracker)---------------------*/
-   DEBUG_INPT   yLOG_info    ("tracker"   , my.t_tracker);
-   strlcpy (a_new->tracker, my.t_tracker, LEN_TITLE);
+   DEBUG_INPT   yLOG_value   ("line"      , n);
+   a_new->recdno      =  n;
    /*---(parse schedule)-----------------*/
-   DEBUG_INPT   yLOG_info    ("t_sched"   , my.t_schedule);
-   rc = ySCHED_create (&(a_new->sched), my.t_schedule);
+   DEBUG_INPT   yLOG_info    ("sched"     , a_schedule);
+   rc = ySCHED_create (&(a_new->sched), a_schedule);
    DEBUG_INPT   yLOG_value   ("sched_rc"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(flags)-----------------------*/
-   rc = yEXEC_flags (a_new->est, x_floor, my.t_flags,
-         &(a_new->value) , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
-         &(a_new->lower) , &(a_new->est_min), 
-         &(a_new->upper) , &(a_new->est_max), 
-         &(a_new->remedy));
-   /*> a_new->value      = my.t_flags [0];                                            <* 
-    *> a_new->track      = my.t_flags [2];                                            <* 
-    *> a_new->lower      = my.t_flags [4];                                            <* 
-    *> a_new->upper      = my.t_flags [6];                                            <* 
-    *> a_new->remedy     = my.t_flags [8];                                            <*/
-   /*---(save scheduling info)--------*/
-   /*> rc = ySCHED_save (&a_new->sched);                                              <* 
-    *> DEBUG_INPT   yLOG_value   ("save_rc"   , rc);                                  <* 
-    *> --rce;  if (rc  < 0) {                                                         <* 
-    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
-    *>    return rce;                                                                 <* 
-    *> }                                                                              <*/
-   /*> a_new->est        = a_new->sched.dur;                                          <*/
-   DEBUG_INPT   yLOG_value   ("est"       , a_new->est);
-   if (a_new->est > 0) {
-      switch (a_new->lower) {
-      case '9' :  a_new->est_min = a_new->est *   0.90;   break;
-      case '8' :  a_new->est_min = a_new->est *   0.80;   break;
-      case '7' :  a_new->est_min = a_new->est *   0.70;   break;
-      case '6' :  a_new->est_min = a_new->est *   0.60;   break;
-      case 'h' :  a_new->est_min = a_new->est *   0.50;   break;
-      case 'q' :  a_new->est_min = a_new->est *   0.25;   break;
-      case 't' :  a_new->est_min = a_new->est *   0.10;   break;
-      case 'z' :  a_new->est_min = a_new->est *   0.00;   break;
-      case '-' :  a_new->est_min = a_new->est *   0.00;   break;
-      default  :  a_new->est_min = a_new->est *   0.50;   break;
-      }
-      switch (a_new->upper) {
-      case '1' :  a_new->est_max = a_new->est *   1.10;   break;
-      case '2' :  a_new->est_max = a_new->est *   1.20;   break;
-      case '3' :  a_new->est_max = a_new->est *   1.30;   break;
-      case '4' :  a_new->est_max = a_new->est *   1.40;   break;
-      case 'H' :  a_new->est_max = a_new->est *   1.50;   break;
-      case 'D' :  a_new->est_max = a_new->est *   2.00;   break;
-      case 'T' :  a_new->est_max = a_new->est *   3.00;   break;
-      case 'Q' :  a_new->est_max = a_new->est *   4.00;   break;
-      case 'X' :  a_new->est_max = a_new->est *  10.00;   break;
-      case 'Z' :  a_new->est_max = a_new->est * 999.00;   break;
-      case '-' :  a_new->est_max = a_new->est * 999.00;   break;
-      default  :  a_new->est_max = a_new->est *   2.00;   break;
+   /*---(tracker)---------------------*/
+   if (a_tracker != NULL) {
+      DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
+      strlcpy (a_new->tracker, a_tracker, LEN_TITLE);
+   }
+   /*---(duration)--------------------*/
+   --rce;  if (a_duration != NULL) {
+      rc = yEXEC_dur_in_sec (a_duration, &(a_new->est));
+      DEBUG_INPT   yLOG_value   ("dur"       , rc);
+      if (rc < 0) {
+         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
       }
    }
-   DEBUG_INPT   yLOG_value   ("est_min"   , a_new->est_min);
-   DEBUG_INPT   yLOG_value   ("est_max"   , a_new->est_max);
+   /*---(flags)-----------------------*/
+   if (a_flags != NULL) {
+      rc = yEXEC_flags (a_new->est, x_floor, a_flags,
+            &(a_new->value) , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
+            &(a_new->lower), &(a_new->est_min), 
+            &(a_new->upper), &(a_new->est_max), 
+            &(a_new->remedy));
+   }
    /*---(command)---------------------*/
-   DEBUG_INPT   yLOG_info    ("command"   , my.t_command);
-   strlcpy (a_new->command, my.t_command, LEN_FULL);
+   DEBUG_INPT   yLOG_info    ("command"   , a_command);
+   strlcpy (a_new->command, a_command, LEN_FULL);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -270,25 +234,25 @@ line_create             (void)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
-   tLINE      *x_line      = NULL;
+   tLINE      *x_new       = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(create data)--------------------*/
-   rc = LINE__new (&x_line);
-   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-   --rce;  if (x_line == NULL) {
+   rc = LINE__new (&x_new);
+   DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
+   --rce;  if (x_new == NULL) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(populate)-----------------------*/
-   rc = LINE__populate (x_line);
+   rc = LINE__populate (x_new, my.t_recdno, my.t_schedule, my.t_tracker, my.t_duration, my.t_flags, my.t_command);
    DEBUG_INPT   yLOG_value   ("populate"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(create list)--------------------*/
-   rc = yDLST_line_create (x_line->tracker, x_line);
+   rc = yDLST_line_create (x_new->tracker, x_new);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
