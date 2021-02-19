@@ -35,11 +35,11 @@ exec_time               (long a_now)
    my.year   = x_broke->tm_year  - 100;
    /*---(heartbeat)----------------------*/
    strftime (t, 20, "%y.%m.%d.%H.%M.%S", x_broke);
-   sprintf  (my.heartbeat, "%s  %-10d  now  %d", t, my.now, my.pid);
+   sprintf  (my.heartbeat, "%s  %-10d  now  %d", t, my.now, my.m_pid);
    rptg_heartbeat ();
    /*---(set the date)-------------------*/
    if (x_year != my.year || x_month != my.month || x_day != my.day) {
-      ySCHED_setdate (my.year, my.month, my.day);
+      ySCHED_config_by_date (my.year, my.month, my.day);
    }
    /*---(complete------------------------*/
    return my.clean;
@@ -88,25 +88,21 @@ exec_focus              (void)
    }
    /*---(check all files)----------------*/
    DEBUG_INPT   yLOG_value   ("files"     , yDLST_list_count ());
-   for (x_file = yDLST_list_seek (YDLST_HEAD); x_file != NULL; x_file = yDLST_list_seek (YDLST_NEXT)) {
+   rc = yDLST_list_by_cursor (YDLST_HEAD, NULL, &x_file);
+   while (rc >= 0 && x_file != NULL) {
       /*---(header)----------------------*/
       DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
       DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
-      DEBUG_INPT   yLOG_char    ("->retire"  , x_file->retire);
-      /*---(check for retired)-----------*/
-      if (x_file->retire != '-') {
-         DEBUG_INPT   yLOG_note    ("file retired, SKIPPING");
-         continue;
-      }
       /*---(check all lines)-------------*/
-      DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count ());
-      for (x_line = yDLST_line_seek (YDLST_HEAD); x_line != NULL; x_line = yDLST_line_seek (YDLST_NEXT)) {
+      DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (YDLST_LOCAL));
+      rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_HEAD, NULL, &x_line);
+      while (rc >= 0 && x_line != NULL) {
          /*---(header)-------------------*/
          DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
          DEBUG_INPT   yLOG_info    ("->title"   , x_line->tracker);
-         DEBUG_INPT   yLOG_value   ("->retire"  , x_line->rpid);
+         DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
          /*---(test)---------------------*/
-         if (ySCHED_test (&x_line->sched, my.hour, ySCHED_ANY) < 0) {
+         if (ySCHED_test_by_time (&x_line->sched, my.hour, YSCHED_ANY) < 0) {
             DEBUG_LOOP   yLOG_note  ("not scheduled within current hour, SKIPPING");
             continue;
          }
@@ -114,8 +110,12 @@ exec_focus              (void)
          yDLST_focus_on ();
          ++c;
          DEBUG_LOOP   yLOG_note  ("set focused and continue");
+         /*---(next)---------------------*/
+         rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_NEXT, NULL, &x_line);
          /*---(done)---------------------*/
       }
+      /*---(next)------------------------*/
+      rc = yDLST_list_by_cursor (YDLST_NEXT, NULL, &x_file);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/
@@ -145,14 +145,16 @@ exec_dispatch           (int a_min)
       return 0;
    }
    /*---(check all files)----------------*/
-   for (x_line = yDLST_focus_seek (YDLST_HEAD); x_line != NULL; x_line = yDLST_focus_seek (YDLST_NEXT)) {
+   rc = yDLST_focus_by_cursor (YDLST_HEAD, NULL, &x_line);
+   while (rc >= 0 && x_line != NULL) {
       /*---(test)------------------------*/
-      if (ySCHED_test (&x_line->sched, my.hour, a_min) < 0) {
+      if (ySCHED_test_by_time (&x_line->sched, my.hour, a_min) < 0) {
          DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
+         rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
       /*---(get file)--------------------*/
-      x_file = yDLST_line_list ();
+      yDLST_line_list (NULL, &x_file);
       DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
       if (x_file == NULL) {
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
@@ -165,6 +167,7 @@ exec_dispatch           (int a_min)
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");
          ++x_line->overlaps;
+         rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
       /*---(activate)--------------------*/
@@ -173,22 +176,25 @@ exec_dispatch           (int a_min)
       /*---(run)-------------------------*/
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
-      DEBUG_INPT   yLOG_info    ("->tracking", x_line->tracking);
-      if (x_line->tracking != 'y')    sprintf (x_cmd, "%s", x_line->command);
+      DEBUG_INPT   yLOG_info    ("->track", x_line->track);
+      if (x_line->track != 'y')    sprintf (x_cmd, "%s", x_line->command);
       else                            sprintf (x_cmd, "scythe %s", x_line->command);
       DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
-      x_rpid = yEXEC_run (my.name_exec, t, x_file->user, x_cmd, SHELL, PATH, yEXEC_FORK);
+      x_rpid = yEXEC_full (t, x_file->user, x_cmd, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.name_exec);
       DEBUG_INPT   yLOG_value   ("x_rpid"    , x_rpid);
       if (x_rpid <  0) {
          DEBUG_INPT  yLOG_note    ("could not launch");
          ++x_line->errors;
          x_line->rpid       = -2;
+         rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
       /*---(update line)-----------------*/
       x_line->rpid       = x_rpid;
       x_line->start      = my.now;
       DEBUG_INPT  yLOG_note    ("launched, move to next");
+      /*---(next)------------------------*/
+      rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/
@@ -218,9 +224,10 @@ exec_check              (void)
       return 0;
    }
    /*---(check all files)----------------*/
-   for (x_line = yDLST_active_seek (YDLST_HEAD); x_line != NULL; x_line = yDLST_active_seek (YDLST_NEXT)) {
+   rc = yDLST_active_by_cursor (YDLST_HEAD, NULL, &x_line);
+   while (rc >= 0 && x_line != NULL) {
       /*---(get file)--------------------*/
-      x_file = yDLST_line_list ();
+      yDLST_line_list (NULL, &x_file);
       DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
       if (x_file == NULL) {
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
@@ -230,10 +237,11 @@ exec_check              (void)
       /*---(check)-----------------------*/
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
-      rc = yEXEC_check (t, x_line->rpid, &x_return);
+      rc = yEXEC_verify (t, x_line->rpid, &x_return);
       DEBUG_INPT   yLOG_value   ("check"     , rc);
       if (rc == YEXEC_RUNNING) {
          DEBUG_INPT   yLOG_note    ("still running, next");
+         rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
       ++x_line->complete;
@@ -261,13 +269,13 @@ exec_check              (void)
       }
       /*---(early/late)------------------*/
       x_dur              = (my.now - x_line->start) / 60;
-      if      (x_dur < x_line->dur_min)  ++x_line->earlies;
-      else if (x_dur > x_line->dur_max)  ++x_line->lates;
+      if      (x_dur < x_line->est_min)  ++x_line->earlies;
+      else if (x_dur > x_line->est_max)  ++x_line->lates;
       /*---(set last data)---------------*/
-      x_line->last_rpid  = x_line->rpid;
-      x_line->last_time  = x_line->start;
-      x_line->last_rc    = x_return;
-      x_line->last_dur   = x_dur;
+      /*> x_line->last_rpid  = x_line->rpid;                                          <* 
+       *> x_line->last_time  = x_line->start;                                         <* 
+       *> x_line->last_rc    = x_return;                                              <* 
+       *> x_line->last_dur   = x_dur;                                                 <*/
       /*---(reset run data)--------------*/
       x_line->rpid       =  0;
       x_line->start      =  0;
@@ -275,156 +283,14 @@ exec_check              (void)
       yDLST_active_off ();
       ++c;
       DEBUG_INPT  yLOG_note    ("collected, next");
+      /*---(next)------------------------*/
+      rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return c;
 }
-
-
-/*> char        /+ PURPOSE : run through the fast list to find what should run    +/            <* 
- *> BASE_dispatch      (cint a_min)                                                             <* 
- *> {                                                                                           <* 
- *>    DEBUG_LOOP   yLOG_enter (__FUNCTION__);                                                  <* 
- *>    /+---(locals)--------------------------------+/                                          <* 
- *>    int       njobs = 0;                      /+ number of jobs ready to run   +/            <* 
- *>    int       ntest = 0;                      /+ number of jobs ready to run   +/            <* 
- *>    tCLINE   *x_line;                         /+ current line                  +/            <* 
- *>    char      msg[200];                                                                      <* 
- *>    /+---(process all time periods)--------------+/                                          <* 
- *>    DEBUG_LOOP   yLOG_value ("total"    ,  n_cline);                                         <* 
- *>    DEBUG_LOOP   yLOG_value ("potential",  nfast);                                           <* 
- *>    for (x_line = fasthead; x_line != NULL; x_line = x_line->fnext) {                        <* 
- *>       /+> if (my.silent == 'y') {                                                     <*    <* 
- *>        *>    switch (x_line->recovery) {                                              <*    <* 
- *>        *>    case '-' : continue;  break;                                             <*    <* 
- *>        *>    case 'x' : continue;  break;                                             <*    <* 
- *>        *>    }                                                                        <*    <* 
- *>        *> }                                                                           <+/   <* 
- *>       ++ntest;                                                                              <* 
- *>       snprintf(msg, 200, "%-16.16s,%3d", x_line->file->name, x_line->recd);                 <* 
- *>       if (x_line->sched.min[a_min]  == '_') {                                               <* 
- *>          if (my.silent == 'n') {                                                            <* 
- *>             yLOG_senter ("not");                                                            <* 
- *>             yLOG_snote(msg);                                                                <* 
- *>             yLOG_snote  ("not sched for min");                                              <* 
- *>             yLOG_sexit  ("not");                                                            <* 
- *>          }                                                                                  <* 
- *>          continue;                                                                          <* 
- *>       }                                                                                     <* 
- *>       if (x_line->rpid        != 0) {                                                       <* 
- *>          if (my.silent == 'n') {                                                            <* 
- *>             yLOG_senter ("not");                                                            <* 
- *>             yLOG_snote(msg);                                                                <* 
- *>             yLOG_snote  ("already running");                                                <* 
- *>             yLOG_sexit  ("not");                                                            <* 
- *>          }                                                                                  <* 
- *>          continue;                                                                          <* 
- *>       }                                                                                     <* 
- *>       run (x_line->file, x_line);                                                           <* 
- *>       ++njobs;                                                                              <* 
- *>    }                                                                                        <* 
- *>    DEBUG_LOOP   yLOG_value ("tested", ntest);                                               <* 
- *>    DEBUG_LOOP   yLOG_value ("ran",    njobs);                                               <* 
- *>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                  <* 
- *>    /+---(complete)------------------------------+/                                          <* 
- *>    return 0;                                                                                <* 
- *> }                                                                                           <*/
-
-/*> char        /+ PURPOSE : create list of jobs to run in a particular period    +/         <* 
- *> BASE_fast     (clong a_start)                /+ time_t of starting hour       +/         <* 
- *> {                                                                                        <* 
- *>    DEBUG_LOOP   yLOG_enter (__FUNCTION__);                                               <* 
- *>    /+> yLOG_note  ("determine jobs that will run in the next hour");               <+/   <* 
- *>    /+---(locals)---------------------------------+/                                      <* 
- *>    int       chrs, cday, cmon, cdow;         /+ simplifying temp variables    +/         <* 
- *>    char      msg[100];                       /+ display string                +/         <* 
- *>    tCFILE   *x_file;                         /+ current file                  +/         <* 
- *>    tCLINE   *x_line;                         /+ current line                  +/         <* 
- *>    /+---(save time)------------------------------+/                                      <* 
- *>    if (a_start    != 0)  my.fast_beg   = a_start;                                        <* 
- *>    /+---(get the date)---------------------------+/                                      <* 
- *>    tTIME    *curr_time = localtime(&my.fast_beg);                                        <* 
- *>    /+---(work out the current time)----------+/                                          <* 
- *>    chrs = curr_time->tm_hour;                                                            <* 
- *>    cday = curr_time->tm_mday;                                                            <* 
- *>    cmon = curr_time->tm_mon + 1;   /+ change to 1-12                          +/         <* 
- *>    cdow = curr_time->tm_wday;                                                            <* 
- *>    if (cdow == 0) cdow = 7;        /+ put sunday at the end                   +/         <* 
- *>    /+---(format the time)------------------------+/                                      <* 
- *>    snprintf(msg, 50, "---- %02dh %02dd %02dm %01dw", chrs, cday, cmon, cdow);            <* 
- *>    DEBUG_LOOP   yLOG_info ("fast for", msg);                                             <* 
- *>    /+---(prepare)-------------------------------+/                                       <* 
- *>    nfast     = 0;                                                                        <* 
- *>    fasthead  = NULL;                                                                     <* 
- *>    fasttail  = NULL;                                                                     <* 
- *>    DEBUG_LOOP   yLOG_value ("total"    ,  n_cline);                                      <* 
- *>    /+---(scan every file)--------------------+/                                          <* 
- *>    for (x_file = h_cfile; x_file != NULL; x_file = x_file->next) {                       <* 
- *>       yLOG_info  ("file"      , x_file->name);                                           <* 
- *>       /+---(scan every line)-----------------+/                                          <* 
- *>       for (x_line = x_file->head; x_line != NULL; x_line = x_line->next) {               <* 
- *>          /+---(initialize every line)-----------+/                                       <* 
- *>          x_line->active  = '-';                                                          <* 
- *>          x_line->fnext   = NULL;                                                         <* 
- *>          x_line->fprev   = NULL;                                                         <* 
- *>          /+---(filter for active)---------------+/                                       <* 
- *>          if (x_file->retire  == 'y')     continue;                                       <* 
- *>          if (x_line->deleted == 'y')     continue;                                       <* 
- *>          /+---(filter for time)-----------------+/                                       <* 
- *>          snprintf(msg, 100, "%3d) %s", x_line->recd, x_line->tracker);                   <* 
- *>          if (ySCHED_test (&x_line->sched, chrs, ySCHED_ANY) < 0) {                       <* 
- *>             DEBUG_LOOP   yLOG_info  ("not",     msg);                                    <* 
- *>             continue;                                                                    <* 
- *>          }                                                                               <* 
- *>          DEBUG_LOOP   yLOG_info  ("YES",     msg);                                       <* 
- *>          /+---(hook them up)--------------------+/                                       <* 
- *>          if (nfast == 0) {                                                               <* 
- *>             fasthead        = x_line;                                                    <* 
- *>             fasttail        = x_line;                                                    <* 
- *>          } else {                                                                        <* 
- *>             fasttail->fnext = x_line;                                                    <* 
- *>             fasttail        = x_line;                                                    <* 
- *>          }                                                                               <* 
- *>          x_line->active  = 'y';                                                          <* 
- *>          ++nfast;                                                                        <* 
- *>       }                                                                                  <* 
- *>    }                                                                                     <* 
- *>    /+---(log results)---------------------------+/                                       <* 
- *>    DEBUG_LOOP   yLOG_value ("count", nfast);                                             <* 
- *>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                               <* 
- *>    /+---(complete)------------------------------+/                                       <* 
- *>    return 0;                                                                             <* 
- *> }                                                                                        <*/
-
-/*> char                                                                                             <* 
- *> run        (tCFILE *a_file, tCLINE *a_line)                                                      <* 
- *> {                                                                                                <* 
- *>    /+---(locals)--------------------------------+/                                               <* 
- *>    int       rc        = 0;                       /+ simple return code       +/                 <* 
- *>    int       rpid      = 0;                       /+ child pid for execution  +/                 <* 
- *>    tPASSWD  *pass;                                                                               <* 
- *>    FILE     *output = NULL;                                                                      <* 
- *>    long      now;                                 /+ present datetime         +/                 <* 
- *>    tTIME    *curr_time = NULL;                                                                   <* 
- *>    char      msg[200];                                                                           <* 
- *>    char      envp[10][200];                                                                      <* 
- *>    /+---(run)----------------------------+/                                                      <* 
- *>    snprintf(msg, 200, "%-16.16s,%3d", a_line->file->name, a_line->recd);                         <* 
- *>    rc = yEXEC_run (my.name_exec, msg, a_file->user, a_line->command, SHELL, PATH, yEXEC_FORK);   <* 
- *>    if (rc <  0) {                                                                                <* 
- *>       a_line->rpid       = 0;                                                                    <* 
- *>       return -1;                                                                                 <* 
- *>    }                                                                                             <* 
- *>    if (rc >= 0) {                                                                                <* 
- *>       a_line->rpid       = rc;                                                                   <* 
- *>       a_line->lasttime = time(NULL);                                                             <* 
- *>       ++a_line->attempts;                                                                        <* 
- *>       proclist_add (a_line);                                                                     <* 
- *>    }                                                                                             <* 
- *>    return 0;                                                                                     <* 
- *> }                                                                                                <*/
 
 
 
@@ -437,19 +303,19 @@ char*            /*--> unit test accessor ------------------------------*/
 exec__unit              (char *a_question, int a_num)
 {
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "EXEC             : question not understood", LEN_TEXT);
+   strlcpy  (unit_answer, "EXEC             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "time"    )        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "EXEC time        : %-10d, %02dy %02dm %02dd %02dh %02dm, %d", my.now, my.year, my.month, my.day, my.hour, my.minute, my.clean);
+      snprintf (unit_answer, LEN_HUND, "EXEC time        : %-10d, %02dy %02dm %02dd %02dh %02dm, %d", my.now, my.year, my.month, my.day, my.hour, my.minute, my.clean);
    }
    else if (strcmp (a_question, "pid"     )        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "EXEC pid         : %d", my.pid);
+      snprintf (unit_answer, LEN_HUND, "EXEC pid         : %d", my.m_pid);
    }
    else if (strcmp (a_question, "focused" )        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "EXEC focused     : %d", yDLST_focus_count ());
+      snprintf (unit_answer, LEN_HUND, "EXEC focused     : %d", yDLST_focus_count ());
    }
    else if (strcmp (a_question, "active"  )        == 0) {
-      snprintf (unit_answer, LEN_TEXT, "EXEC active      : %d", yDLST_active_count ());
+      snprintf (unit_answer, LEN_HUND, "EXEC active      : %d", yDLST_active_count ());
    }
    /*---(complete)-----------------------*/
    return unit_answer;

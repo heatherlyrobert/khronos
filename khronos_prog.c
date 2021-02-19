@@ -19,7 +19,7 @@
 #include   "khronos.h"
 
 
-char          unit_answer [ LEN_TEXT ];
+char          unit_answer [ LEN_HUND ];
 
 
 
@@ -86,20 +86,21 @@ PROG_version       (void)
 #else
    strlcpy (t, "[unknown    ]", 15);
 #endif
-   snprintf (verstring, 100, "%s   %s : %s", t, VER_NUM, VER_TXT);
+   snprintf (verstring, 100, "%s   %s : %s", t, P_VERNUM, P_VERTXT);
    return verstring;
 }
 
 char         /*--: pre-argument program initialization ---[ leaf   [ ------ ]-*/
 PROG_init          (void)
 {
-   /*---(locals)-------------------------*/
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
    char        rc          =    0;
    /*---(log header)---------------------*/
    DEBUG_TOPS   yLOG_info    ("purpose" , "provide consistent, reliable, time-based job scheduling");
    DEBUG_TOPS   yLOG_info    ("namesake", "winged serpent khronos is the god of creation and unyielding time");
    DEBUG_TOPS   yLOG_info    ("khronos" , PROG_version    ());
-   DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOG_version    ());
+   DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOGS_version   ());
    DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
    DEBUG_TOPS   yLOG_info    ("yDLST"   , yDLST_version   ());
    DEBUG_TOPS   yLOG_info    ("yPARSE"  , yPARSE_version  ());
@@ -109,79 +110,28 @@ PROG_init          (void)
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(begin)--------------------------*/
-   snprintf (my.dir_central   , 200, "%s"  , DIR_CENTRAL);
-   snprintf (my.name_heartbeat, 200, "%s%s", DIR_YLOG , FILE_HEARTBEAT);
-   snprintf (my.name_watcher  , 200, "%s%s", DIR_YHIST, FILE_WATCH);
-   snprintf (my.name_locker   , 200, "%s%s", DIR_RUN  , FILE_LOCK);
-   snprintf (my.name_exec     , 200, "%s%s", DIR_YLOG , FILE_EXEC);
-   snprintf (my.name_status   , 200, "%s%s", DIR_YLOG , FILE_STATUS);
+   snprintf (my.dir_central   , LEN_PATH, "%s"  , DIR_CENTRAL);
+   snprintf (my.name_heartbeat, LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
+   snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_YHIST, FILE_TRACK);
+   snprintf (my.name_locker   , LEN_PATH, "%s%s", DIR_RUN  , FILE_LOCK);
+   snprintf (my.name_exec     , LEN_PATH, "%s%s", DIR_YLOG , FILE_EXEC);
+   snprintf (my.name_status   , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
    my.silent  = 'n';
    my.user_mode = MODE_DAEMON;
    rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
    rc = yPARSE_delimiters  ("§");
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char       /* PURPOSE : figure out who launched us and how -------------------*/
-PROG_whoami        (void)
-{
-   /*---(locals)-------------------------*/
-   char        rce         =  -10;
-   int         rc          = 0;            /* generic return code                 */
-   tPASSWD    *x_pass      = NULL;         /* passwd data structure               */
-   int         x_len       = 0;            /* user name length                    */
-   /*---(header)-------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(get real uid)-------------------*/
-   my.uid    = getuid();
-   DEBUG_TOPS   yLOG_value   ("uid"       , my.uid);
-   /*---(pull user name)-----------------*/
-   x_pass    = getpwuid (my.uid);
-   DEBUG_TOPS   yLOG_point   ("x_pass"    , x_pass);
-   --rce;  if (x_pass == NULL) {
-      printf("can not retreive your user information from the system\n");
+   /*---(call whoami)--------------------*/
+   rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), &my.m_root, &my.m_user, 'n');
+   DEBUG_TOPS   yLOG_value   ("whoami"    , rc);
+   --rce;  if (rc < 0) {
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_TOPS   yLOG_info    ("->name"    , x_pass->pw_name);
-   /*---(check user name)----------------*/
-   x_len      = strllen (x_pass->pw_name, 20);
-   DEBUG_TOPS   yLOG_value   ("x_len"     , x_len);
-   --rce;  if (x_len < 1) {
-      printf("your user name can not be empty\n");
-      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   --rce;  if (x_len > 20) {
-      printf("user name is too long\n");
-      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   strlcpy(my.who, x_pass->pw_name, 20);
-   /*---(check for root user)--------------*/
-   my.am_root = 'n';
-   if (my.uid == 0)   my.am_root = 'y';
-   DEBUG_TOPS   yLOG_char    ("am_root"   , my.am_root);
-   /*---(change uid/permissions)-----------*/
-   --rce;  if (my.am_root != 'y') {
-      DEBUG_TOPS   yLOG_note    ("attempt to gain root (legally;)");
-      rc = setuid(0);
-      DEBUG_TOPS   yLOG_value   ("setuid"    , rc);
-      if (rc != 0) {
-         printf("could not gain root authority\n");
-         DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      DEBUG_TOPS   yLOG_note    ("successfully gained root");
-   }
-   /*---(log pid info)---------------------*/
-   my.pid  = getpid();
-   DEBUG_TOPS   yLOG_value   ("pid"       , my.pid);
-   my.ppid = getppid();
-   DEBUG_TOPS   yLOG_value   ("ppid"      , my.ppid);
+   DEBUG_TOPS   yLOG_value   ("m_pid"     , my.m_pid);
+   DEBUG_TOPS   yLOG_value   ("m_ppid"    , my.m_ppid);
+   DEBUG_TOPS   yLOG_value   ("m_uid"     , my.m_uid);
+   DEBUG_TOPS   yLOG_info    ("m_user"    , my.m_user);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -205,13 +155,13 @@ PROG_args          (int argc, char *argv[])
       return 0;
    }
    /*---(program name)--------------------------*/
-   strlcpy(my.prog, argv[0], LEN_USER);
-   DEBUG_TOPS   yLOG_value   ("prog name" , my.prog);
+   strlcpy (my.m_prog, argv [0], LEN_DESC);
+   DEBUG_TOPS   yLOG_value   ("prog name" , my.m_prog);
    /*---(process)------------------------*/
    for (i = 1; i < argc; ++i) {
       a = argv[i];
       if (i < argc - 1) two_arg = 1; else two_arg = 0;
-      len = strllen (a, LEN_LINE);
+      len = strlen (a);
       /*---(skip debugging)--------------*/
       if      (a[0] == '@')                     continue;
       my.user_mode = MODE_USER;
@@ -225,17 +175,17 @@ PROG_args          (int argc, char *argv[])
       else if (strcmp(a, "-h"        ) == 0)    PROG_usage();
       else if (strcmp(a, "--help"    ) == 0)    PROG_usage();
       /*---(lists)-----------------------*/
-      else if (strcmp(a, "--list"    ) == 0)    tabs_global  (my.who, 'l');
+      else if (strcmp(a, "--list"    ) == 0)    tabs_global  (my.m_user, 'l');
       else if (strcmp(a, "--all"     ) == 0)    tabs_global  ("ALL" , 'l');
-      else if (strcmp(a, "--here"    ) == 0)    tabs_local   (my.who, 'l');
+      else if (strcmp(a, "--here"    ) == 0)    tabs_local   (my.m_user, 'l');
       /*---(installing)------------------*/
       else if (a[0] != '-'           )          tabs_install (a);
       /*> else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }   <*/
-      else if (strcmp(a, "--reload"  ) == 0)    tabs_local   (my.who, 'i');
+      else if (strcmp(a, "--reload"  ) == 0)    tabs_local   (my.m_user, 'i');
       /*---(removing)--------------------*/
       else if (strcmp(a, "-d"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
       else if (strcmp(a, "-r"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
-      else if (strcmp(a, "--purge"   ) == 0)    tabs_global  (my.who, 'p');
+      else if (strcmp(a, "--purge"   ) == 0)    tabs_global  (my.m_user, 'p');
       else if (strcmp(a, "--cleanse" ) == 0)    tabs_global  ("ALL" , 'p');
       /*---(user switches)---------------*/
       else if (strcmp(a, "-u"        ) == 0)  { TWOARG  tabs_user     (argv[++i]); }
@@ -337,8 +287,8 @@ PROG_term          (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    int   rc = 0;
-   rc = setuid(my.uid);
-   printf("; fatal, program terminated\n");
+   /*> rc = setuid(my.uid);                                                           <*/
+   /*> printf("; fatal, program terminated\n");                                       <*/
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    exit (-1);
@@ -351,11 +301,11 @@ PROG_end           (void)
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    int   rc = 0;
    yDLST_wrap ();
-   rc = setuid(my.uid);
-   printf("\n");
+   /*> rc = setuid(my.uid);                                                           <*/
+   /*> printf("\n");                                                                  <*/
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   DEBUG_TOPS   yLOG_end     ();
+   DEBUG_TOPS   yLOGS_end    ();
    return 0;
 }
 
@@ -373,10 +323,10 @@ static void      o___UNITTEST________________o (void) {;}
  *>    int       xfore  = 0, xback  = 0;  /+ counts to verify doubly-linked list +/       <* 
  *>    tCFILE   *xlist    = NULL;                                                         <* 
  *>    /+---(prepare)------------------------+/                                           <* 
- *>    strlcpy  (unit_answer, "PROG_getter      : question not understood", LEN_TEXT);    <* 
+ *>    strlcpy  (unit_answer, "PROG_getter      : question not understood", LEN_HUND);    <* 
  *>    /+---(pulser)-------------------------+/                                           <* 
  *>    if        (strncmp(a_question, "pulse_name"     , 20)   == 0) {                    <* 
- *>       snprintf (unit_answer, LEN_TEXT, "PROG pulse name  : %.35s", my.name_pulser);   <* 
+ *>       snprintf (unit_answer, LEN_HUND, "PROG pulse name  : %.35s", my.name_pulser);   <* 
  *>    }                                                                                  <* 
  *>    /+---(complete)-----------------------+/                                           <* 
  *>    return unit_answer;                                                                <* 
@@ -386,11 +336,11 @@ char       /*----: set up program test file locations ------------------------*/
 prog__unit_files   (void)
 {
    char        x_cmd       [LEN_RECD];
-   snprintf (my.name_heartbeat, 200, "%s%s", "/tmp/" , FILE_HEARTBEAT);
-   snprintf (my.name_watcher  , 200, "%s%s", "/tmp/" , FILE_WATCH);
-   snprintf (my.name_locker   , 200, "%s%s", "/tmp/" , FILE_LOCK);
-   snprintf (my.name_exec     , 200, "%s%s", "/tmp/" , FILE_EXEC);
-   snprintf (my.name_status   , 200, "%s%s", "/tmp/" , FILE_STATUS);
+   snprintf (my.name_heartbeat, LEN_PATH, "%s%s", "/tmp/" , FILE_HEARTBEAT);
+   snprintf (my.n_track       , LEN_PATH, "%s%s", "/tmp/" , FILE_TRACK);
+   snprintf (my.name_locker   , LEN_PATH, "%s%s", "/tmp/" , FILE_LOCK);
+   snprintf (my.name_exec     , LEN_PATH, "%s%s", "/tmp/" , FILE_EXEC);
+   snprintf (my.name_status   , LEN_PATH, "%s%s", "/tmp/" , FILE_STATUS);
    chdir  ("/tmp");
    sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_USER   );
    system  (x_cmd);
@@ -414,9 +364,9 @@ prog__unit_quiet   (void)
    int         x_argc      = 1;
    char       *x_argv [1]  = { "khronos" };
    yURG_logger    (x_argc, x_argv);
-   PROG_init      ();
    yURG_urgs      (x_argc, x_argv);
-   PROG_whoami    ();
+   PROG_init      ();
+   /*> PROG_whoami    ();                                                             <*/
    prog__unit_files ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
@@ -431,9 +381,9 @@ prog__unit_loud    (void)
    int         x_argc      = 5;
    char       *x_argv [5]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched"  };
    yURG_logger    (x_argc, x_argv);
-   PROG_init      ();
    yURG_urgs      (x_argc, x_argv);
-   PROG_whoami    ();
+   PROG_init      ();
+   /*> PROG_whoami    ();                                                             <*/
    prog__unit_files ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();

@@ -122,6 +122,7 @@ base_daemon_mode        (void)
    }
    /*---(startup)------------------------*/
    x_hour  = exec_time (0);
+   rc      = rptg_beg_watch ();
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
    tabs_global ("ALL", ACT_LOAD);
    rptg_status ();
@@ -155,7 +156,7 @@ base_daemon_mode        (void)
 static void      o___HOUSEKEEPING____________o (void) {;}
 
 void             /* [------] receive signals ---------------------------------*/
-base_comm          (int a_signal, siginfo_t *a_info, void *a_nada)
+base_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
 {
    /*---(catch)--------------------------*/
    switch (a_signal) {
@@ -165,18 +166,21 @@ base_comm          (int a_signal, siginfo_t *a_info, void *a_nada)
       break;
    case  SIGTERM:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGTERM means terminate daemon");
-      rptg_end_watch ();
+      rptg_end_watch ("SIGTERM");
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGSEGV:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGSEGV means daemon blew up");
-      rptg_end_watch ();
+      rptg_end_watch ("SEGSEGV");
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGABRT:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGABRT means daemon blew up");
-      rptg_end_watch ();
+      rptg_end_watch ("SIGABRT");
       yEXEC_term    ("EXITING", 99);
+      break;
+   default      :
+      DEBUG_PROG  yLOG_info     ("SIGNAL", "unknown signal recieved");
       break;
    }
    /*---(complete)-----------------------*/
@@ -280,25 +284,17 @@ base_daemon        (void)
       DEBUG_ENVI   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   x_running = yEXEC_find ("khronos_debug", NULL);
-   DEBUG_ENVI   yLOG_value   ("x_running" , x_running);
-   --rce;  if (x_running > 1) {
-      printf ("khronos already running in daemon mode\n");
-      DEBUG_ENVI   yLOG_note    ("khronos already running in daemon mode");
-      DEBUG_ENVI   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
    /*---(check for user)-----------------*/
-   DEBUG_ENVI   yLOG_value   ("my.uid"    , my.uid);
-   --rce;  if (my.uid != 0) {
+   DEBUG_ENVI   yLOG_value   ("my.m_uid"  , my.m_uid);
+   --rce;  if (my.m_uid != 0) {
       printf ("only root can run khronos in daemon mode\n");
       DEBUG_ENVI   yLOG_note    ("only root can run khronos in daemon mode");
       DEBUG_ENVI   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(fork off and die)---------------*/
-   DEBUG_ENVI   yLOG_value   ("logger"    , yURG_debug.logger);
-   rc = yEXEC_daemon (yURG_debug.logger, &my.pid);
+   DEBUG_ENVI   yLOG_value   ("logger"    , yLOGS_lognum ());
+   rc = yEXEC_daemon (yLOGS_lognum (), &(my.m_pid));
    DEBUG_ENVI   yLOG_value   ("daemon"    , rc);
    --rce;  if (rc < 0) {
       printf ("khronos could not be daemonized\n");
@@ -307,7 +303,7 @@ base_daemon        (void)
       return rce;
    }
    /*---(signals)-------------------------------*/
-   yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, base_comm);
+   yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, base_comm, "stdsig");
    DEBUG_ENVI   yLOG_value   ("signals"   , rc);
    --rce;  if (rc < 0) {
       printf ("khronos sigals could not be set properly\n");
@@ -333,11 +329,11 @@ base__unit              (char *a_question, int a_num)
    /*---(locals)-----------+-----+-----+-*/
    char        t           [LEN_RECD];
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "BASE             : question not understood", LEN_TEXT);
+   strlcpy  (unit_answer, "BASE             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "central"       )  == 0) {
       sprintf (t, "[%s]", my.dir_central);
-      snprintf (unit_answer, LEN_TEXT, "BASE central     : %2d%-38.38s  %c", strlen (my.dir_central), t, my.alt_dir);
+      snprintf (unit_answer, LEN_HUND, "BASE central     : %2d%-38.38s  %c", strlen (my.dir_central), t, my.alt_dir);
    }
    /*---(complete)-----------------------*/
    return unit_answer;

@@ -13,8 +13,8 @@ tabs_set_path           (cchar *a_user, char a_scope)
    /*---(prepare)------------------------*/
    strlcpy (my.f_path, "", LEN_PATH);
    /*---(check user)---------------------*/
-   if (strcmp (a_user, "ALL") == 0)  rc = file_check_user ("root", LOC_CENTRAL);
-   else                              rc = file_check_user (a_user, LOC_CENTRAL);
+   if (strcmp (a_user, "ALL") == 0)  rc = FILE_user ("root", LOC_CENTRAL);
+   else                              rc = FILE_user (a_user, LOC_CENTRAL);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -70,7 +70,7 @@ tabs_global        (cchar *a_user, cchar a_action)
       return rce;
    }
    /*---(check for all user)-------------*/
-   --rce;  if (strcmp (a_user, "ALL") == 0 && my.am_root != 'y') {
+   --rce;  if (strcmp (a_user, "ALL") == 0 && my.m_root != 'y') {
       RUN_USER     printf ("warn, must be logged in as root to use the --all option\n");
       DEBUG_INPT   yLOG_note    ("must be root to use the --all option");
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -99,7 +99,7 @@ tabs_global        (cchar *a_user, cchar a_action)
    while (x_file  != NULL) {
       /*---(filter by name)---------------------*/
       DEBUG_INPT   yLOG_info    ("name"      , x_file->d_name);
-      rc = file_parse_name (x_file->d_name, LOC_CENTRAL);
+      rc = FILE_parse (x_file->d_name, LOC_CENTRAL);
       DEBUG_INPT   yLOG_value   ("parse"     , rc);
       if (rc < 0) {
          DEBUG_INPT   yLOG_note    ("not a crontab, SKIPPING");
@@ -114,19 +114,10 @@ tabs_global        (cchar *a_user, cchar a_action)
          case ACT_PURGE : tabs_delete (x_file->d_name);       break;
          case ACT_LIST  : printf ("%s\n", x_file->d_name);    break;
          case ACT_LOAD  : 
-         case ACT_HUP   : if (strcmp (my.f_ext, "NEW") == 0) {
-                             tabs_rename  (ACT_NEW);
-                             file_request ();
-                          }
-                          else if (strcmp (my.f_ext, "DEL") == 0) {
-                             tabs_rename  (ACT_DEL);
-                             file_retire  ();
-                          }
-                          else {
-                             if (a_action == ACT_LOAD)  file_request ();
-                             else                       --x_count;
-                          }
-                          my.resync = '-';
+         case ACT_HUP   :
+                          /*> if (a_action == ACT_LOAD)  file_request ();             <* 
+                           *> else                       --x_count;                   <* 
+                           *> my.resync = '-';                                        <*/
                           break;
          case ACT_NONE  : break;
          }
@@ -208,7 +199,7 @@ tabs_local         (cchar *a_user, cchar a_action)
    DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
    while (x_file  != NULL) {
       /*---(check name)-------------------------*/
-      rc = file_parse_name (x_file->d_name, LOC_LOCAL);
+      rc = FILE_parse (x_file->d_name, LOC_LOCAL);
       DEBUG_INPT   yLOG_value   ("parse"     , rc);
       /*---(filter files)-----------------------*/
       if (rc >= 0) {
@@ -328,13 +319,13 @@ tabs_clear_extfiles     (void)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(clear new)--------------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.who, my.f_desc);
+   snprintf (x_name, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.m_user, my.f_desc);
    tabs__remove (x_name);
    /*---(clear del)--------------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.who, my.f_desc);
+   snprintf (x_name, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.m_user, my.f_desc);
    tabs__remove (x_name);
    /*---(clear base)-------------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s.%s"    , my.dir_central, my.who, my.f_desc);
+   snprintf (x_name, LEN_RECD, "%s%s.%s"    , my.dir_central, my.m_user, my.f_desc);
    tabs__remove (x_name);
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
@@ -415,8 +406,8 @@ tabs_rename             (char a_ext)
    }
    DEBUG_INPT   yLOG_info    ("x_src"     , x_src);
    /*---(update naming)------------------*/
-   strlcpy  (my.f_ext , ""      , LEN_ACT);
-   snprintf (my.f_name, LEN_NAME, "%s.%s", my.f_user, my.f_desc);
+   strlcpy  (my.f_ext , ""      , LEN_SHORT);
+   snprintf (my.f_name, LEN_HUND, "%s.%s", my.f_user, my.f_desc);
    snprintf (my.f_full, LEN_RECD, "%s%s.%s", my.dir_central, my.f_user, my.f_desc);
    /*---(move file)--------------------------*/
    if (a_ext == ACT_NEW) {
@@ -453,14 +444,14 @@ tabs_install            (cchar *a_name)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(check name)-------------------------*/
-   rc = file_parse_name (a_name, LOC_LOCAL);
+   rc = FILE_parse (a_name, LOC_LOCAL);
    DEBUG_INPT   yLOG_value   ("parse"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(build dir name)-----------------*/
-   rc = tabs_set_path (my.who, LOC_LOCAL);
+   rc = tabs_set_path (my.m_user, LOC_LOCAL);
    DEBUG_INPT   yLOG_value   ("set path"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -475,7 +466,7 @@ tabs_install            (cchar *a_name)
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   snprintf (x_full, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.who, my.f_desc);
+   snprintf (x_full, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.m_user, my.f_desc);
    DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
    /*---(clear files)------------------------*/
    rc = tabs_clear_extfiles  ();
@@ -522,14 +513,14 @@ tabs_delete             (cchar *a_name)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(check name)-------------------------*/
-   rc = file_parse_name (a_name, LOC_LOCAL);
+   rc = FILE_parse (a_name, LOC_LOCAL);
    DEBUG_INPT   yLOG_value   ("parse"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(verify source)------------------*/
-   snprintf (x_full, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.who, my.f_desc);
+   snprintf (x_full, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.m_user, my.f_desc);
    DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
    /*---(clear files)------------------------*/
    rc = tabs_clear_extfiles  ();
@@ -576,8 +567,8 @@ tabs_delete             (cchar *a_name)
  *>    testing = 'y';                                                                                         <* 
  *>    failed  = 0;                                                                                           <* 
  *>    /+---(set source directory)------------------+/                                                        <* 
- *>    if (strcmp(my.who, "root") == 0) snprintf(dir_name, LEN_PATH, "/home/machine/crontabs/");              <* 
- *>    else                             snprintf(dir_name, LEN_PATH, "/home/%s/c_quani/crontabs/", my.who);   <* 
+ *>    if (strcmp(my.m_user, "root") == 0) snprintf(dir_name, LEN_PATH, "/home/machine/crontabs/");              <* 
+ *>    else                             snprintf(dir_name, LEN_PATH, "/home/%s/c_quani/crontabs/", my.m_user);   <* 
  *>    /+---(move to local directory)--------+/                                                               <* 
  *>    DEBUG_INPT   printf("   moved to local crontab directory\n");                                          <* 
  *>    if (chdir(dir_name) < 0) {                                                                             <* 
@@ -588,7 +579,7 @@ tabs_delete             (cchar *a_name)
  *>    /+---(break up the file name)-------------+/                                                           <* 
  *>    snprintf (x_file, 500, "%s.%s", "crontab", a_source);                                                  <* 
  *>    DEBUG_INPT   printf("   starting with <<%s>>\n", x_file);                                              <* 
- *>    rc = file_parse_name (x_file, '-');                                                                    <* 
+ *>    rc = FILE_parse (x_file, '-');                                                                    <* 
  *>    if (rc <  0) {                                                                                         <* 
  *>       DEBUG_INPT   printf("   ");                                                                         <* 
  *>       printf("crontab name is found, but format is not valid [%d]\n\n", rc);                              <* 
@@ -624,13 +615,13 @@ tabs_user               (cchar *a_user)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(check for root)-----------------*/
-   DEBUG_INPT   yLOG_char    ("am root"   , my.am_root);
-   --rce;  if (my.am_root != 'y') {
+   DEBUG_INPT   yLOG_char    ("am root"   , my.m_root);
+   --rce;  if (my.m_root != 'y') {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(check name)---------------------*/
-   rc = file_check_user (a_user, LOC_VERIFY);
+   rc = FILE_user (a_user, LOC_VERIFY);
    DEBUG_INPT   yLOG_value   ("check"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -735,39 +726,39 @@ tabs__unit              (char *a_question, int a_num)
    int         x_count     =    0;
    int         x_total     =    0;
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "TABS             : question not understood", LEN_TEXT);
+   strlcpy  (unit_answer, "TABS             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "file"          )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS file        : %2d[%.35s]", strlen (my.f_name), my.f_name);
+      snprintf (unit_answer, LEN_HUND, "TABS file        : %2d[%.35s]", strlen (my.f_name), my.f_name);
    }
    else if (strcmp (a_question, "user"          )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS user        : %2d[%.35s]", strlen (my.f_user), my.f_user);
+      snprintf (unit_answer, LEN_HUND, "TABS user        : %2d[%.35s]", strlen (my.f_user), my.f_user);
    }
    else if (strcmp (a_question, "desc"          )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS desc        : %2d[%.35s]", strlen (my.f_desc), my.f_desc);
+      snprintf (unit_answer, LEN_HUND, "TABS desc        : %2d[%.35s]", strlen (my.f_desc), my.f_desc);
    }
    else if (strcmp (a_question, "ext"           )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS ext         : %2d[%.35s]", strlen (my.f_ext), my.f_ext);
+      snprintf (unit_answer, LEN_HUND, "TABS ext         : %2d[%.35s]", strlen (my.f_ext), my.f_ext);
    }
    else if (strcmp (a_question, "path"          )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS path        : %2d[%.35s]", strlen (my.f_path), my.f_path);
+      snprintf (unit_answer, LEN_HUND, "TABS path        : %2d[%.35s]", strlen (my.f_path), my.f_path);
    }
    else if (strcmp (a_question, "who"           )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS who         : %2d[%.35s]", strlen (my.who), my.who);
+      snprintf (unit_answer, LEN_HUND, "TABS who         : %2d[%.35s]", strlen (my.m_user), my.m_user);
    }
    else if (strcmp (a_question, "uid"           )  == 0) {
-      snprintf (unit_answer, LEN_TEXT, "TABS uid         : %d"        , my.uid);
+      snprintf (unit_answer, LEN_HUND, "TABS uid         : %d"        , my.m_uid);
    }
    else if (strcmp (a_question, "entry"         )  == 0) {
       /*---(find entry)---------------------*/
       x_dir  = opendir (my.dir_central);
       if (x_dir == NULL) {
-         snprintf (unit_answer, LEN_TEXT, "TABS entry  (%2d) : can not open dir", a_num);
+         snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : can not open dir", a_num);
          return unit_answer;
       }
       x_file = readdir (x_dir);
       while (x_file != NULL) {
-         rc = file_parse_name (x_file->d_name, LOC_CENTRAL);
+         rc = FILE_parse (x_file->d_name, LOC_CENTRAL);
          if (rc >= 0)  {
             if (c >= a_num)  break;
             ++c;
@@ -775,9 +766,9 @@ tabs__unit              (char *a_question, int a_num)
          x_file = readdir (x_dir);
       }
       if (x_file != NULL) {
-         snprintf (unit_answer, LEN_TEXT, "TABS entry  (%2d) : [%s]"        , a_num, x_file->d_name);
+         snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : [%s]"        , a_num, x_file->d_name);
       } else {
-         snprintf (unit_answer, LEN_TEXT, "TABS entry  (%2d) : []"          , a_num);
+         snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : []"          , a_num);
       }
       rc = closedir (x_dir);
    }
