@@ -27,14 +27,72 @@ tabs_set_path           (cchar *a_user, char a_scope)
    }
    /*---(build global dirs)--------------*/
    else if (a_scope == LOC_CENTRAL) {
-      if      (my.user_mode == MODE_UNIT)    strlcpy  (my.f_path, DIR_UNIT_CENTRAL, LEN_PATH);
-      else                                   strlcpy  (my.f_path, DIR_CENTRAL     , LEN_PATH);
+      if      (my.user_mode == MODE_UNIT)    strlcpy  (my.f_path, DIR_UNIT   , LEN_PATH);
+      else                                   strlcpy  (my.f_path, DIR_CENTRAL, LEN_PATH);
    }
    /*---(summary)------------------------*/
    DEBUG_INPT   yLOG_info    ("f_path"    , my.f_path);
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
+}
+
+char
+TABS__here              (char *a_home)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        x_home      [LEN_HUND]  = "";
+   char       *p           = NULL;
+   int         x_len       =    0;
+   /*---(header)-------------------------*/
+   DEBUG_YSTR   yLOG_senter  (__FUNCTION__);
+   /*---(check return)-------------------*/
+   DEBUG_YSTR   yLOG_spoint  (a_home);
+   --rce;  if (a_home == NULL) {
+      DEBUG_YSTR   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(default)------------------------*/
+   strlcpy (a_home, ""    , LEN_HUND);
+   /*---(get the home)-------------------*/
+   p = getcwd (x_home, LEN_HUND);
+   DEBUG_YSTR   yLOG_spoint  (p);
+   --rce;  if (p == NULL) {
+      DEBUG_YSTR   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_YSTR   yLOG_snote   (x_home);
+   x_len = strlen (x_home);
+   DEBUG_YSTR   yLOG_sint    (x_len);
+   /*---(check valid areas)--------------*/
+   --rce; if (x_len > 16 && strncmp ("/home/system/"         , x_home, 13) == 0) {
+      DEBUG_YSTR   yLOG_snote   ("system");
+      ;;
+   } else if (x_len > 16 && strncmp ("/home/monkey/"         , x_home, 13) == 0) {
+      DEBUG_YSTR   yLOG_snote   ("monkey");
+      ;;
+   } else if (x_len > 25 && strncmp ("/home/member/p_gvskav/", x_home, 22) == 0) {
+      DEBUG_YSTR   yLOG_snote   ("member");
+      ;;
+   } else if (x_len >  8 && strncmp ("/tmp/"                 , x_home,  5) == 0) {
+      DEBUG_YSTR   yLOG_snote   ("unittest");
+      ;;
+   } else {
+      DEBUG_YSTR   yLOG_snote   ("not allowed");
+      DEBUG_YSTR   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(save back)----------------------*/
+   strlcpy (a_home, x_home, LEN_HUND);
+   /*---(complete)-----------------------*/
+   DEBUG_YSTR   yLOG_sexit   (__FUNCTION__);
+   return 0;
+}
+
+char
+TABS__open              (void)
+{
 }
 
 
@@ -319,13 +377,13 @@ tabs_clear_extfiles     (void)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(clear new)--------------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.m_user, my.f_desc);
+   snprintf (x_name, LEN_RECD, "%s%s.%s.NEW", my.n_central, my.m_user, my.f_desc);
    tabs__remove (x_name);
    /*---(clear del)--------------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.m_user, my.f_desc);
+   snprintf (x_name, LEN_RECD, "%s%s.%s.DEL", my.n_central, my.m_user, my.f_desc);
    tabs__remove (x_name);
    /*---(clear base)-------------------------*/
-   snprintf (x_name, LEN_RECD, "%s%s.%s"    , my.dir_central, my.m_user, my.f_desc);
+   snprintf (x_name, LEN_RECD, "%s%s.%s"    , my.n_central, my.m_user, my.f_desc);
    tabs__remove (x_name);
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
@@ -397,9 +455,9 @@ tabs_rename             (char a_ext)
    /*---(temp source name)---------------*/
    DEBUG_INPT   yLOG_char    ("a_ext"     , a_ext);
    --rce;  if (a_ext == ACT_NEW) {
-      snprintf (x_src, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.f_user, my.f_desc);
+      snprintf (x_src, LEN_RECD, "%s%s.%s.NEW", my.n_central, my.f_user, my.f_desc);
    } else if (a_ext == ACT_DEL) {
-      snprintf (x_src, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.f_user, my.f_desc);
+      snprintf (x_src, LEN_RECD, "%s%s.%s.DEL", my.n_central, my.f_user, my.f_desc);
    } else {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -408,7 +466,7 @@ tabs_rename             (char a_ext)
    /*---(update naming)------------------*/
    strlcpy  (my.f_ext , ""      , LEN_SHORT);
    snprintf (my.f_name, LEN_HUND, "%s.%s", my.f_user, my.f_desc);
-   snprintf (my.f_full, LEN_RECD, "%s%s.%s", my.dir_central, my.f_user, my.f_desc);
+   snprintf (my.f_full, LEN_RECD, "%s%s.%s", my.n_central, my.f_user, my.f_desc);
    /*---(move file)--------------------------*/
    if (a_ext == ACT_NEW) {
       snprintf (x_cmd, LEN_RECD, "mv %s %s", x_src, my.f_full);
@@ -466,7 +524,7 @@ tabs_install            (cchar *a_name)
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   snprintf (x_full, LEN_RECD, "%s%s.%s.NEW", my.dir_central, my.m_user, my.f_desc);
+   snprintf (x_full, LEN_RECD, "%s%s.%s.NEW", my.n_central, my.m_user, my.f_desc);
    DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
    /*---(clear files)------------------------*/
    rc = tabs_clear_extfiles  ();
@@ -520,7 +578,7 @@ tabs_delete             (cchar *a_name)
       return rce;
    }
    /*---(verify source)------------------*/
-   snprintf (x_full, LEN_RECD, "%s%s.%s.DEL", my.dir_central, my.m_user, my.f_desc);
+   snprintf (x_full, LEN_RECD, "%s%s.%s.DEL", my.n_central, my.m_user, my.f_desc);
    DEBUG_INPT   yLOG_info    ("x_full"    , x_full);
    /*---(clear files)------------------------*/
    rc = tabs_clear_extfiles  ();
@@ -751,7 +809,7 @@ tabs__unit              (char *a_question, int a_num)
    }
    else if (strcmp (a_question, "entry"         )  == 0) {
       /*---(find entry)---------------------*/
-      x_dir  = opendir (my.dir_central);
+      x_dir  = opendir (my.n_central);
       if (x_dir == NULL) {
          snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : can not open dir", a_num);
          return unit_answer;

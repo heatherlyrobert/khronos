@@ -21,7 +21,6 @@ main (int argc, char *argv[])
    if (rc >= 0)  rc = yURG_logger  (argc, argv);
    if (rc >= 0)  rc = yURG_urgs    (argc, argv);
    if (rc >= 0)  rc = PROG_init    ();
-   /*> if (rc == 0)  rc = PROG_whoami  ();                                            <*/
    if (rc >= 0)  rc = PROG_args    (argc, argv);
    if (rc >= 0)  rc = PROG_begin   ();
    DEBUG_PROG  yLOG_value   ("startup"   , rc);

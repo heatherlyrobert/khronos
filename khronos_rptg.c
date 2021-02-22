@@ -19,8 +19,8 @@ rptg_heartbeat          (void)
    /*---(header)-------------------------*/
    DEBUG_RPTG   yLOG_enter   (__FUNCTION__);
    /*---(open)---------------------------*/
-   DEBUG_RPTG   yLOG_info    ("file"      , my.name_heartbeat);
-   f = fopen (my.name_heartbeat, "wt");
+   DEBUG_RPTG   yLOG_info    ("file"      , my.n_heartbeat);
+   f = fopen (my.n_heartbeat, "wt");
    DEBUG_RPTG   yLOG_point   ("f"         , f);
    --rce;  if (rc < 0) {
       DEBUG_RPTG   yLOG_exitr   (__FUNCTION__, rce);
@@ -51,8 +51,8 @@ rptg__unit_heartbeat   (char *a_heartbeat)
    /*---(header)-------------------------*/
    DEBUG_RPTG   yLOG_enter   (__FUNCTION__);
    /*---(open)---------------------------*/
-   DEBUG_RPTG   yLOG_info    ("file"      , my.name_heartbeat);
-   f = fopen (my.name_heartbeat, "rt");
+   DEBUG_RPTG   yLOG_info    ("file"      , my.n_heartbeat);
+   f = fopen (my.n_heartbeat, "rt");
    DEBUG_RPTG   yLOG_point   ("f"         , f);
    --rce;  if (rc < 0) {
       DEBUG_RPTG   yLOG_exitr   (__FUNCTION__, rce);
@@ -135,8 +135,8 @@ rptg_status             (void)
    /*---(header)-------------------------*/
    DEBUG_RPTG   yLOG_enter   (__FUNCTION__);
    /*---(open)---------------------------*/
-   DEBUG_RPTG   yLOG_info    ("file"      , my.name_status);
-   f = fopen (my.name_status, "wt");
+   DEBUG_RPTG   yLOG_info    ("file"      , my.n_status);
+   f = fopen (my.n_status, "wt");
    DEBUG_RPTG   yLOG_point   ("f"         , f);
    --rce;  if (rc < 0) {
       DEBUG_RPTG   yLOG_exitr   (__FUNCTION__, rce);

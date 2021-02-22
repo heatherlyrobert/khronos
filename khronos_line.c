@@ -60,11 +60,11 @@ LINE__memory            (tLINE *a_cur)
    ++n;
    ++n;  if (a_cur->value       != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->track       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->handoff     != '·')         s_print [n] = 'X';
+   ++n;  if (a_cur->handoff     != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->strict      != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->lower       != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->upper       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->remedy      != '·')         s_print [n] = 'X';
+   ++n;  if (a_cur->remedy      != '-')         s_print [n] = 'X';
    return s_print;
 }
 
@@ -168,102 +168,6 @@ LINE__free              (tLINE **a_old)
 static void  o___PARSE___________o () { return; }
 
 char
-LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command)
-{
-   /*---(locals)-----------+-----------+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   int         x_floor     =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_INPT   yLOG_point   ("sched"     , a_schedule);
-   --rce;  if (a_schedule == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_point   ("command"   , a_command);
-   --rce;  if (a_command == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(line number)--------------------*/
-   DEBUG_INPT   yLOG_value   ("line"      , n);
-   a_new->recdno      =  n;
-   /*---(parse schedule)-----------------*/
-   DEBUG_INPT   yLOG_info    ("sched"     , a_schedule);
-   rc = ySCHED_create (&(a_new->sched), a_schedule);
-   DEBUG_INPT   yLOG_value   ("sched_rc"  , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(tracker)---------------------*/
-   if (a_tracker != NULL) {
-      DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
-      strlcpy (a_new->tracker, a_tracker, LEN_TITLE);
-   }
-   /*---(duration)--------------------*/
-   --rce;  if (a_duration != NULL) {
-      rc = yEXEC_dur_in_sec (a_duration, &(a_new->est));
-      DEBUG_INPT   yLOG_value   ("dur"       , rc);
-      if (rc < 0) {
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-   }
-   /*---(flags)-----------------------*/
-   if (a_flags != NULL) {
-      rc = yEXEC_flags (a_new->est, x_floor, a_flags,
-            &(a_new->value) , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
-            &(a_new->lower), &(a_new->est_min), 
-            &(a_new->upper), &(a_new->est_max), 
-            &(a_new->remedy));
-   }
-   /*---(command)---------------------*/
-   DEBUG_INPT   yLOG_info    ("command"   , a_command);
-   strlcpy (a_new->command, a_command, LEN_FULL);
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-line_create             (void)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   tLINE      *x_new       = NULL;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(create data)--------------------*/
-   rc = LINE__new (&x_new);
-   DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
-   --rce;  if (x_new == NULL) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(populate)-----------------------*/
-   rc = LINE__populate (x_new, my.t_recdno, my.t_schedule, my.t_tracker, my.t_duration, my.t_flags, my.t_command);
-   DEBUG_INPT   yLOG_value   ("populate"  , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(create list)--------------------*/
-   rc = yDLST_line_create (x_new->tracker, x_new);
-   DEBUG_INPT   yLOG_value   ("create"    , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
 LINE__prepare            (void)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -292,7 +196,7 @@ LINE__original          (int n, uchar *a_verb)
    char        rce         =  -10;
    int         rc          =    0;
    char        x_recd      [LEN_RECD];
-   int         x_fields    =    0;
+   int         c           =    0;
    int         x_pos       =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
@@ -306,9 +210,9 @@ LINE__original          (int n, uchar *a_verb)
    strltrim (x_recd, ySTR_SINGLE, LEN_RECD);
    DEBUG_INPT   yLOG_info    ("x_recd"    , x_recd);
    /*---(parse)--------------------------*/
-   x_fields = strldcnt (x_recd, ' ', LEN_RECD);
-   DEBUG_INPT   yLOG_value   ("x_fields"  , x_fields);
-   --rce;  if (x_fields < 6) {
+   c = strldcnt (x_recd, ' ', LEN_RECD);
+   DEBUG_INPT   yLOG_value   ("c"         , c);
+   --rce;  if (c < 5) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -451,12 +355,109 @@ LINE__parse             (void)
    return 0;
 }
 
+char
+LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command)
+{
+   /*---(locals)-----------+-----------+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   int         x_floor     =    0;
+   char        t           [LEN_LABEL] = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT   yLOG_point   ("sched"     , a_schedule);
+   --rce;  if (a_schedule == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_point   ("command"   , a_command);
+   --rce;  if (a_command == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(line number)--------------------*/
+   DEBUG_INPT   yLOG_value   ("line"      , n);
+   a_new->recdno      =  n;
+   /*---(parse schedule)-----------------*/
+   DEBUG_INPT   yLOG_info    ("sched"     , a_schedule);
+   rc = ySCHED_create (&(a_new->sched), a_schedule);
+   DEBUG_INPT   yLOG_value   ("sched_rc"  , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(tracker)---------------------*/
+   if (a_tracker != NULL) {
+      DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
+      if (strcmp (a_tracker, "n/a") == 0) {
+         sprintf (t, "%02d/%03d", g_seq - 1, n);
+         strlcpy (a_new->tracker, t, LEN_TITLE);
+      } else {
+         strlcpy (a_new->tracker, a_tracker, LEN_TITLE);
+      }
+   }
+   /*---(duration)--------------------*/
+   --rce;  if (a_duration != NULL) {
+      rc = yEXEC_dur_in_sec (a_duration, &(a_new->est));
+      DEBUG_INPT   yLOG_value   ("dur"       , rc);
+      if (rc < 0) {
+         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(flags)-----------------------*/
+   if (a_flags != NULL) {
+      rc = yEXEC_flags (a_new->est, x_floor, a_flags,
+            &(a_new->value) , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
+            &(a_new->lower), &(a_new->est_min), 
+            &(a_new->upper), &(a_new->est_max), 
+            &(a_new->remedy));
+   }
+   /*---(command)---------------------*/
+   DEBUG_INPT   yLOG_info    ("command"   , a_command);
+   strlcpy (a_new->command, a_command, LEN_FULL);
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
 
-
-/*====================------------------------------------====================*/
-/*===----                      handling employment                     ----===*/
-/*====================------------------------------------====================*/
-static void  o___EMPLOYMENT______o () { return; }
+char
+LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tLINE      *x_new       = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(create data)--------------------*/
+   rc = LINE__new (&x_new);
+   DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
+   --rce;  if (x_new == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(populate)-----------------------*/
+   rc = LINE__populate (x_new, n, a_schedule, a_tracker, a_duration, a_flags, a_command);
+   DEBUG_INPT   yLOG_value   ("populate"  , rc);
+   --rce;  if (rc < 0) {
+      LINE__free (&x_new);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(create list)--------------------*/
+   rc = yDLST_line_create (x_new->tracker, x_new);
+   DEBUG_INPT   yLOG_value   ("create"    , rc);
+   --rce;  if (rc < 0) {
+      LINE__free (&x_new);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
 
 char
 LINE__handler           (int n, uchar *a_verb, char a_exist, void *a_handler)
@@ -465,8 +466,17 @@ LINE__handler           (int n, uchar *a_verb, char a_exist, void *a_handler)
    char        rce         =  -10;
    int         rc          =    0;
    int         c           =    0;
+   tFILE      *x_file      = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(increment count)----------------*/
+   rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   ++x_file->lines;
    /*---(defense)------------------------*/
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL) {
@@ -527,23 +537,53 @@ LINE__handler           (int n, uchar *a_verb, char a_exist, void *a_handler)
          return rce;
       }
    }
+   /*---(create actual line)-------------*/
+   rc = LINE__create (my.t_recdno, my.t_schedule, my.t_tracker, my.t_duration, my.t_flags, my.t_command);
+   DEBUG_INPT   yLOG_value   ("create"    , rc);
+   --rce; if (rc < 0) {
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                      handling employment                     ----===*/
+/*====================------------------------------------====================*/
+static void  o___EMPLOYMENT______o () { return; }
+
 char
-LINE_assimilate         (void)
+LINE_assimilate         (cchar *a_full)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(parse file)---------------------*/
+   rc = FILE_parse (a_full, LOC_CENTRAL);
+   DEBUG_INPT   yLOG_value   ("parse"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(create file)--------------------*/
    rc = FILE_create (my.f_name, my.f_user, my.f_uid);
    DEBUG_INPT   yLOG_value   ("file"      , rc);
    --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(get current file)---------------*/
+   yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -559,75 +599,29 @@ LINE_assimilate         (void)
    rc = yPARSE_autoread (my.f_full, NULL, LINE__handler);
    DEBUG_PROG  yLOG_value   ("read"      , rc);
    --rce;  if (rc <  0) {
+      strlcpy (x_file->note, "NO FILE" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   c  = yDLST_line_count (YDLST_LOCAL);
+   --rce;  if (c != x_file->lines) {
+      strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   } else if (c == 0) {
+      strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   strlcpy (x_file->note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-char
-LINE_assimilate_OLD     (void)
-{
-   /*---(locals)-----------+-----------+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(create file)--------------------*/
-   rc = FILE_create (my.f_name, my.f_user, my.f_uid);
-   DEBUG_INPT   yLOG_value   ("file"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(open file)----------------------*/
-   DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
-   rc = yPARSE_open_in (my.f_full);
-   DEBUG_INPT   yLOG_value   ("open"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(lines)--------------------------*/
-   while (rc >= 0) {
-      /*---(read file)-------------------*/
-      rc = yPARSE_read (&my.t_recdno, NULL, NULL, NULL);
-      DEBUG_INPT   yLOG_value   ("yparse"    , rc);
-      if (rc == 0) {
-         DEBUG_INPT  yLOG_note    ("end-of-file");
-         break;
-      }
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      /*---(handle line)-----------------*/
-      rc = LINE__parse  ();
-      DEBUG_INPT   yLOG_value   ("parse"     , rc);
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      rc = line_create  ();
-      DEBUG_INPT   yLOG_value   ("data"      , rc);
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-   }
-   /*---(close file)---------------------*/
-   rc = yPARSE_close_in ();
-   DEBUG_INPT   yLOG_value   ("close"     , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
+
+
+
 
 int
 line_prune              (void)
@@ -735,8 +729,10 @@ line__unit              (char *a_question, int a_num)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rc          =    0;
-   char        s           [LEN_USER]  = "[]";
    char        t           [LEN_USER]  = "[]";
+   char        s           [LEN_USER]  = "[]";
+   char        r           [LEN_USER]  = "[]";
+   char        u           [LEN_USER]  = "[]";
    int         c           =    0;
    void       *x_void      = NULL;
    tFILE      *x_file      = NULL;
@@ -781,11 +777,13 @@ line__unit              (char *a_question, int a_num)
       rc = yDLST_line_by_index  (YDLST_GLOBAL, a_num, NULL, &x_line);
       rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
       if (x_line != NULL) {
-         sprintf (s, "[%s]", x_file->title);
-         sprintf (t, "[%s]", x_line->tracker);
-         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) : %-20.20s  %-20.20s  %3d", a_num, t, s, strlen (x_line->command));
+         sprintf (t, "%2d[%-.12s]", strlen (x_line->tracker), x_line->tracker);
+         sprintf (s, "%2d[%-.12s]", strlen (x_line->command), x_line->command);
+         sprintf (u, "%3d %7d %7d", x_line->est, x_line->est_min, x_line->est_max);
+         sprintf (r, "%c %c %c  %c %c %c %c", x_line->value, x_line->track, x_line->handoff, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
+         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) : %2d/%2d  %-16.16s  %-16.16s  %s   %s", a_num, x_file->seq, x_line->recdno, t, s, u, r);
       } else {
-         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) : []                                           -1", a_num);
+         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) :  -/ -   -[]               -[]                -       -       -   · · ·  · · · ·", a_num);
       }
    }
    else if (strcmp (a_question, "runs"    )        == 0) {

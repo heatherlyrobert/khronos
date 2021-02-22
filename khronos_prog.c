@@ -37,7 +37,6 @@ static void      o___UTILITY_________________o (void) {;}
  *>    long      curr      = 0;                       /+ curr hour                +/             <* 
  *>    int       min       = 0;                       /+ curr minute              +/             <* 
  *>    /+---(init)----------------------------------+/                                           <* 
- *>    my.silent = 'y';                                                                          <* 
  *>    /+---(main loop)-----------------------------+/                                           <* 
  *>    DEBUG_LOOP   yLOG_note ("catchup specially flagged missed jobs");                         <* 
  *>    min       = ((my.last_end / 60) % 60) + 1;     /+ start right after last   +/             <* 
@@ -58,7 +57,6 @@ static void      o___UTILITY_________________o (void) {;}
  *>    }                                                                                         <* 
  *>    DEBUG_LOOP   yLOG_value ("last min", min - 1);                                            <* 
  *>    /+---(reset)---------------------------------+/                                           <* 
- *>    my.silent = 'n';                                                                          <* 
  *>    /+---(complete)------------------------------+/                                           <* 
  *>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                   <* 
  *>    return 0;                                                                                 <* 
@@ -90,12 +88,40 @@ PROG_version       (void)
    return verstring;
 }
 
+char
+PROG__files_normal      (void)
+{
+   snprintf (my.n_central     , LEN_PATH, "%s"  , DIR_CENTRAL);
+   snprintf (my.n_home        , LEN_PATH, "%s"  , "/home/");
+   snprintf (my.n_root        , LEN_PATH, "%s"  , "/root");
+   snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
+   snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_YHIST, FILE_TRACK);
+   snprintf (my.n_exec        , LEN_PATH, "%s%s", DIR_YLOG , FILE_EXEC);
+   snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
+   return 0;
+}
+
+char
+PROG__files_unit        (void)
+{
+   snprintf (my.n_central     , LEN_PATH, "%s%s", DIR_UNIT, "crontabs/");
+   snprintf (my.n_home        , LEN_PATH, "%s"  , DIR_UNIT);
+   snprintf (my.n_root        , LEN_PATH, "%s%s", DIR_UNIT, "root");
+   snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", "/tmp/" , FILE_HEARTBEAT);
+   snprintf (my.n_track       , LEN_PATH, "%s%s", "/tmp/" , FILE_TRACK);
+   snprintf (my.n_exec        , LEN_PATH, "%s%s", "/tmp/" , FILE_EXEC);
+   snprintf (my.n_status      , LEN_PATH, "%s%s", "/tmp/" , FILE_STATUS);
+   return 0;
+}
+
 char         /*--: pre-argument program initialization ---[ leaf   [ ------ ]-*/
 PROG_init          (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
+   char        x_home      [LEN_HUND]  = "";
+   char       *p           = NULL;
    /*---(log header)---------------------*/
    DEBUG_TOPS   yLOG_info    ("purpose" , "provide consistent, reliable, time-based job scheduling");
    DEBUG_TOPS   yLOG_info    ("namesake", "winged serpent khronos is the god of creation and unyielding time");
@@ -110,13 +136,9 @@ PROG_init          (void)
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(begin)--------------------------*/
-   snprintf (my.dir_central   , LEN_PATH, "%s"  , DIR_CENTRAL);
-   snprintf (my.name_heartbeat, LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
-   snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_YHIST, FILE_TRACK);
-   snprintf (my.name_locker   , LEN_PATH, "%s%s", DIR_RUN  , FILE_LOCK);
-   snprintf (my.name_exec     , LEN_PATH, "%s%s", DIR_YLOG , FILE_EXEC);
-   snprintf (my.name_status   , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
-   my.silent  = 'n';
+   PROG__files_normal ();
+   g_seq = 0;
+   yURG_stderr ();
    my.user_mode = MODE_DAEMON;
    rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
@@ -132,6 +154,14 @@ PROG_init          (void)
    DEBUG_TOPS   yLOG_value   ("m_ppid"    , my.m_ppid);
    DEBUG_TOPS   yLOG_value   ("m_uid"     , my.m_uid);
    DEBUG_TOPS   yLOG_info    ("m_user"    , my.m_user);
+   /*---(get current path)---------------*/
+   p = getcwd (my.m_path, LEN_PATH);
+   DEBUG_TOPS   yLOG_spoint  (p);
+   --rce;  if (p == NULL) {
+      DEBUG_TOPS   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_TOPS   yLOG_info    ("m_path"    , my.m_path);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -195,6 +225,11 @@ PROG_args          (int argc, char *argv[])
       else if (strcmp(a, "-c"        ) == 0)    tabs_dir_stub   ();
       else if (strcmp(a, "-e"        ) == 0)    tabs_edit_stub  ();
       else if (strcmp(a, "-"         ) == 0)    tabs_stdin_stub ();
+      /*---(for testing)-----------------*/
+      else if (strcmp (a, "--who"    ) == 0) {
+         printf ("launched as %s (%d)\n", my.m_user, my.m_uid);
+         exit (0);
+      }
       /*---(unknown)---------------------*/
       else    printf("requested action not understood or incomplete\n");
    }
@@ -299,7 +334,6 @@ char
 PROG_end           (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   int   rc = 0;
    yDLST_wrap ();
    /*> rc = setuid(my.uid);                                                           <*/
    /*> printf("\n");                                                                  <*/
@@ -332,29 +366,51 @@ static void      o___UNITTEST________________o (void) {;}
  *>    return unit_answer;                                                                <* 
  *> }                                                                                     <*/
 
-char       /*----: set up program test file locations ------------------------*/
-prog__unit_files   (void)
+char
+PROG__unit_mkdir        (char *a_dir, char *a_own, char *a_perms)
+{
+   char        x_cmd       [LEN_RECD]  = "";
+   sprintf (x_cmd, "rm -fr %s > /dev/null", a_dir);
+   system  (x_cmd);
+   sprintf (x_cmd, "mkdir %s > /dev/null", a_dir);
+   system  (x_cmd);
+   sprintf (x_cmd, "chown %s %s > /dev/null", a_own  , a_dir);
+   system  (x_cmd);
+   sprintf (x_cmd, "chmod %s %s > /dev/null", a_perms, a_dir);
+   system  (x_cmd);
+   return 0;
+}
+
+char
+PROG__unit_prepare      (void)
+{
+   char        x_cmd       [LEN_RECD]  = "";
+   char        x_dir       [LEN_RECD]  = "";
+   PROG__files_unit ();
+   chdir  ("/tmp");
+   sprintf (x_dir, "%s", DIR_UNIT);
+   PROG__unit_mkdir (x_dir, "root:users"    , "0777");
+   sprintf (x_dir, "%s/crontabs", DIR_UNIT);
+   PROG__unit_mkdir (x_dir, "root:root"     , "0700");
+   sprintf (x_dir, "%s/root"    , DIR_UNIT);
+   PROG__unit_mkdir (x_dir, "root:root"     , "0700");
+   sprintf (x_dir, "%s/member"  , DIR_UNIT);
+   PROG__unit_mkdir (x_dir, "member:root"   , "0700");
+   sprintf (x_dir, "%s/machine" , DIR_UNIT);
+   PROG__unit_mkdir (x_dir, "machine:root"  , "0700");
+   sprintf (x_dir, "%s/monkey"  , DIR_UNIT);
+   PROG__unit_mkdir (x_dir, "monkey:root"   , "0700");
+   return 0;
+}
+
+char
+PROG__unit_cleanup      (void)
 {
    char        x_cmd       [LEN_RECD];
-   snprintf (my.name_heartbeat, LEN_PATH, "%s%s", "/tmp/" , FILE_HEARTBEAT);
-   snprintf (my.n_track       , LEN_PATH, "%s%s", "/tmp/" , FILE_TRACK);
-   snprintf (my.name_locker   , LEN_PATH, "%s%s", "/tmp/" , FILE_LOCK);
-   snprintf (my.name_exec     , LEN_PATH, "%s%s", "/tmp/" , FILE_EXEC);
-   snprintf (my.name_status   , LEN_PATH, "%s%s", "/tmp/" , FILE_STATUS);
    chdir  ("/tmp");
-   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_USER   );
+   sprintf (x_cmd, "rm -fr %s > /dev/null", DIR_UNIT);
    system  (x_cmd);
-   rmdir  (DIR_UNIT_USER);
-   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_CENTRAL);
-   system  (x_cmd);
-   rmdir  (DIR_UNIT_CENTRAL);
-   strlcpy (my.dir_central, DIR_UNIT_CENTRAL, LEN_PATH);
-   sprintf (x_cmd, "mkdir %s > /dev/null", DIR_UNIT_CENTRAL);
-   system  (x_cmd);
-   mkdir  (DIR_UNIT_CENTRAL, 0777);
-   sprintf (x_cmd, "mkdir %s > /dev/null", DIR_UNIT_USER   );
-   system  (x_cmd);
-   mkdir  (DIR_UNIT_USER   , 0777);
+   strlcpy (my.n_central, DIR_CENTRAL, LEN_PATH);
    return 0;
 }
 
@@ -366,8 +422,8 @@ prog__unit_quiet   (void)
    yURG_logger    (x_argc, x_argv);
    yURG_urgs      (x_argc, x_argv);
    PROG_init      ();
-   /*> PROG_whoami    ();                                                             <*/
-   prog__unit_files ();
+   PROG__unit_prepare ();
+   yURG_noerror ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
    PROG_final     ();
@@ -383,8 +439,8 @@ prog__unit_loud    (void)
    yURG_logger    (x_argc, x_argv);
    yURG_urgs      (x_argc, x_argv);
    PROG_init      ();
-   /*> PROG_whoami    ();                                                             <*/
-   prog__unit_files ();
+   PROG__unit_prepare ();
+   yURG_noerror ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
    PROG_final     ();
@@ -395,15 +451,7 @@ prog__unit_loud    (void)
 char       /*----: set up program urgents/debugging --------------------------*/
 prog__unit_end     (void)
 {
-   char        x_cmd       [LEN_RECD];
-   chdir  ("/tmp");
-   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_USER   );
-   system  (x_cmd);
-   rmdir  (DIR_UNIT_USER);
-   sprintf (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT_CENTRAL);
-   system  (x_cmd);
-   rmdir  (DIR_UNIT_CENTRAL);
-   strlcpy (my.dir_central, DIR_CENTRAL, LEN_PATH);
+   PROG__unit_cleanup ();
    PROG_end       ();
    return 0;
 }

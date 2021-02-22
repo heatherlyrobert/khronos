@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  ""
 #define     P_VERMINOR  ""
-#define     P_VERNUM    "1.4g"
-#define     P_VERTXT    "stripped extra statistics out of lines and code"
+#define     P_VERNUM    "1.4h"
+#define     P_VERTXT    "put together better local file existance/acceptance function"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -456,7 +456,7 @@
 #define     DIR_CENTRAL             "/var/spool/crontabs/"
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
-#define     DIR_UNIT_CENTRAL        "/tmp/khronos_test/"
+#define     DIR_UNIT                "/tmp/khronos_test/"
 #define     DIR_UNIT_USER           "/tmp/khronos_test/user/"
 
 
@@ -518,6 +518,7 @@
 #define     TEST        if (testing     == 'y')
 extern      char        testing;
 extern      int         failed;
+extern      char        g_seq;
 
 
 extern      char        unit_answer [LEN_HUND];
@@ -546,8 +547,6 @@ typedef struct cLINE     tLINE;
 struct cACCESSOR
 {
    /*---(files)----------------*/
-   char        quiet;              /* bool : 0=normal, 1=quiet                */
-   char        updates;            /* bool : 0=normal, 1=quiet                */
    char        user_mode;          /* interactive, daemon, or unittest        */
    /*---(warnings)-------------*/
    char        alt_dir;                     /* use of dir central             */
@@ -561,13 +560,13 @@ struct cACCESSOR
    int         minute;                      /* current minute                 */
    char        heartbeat      [LEN_HUND];   /* latest heartbeat               */
    /*---(files)----------------*/
-   char        dir_central    [LEN_PATH]; /* crontabs global directory        */
-   char        dir_local      [LEN_PATH]; /* crontabs local directory         */
-   char        name_heartbeat [LEN_PATH]; /* pulser file name                 */
-   char        n_track        [LEN_PATH]; /* job tracker file name            */
-   char        name_locker    [LEN_PATH]; /* run lock file name               */
-   char        name_exec      [LEN_PATH]; /* execution file name              */
-   char        name_status    [LEN_PATH]; /* status update file name          */
+   char        n_central   [LEN_PATH];      /* crontabs global directory      */
+   char        n_home      [LEN_PATH];      /* home directory                 */
+   char        n_root      [LEN_PATH];      /* root directory                 */
+   char        n_heartbeat [LEN_PATH];      /* pulser file name               */
+   char        n_track     [LEN_PATH];      /* job tracker file name          */
+   char        n_exec      [LEN_PATH];      /* execution file name            */
+   char        n_status    [LEN_PATH];      /* status update file name        */
    /*---(pulse)----------------*/
    char        pulse_time   [ 50]; /* last time string written to pulse       */
    char        pulse_begin  [ 50]; /* start of this cron run as string        */
@@ -579,6 +578,7 @@ struct cACCESSOR
    char        m_root;                      /* is caller root (y/-)           */
    int         m_pid;                       /* process id of khronos          */
    int         m_ppid;                      /* parent process id of khronos   */
+   char        m_path      [LEN_PATH];      /* run-time path                  */
    /*---(files)----------------*/
    char        f_path      [LEN_PATH];      /* crontab file path              */
    char        f_ready;                     /* crontab name checks out        */
@@ -587,6 +587,7 @@ struct cACCESSOR
    char        f_desc      [LEN_DESC];      /* crontab description            */
    int         f_uid;                       /* crontab execution uid          */
    char        f_ext       [LEN_SHORT];     /* crontab extention              */
+   char        f_new       [LEN_HUND];      /* crontab installed name         */
    char        f_full      [LEN_RECD];      /* crontab fully qualified name   */
    /*---(file deprecated)------*/
    char        name        [LEN_HUND];      /* name of the current crontab    */
@@ -609,16 +610,18 @@ struct cACCESSOR
    long        this_start;                  /* present start                  */
    /*---(trigger)--------------*/
    char        resync;                      /* update crontabs : n=not, -=marked, a=all  */
-   char        silent;                      /* y=log runs, n=no logging       */
 };
 extern    struct cACCESSOR my;
 
 
 struct cFILE {
    /*---(master)---------------*/
+   char        seq;                         /* unique id for testing          */
    char        title       [LEN_HUND];      /* name of the cronfile           */
    char        user        [LEN_USER];      /* execution user name            */
    int         uid;                         /* execution user uid             */
+   char        note        [LEN_TERSE];     /* processing note for sysadmin   */
+   int         lines;                       /* number of lines attempted      */
    /*---(done)-----------------*/
 };
 
@@ -659,20 +662,23 @@ int         main               (int argc, char *argv[]);
 /*---(utility)--------------*/
 char        wait_minute        (void);
 /*> char        catchup            (void);                                            <*/
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(program)--------------*/
-char*       PROG_version       (void);
-char        PROG_init          (void);
-/*> char        PROG_whoami        (void);                                            <*/
-char        PROG_args          (int argc, char *argv[]);
-char        PROG_usage         (void);
-char        PROG_begin         (void);
-char        PROG_final         (void);
-char        PROG_term          (void);
-char        PROG_end           (void);
+char*       PROG_version            (void);
+char        PROG__files_normal      (void);
+char        PROG__files_unit        (void);
+char        PROG_init               (void);
+char        PROG_args               (int argc, char *argv[]);
+char        PROG_usage              (void);
+char        PROG_begin              (void);
+char        PROG_final              (void);
+char        PROG_term               (void);
+char        PROG_end                (void);
 /*---(unit testing)---------*/
 /*> char*       PROG_getter        (char *a_question, int a_num);                     <*/
 
-char        prog__unit_files   (void);
+char        PROG__unit_prepare (void);
+char        PROG__unit_cleanup (void);
 char        prog__unit_quiet   (void);
 char        prog__unit_loud    (void);
 char        prog__unit_end     (void);
@@ -743,6 +749,7 @@ char        FILE_user               (cchar *a_user, cchar a_loc);
 char        FILE__description       (cchar *a_desc);
 char        FILE_parse              (cchar *a_file, cchar a_loc);
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
+char        FILE_acceptable         (cchar *a_name);
 /*---(unittest)-------------*/
 char*       file__unit              (char *a_question, int a_num);
 
@@ -762,9 +769,10 @@ char        LINE__original          (int n, uchar *a_verb);
 char        LINE__revised           (int n, uchar *a_verb, int c);
 char        LINE__handler           (int n, uchar *a_verb, char a_exist, void *a_handler);
 char        LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
-char        line_create             (void);
+char        LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
 char        LINE__parse             (void);
-char        LINE_assimilate         (void);
+char        LINE_assimilate         (cchar *a_full);
+
 int         line_prune              (void);
 char        line_kill               (char *a_file, char *a_line);
 char        line__unit_rpid         (char *a_file, char *a_line, int a_rpid);

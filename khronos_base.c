@@ -10,51 +10,6 @@ char        testing      = 'n';
 
 char        strtest      [100];
 
-#define     MAX_DURATION    10
-#define     MAX_CONTROL     10
-
-struct cDURATION {
-   char       name         [15];
-   int        dur_min;
-   int        dur_exp;
-   int        dur_max;
-} durations [MAX_DURATION] = {
-   /*"123456789012", 123, 123, 123  */
-   { "-"           ,   0,   0,   5  },
-   { "tiny"        ,   0,   0,   2  },
-   { "small"       ,   0,   2,  10  },
-   { "medium"      ,   1,   5,  30  },
-   { "large"       ,   5,  15,  60  },
-   { "huge"        ,  15,  30, 120  },
-   { "---null---"  ,   0,   0,   0  },
-   { "---null---"  ,   0,   0,   0  },
-   { "---null---"  ,   0,   0,   0  },
-   { "---null---"  ,   0,   0,   0  },
-};
-struct cCONTROL  {
-   char       name         [15];
-   char       importance;
-   char       monitoring;
-   char       catchup;
-   char       busy_delay;
-   char       busy_skip;
-   char       busy_kill;
-} controls [MAX_CONTROL] = {
-   /*"123456789012", 123, 123, 123, 123, 123, 123  */
-   /* name-------- , imp, mon, cat, del, ski, kil  */
-   { "-"           , '0', '-', '-', 'y', 'y', 'y'  },
-   { "could"       , '0', '-', '-', 'y', 'y', 'y'  },
-   { "like"        , '1', 'y', '-', 'y', 'y', 'y'  },
-   { "want"        , '2', 'y', '-', 'y', 'y', '-'  },
-   { "need"        , '3', 'y', 'y', 'y', 'y', '-'  },
-   { "must"        , '4', 'y', 'y', 'y', '-', '-'  },
-   { "absolute"    , '5', 'y', 'y', '-', '-', '-'  },
-   { "---null---"  ,   0, '-', '-', '-', '-', '-'  },
-   { "---null---"  ,   0, '-', '-', '-', '-', '-'  },
-   { "---null---"  ,   0, '-', '-', '-', '-', '-'  },
-   /* name-------- , imp, mon, cat, del, ski, kil  */
-};
-
 
 
 char
@@ -200,8 +155,8 @@ base_check_dir          (void)
    /*---(prepare)------------------------*/
    my.alt_dir = 'e';
    /*---(defenses)-----------------------*/
-   DEBUG_ENVI   yLOG_snote   (my.dir_central);
-   x_len = strlen (my.dir_central);
+   DEBUG_ENVI   yLOG_snote   (my.n_central);
+   x_len = strlen (my.n_central);
    DEBUG_ENVI   yLOG_sint    (x_len);
    if (x_len < 10) {
       DEBUG_ENVI   yLOG_snote   ("crondir too short (<10)");
@@ -209,7 +164,7 @@ base_check_dir          (void)
       return rce;
    }
    /*---(existance)----------------------*/
-   rc = lstat (my.dir_central, &s);
+   rc = lstat (my.n_central, &s);
    DEBUG_ENVI   yLOG_sint    (rc);
    --rce;  if  (rc < 0) {
       DEBUG_ENVI   yLOG_snote   ("crondir not found");
@@ -245,7 +200,7 @@ base_check_dir          (void)
       return rce;
    }
    /*---(change to safe location)--------*/
-   rc = chdir (my.dir_central);
+   rc = chdir (my.n_central);
    DEBUG_ENVI   yLOG_sint    (rc);
    if (rc < 0) {
       DEBUG_ENVI   yLOG_snote   ("could not move to central dir");
@@ -253,7 +208,7 @@ base_check_dir          (void)
       return rce;
    }
    /*---(note alternate dir)-------------*/
-   if (strcmp (my.dir_central, DIR_CENTRAL) != 0) {
+   if (strcmp (my.n_central, DIR_CENTRAL) != 0) {
       DEBUG_ENVI   yLOG_snote   ("using alternative dir");
       my.alt_dir = 'y';
    } else {
@@ -332,8 +287,8 @@ base__unit              (char *a_question, int a_num)
    strlcpy  (unit_answer, "BASE             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "central"       )  == 0) {
-      sprintf (t, "[%s]", my.dir_central);
-      snprintf (unit_answer, LEN_HUND, "BASE central     : %2d%-38.38s  %c", strlen (my.dir_central), t, my.alt_dir);
+      sprintf (t, "[%s]", my.n_central);
+      snprintf (unit_answer, LEN_HUND, "BASE central     : %2d%-38.38s  %c", strlen (my.n_central), t, my.alt_dir);
    }
    /*---(complete)-----------------------*/
    return unit_answer;
