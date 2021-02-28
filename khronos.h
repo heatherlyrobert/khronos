@@ -18,8 +18,8 @@
 
 #define     P_BASENAME  ""
 #define     P_FULLPATH  ""
-#define     P_SUFFIX    ""
-#define     P_CONTENT   ""
+#define     P_SUFFIX    "khronos"
+#define     P_CONTENT   "revised crontabs allowing enhanced controls"
 
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
@@ -29,10 +29,10 @@
 #define     P_AUTHOR    "heatherlyrobert"
 #define     P_CREATED   "2010-05"
 
-#define     P_VERMAJOR  ""
-#define     P_VERMINOR  ""
-#define     P_VERNUM    "1.4h"
-#define     P_VERTXT    "put together better local file existance/acceptance function"
+#define     P_VERMAJOR  "1.--, in production and working"
+#define     P_VERMINOR  "1.4-, simplify old design, simple == reliable"
+#define     P_VERNUM    "1.4i"
+#define     P_VERTXT    "put verinst, install, check, audit, and fullcheck in place"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -40,6 +40,30 @@
 
 /*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 /*===[[ END ONE_LINERS ]]=====================================================*/
+
+/*
+ *   DESIGN DECISIONS
+ *
+ *   create a separate spool directory called khronos, rather than use cron
+ *   -- other programs then can not auto-create batch jobs (security)
+ *   -- if both are used on a system, no conflicts
+ *
+ *   support the original format, but also a enhanced one
+ *   -- the original format is quick and easy
+ *   -- the enhanced/revised one allows many more controls
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+
+
+
+
+
 
 /*===[[ HEADER ]]=============================================================#
 
@@ -420,6 +444,7 @@
 #include  <yDLST.h>
 #include  <yPARSE.h>
 #include  <ySCHED.h>
+#include    <yREGEX.h>       /* CUSTOM : heatherly regular expressions        */
 #include  <yEXEC.h>
 #include  <ySTR.h>
 #include  <yURG.h>
@@ -451,9 +476,9 @@
 #define     DIR_LOG                 "/var/log/"
 #define     DIR_YLOG                "/var/log/yLOG/"
 #define     DIR_YHIST               "/var/log/yLOG.historical/"
-#define     DIR_ROOT                "/home/machine/crontabs/"
-#define     DIR_LOCAL               "c_quani/crontabs/"
-#define     DIR_CENTRAL             "/var/spool/crontabs/"
+#define     DIR_ROOT                "/home/machine/khronos/"
+#define     DIR_LOCAL               "c_quani/khronos/"
+#define     DIR_CENTRAL             "/var/spool/khronos/"
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 #define     DIR_UNIT                "/tmp/khronos_test/"
@@ -468,14 +493,29 @@
 
 #define     LOC_CENTRAL     'C'
 #define     LOC_LOCAL       'L'
-#define     LOC_VERIFY      'V'
-#define     LOC_ALL         "CLV"
+
+
+
+ /*===[[ ACTIONS ]]=============================*/
+/*---(central)--------------*/
+#define     ACT_LIST        'l'
+#define     ACT_CHECK       'c'
+#define     ACT_AUDIT       'a'
+#define     ACT_FULLCHECK   'f'
+/*---(incomming)------------*/
+#define     ACT_VERIFY      'v'
+#define     ACT_INSTALL     'i'
+#define     ACT_VERINST     'I'
+/*---(outgoing)-------------*/
+#define     ACT_REMOVE      'r'
+
+#define     ACT_RELOAD      'H'
+
 
 #define     ACT_PURGE       'p'
-#define     ACT_LIST        'l'
-#define     ACT_INST        'i'
-#define     ACT_LOAD        'L'
 #define     ACT_HUP         'H'
+
+#define     ACT_LOAD        'L'
 #define     ACT_NONE        '-'
 #define     ACT_ALL         "pliLH-"
 
@@ -483,7 +523,6 @@
 #define     ACT_DEL         'D'
 
 /*---(work files and directories)-------------------------------*/
-#define    CRONTABS      "/var/spool/crontabs"
 #define    PATH          "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
 #define    SHELL         "/bin/dash"
 
@@ -608,6 +647,17 @@ struct cACCESSOR
    int         for_line;                    /* line which uses context (next one)        */
    long        last_end;                    /* last end                       */
    long        this_start;                  /* present start                  */
+   /*---(scheduling)--------*/
+   char        s_min       [LEN_LONG];      /* minutes           0-59         */
+   char        s_hrs       [LEN_TITLE];     /* hours             0-23         */
+   char        s_dys       [LEN_DESC];      /* days of month     1-31         */
+   char        s_mos       [LEN_LABEL];     /* month of year     1-12         */
+   char        s_dow       [LEN_TERSE];     /* day of week       1-7          */
+   char        s_wks       [LEN_LONG];      /* week of year      1-53         */
+   char        s_yrs       [LEN_LONG];      /* years             1-50         */
+   char        s_beg       [LEN_TERSE];     /* beg of validity                */
+   char        s_end       [LEN_TERSE];     /* end of validity                */
+   char        s_valid;                     /* valid for current day          */
    /*---(trigger)--------------*/
    char        resync;                      /* update crontabs : n=not, -=marked, a=all  */
 };
@@ -705,10 +755,9 @@ char        BASE_unitshape     (char*);
 
 /*===[[ KHRONOS_TABS.C ]]======================================*/
 /*---(names)-----------*/
-char        tabs_set_path           (cchar *a_user, char a_scope);
+char        TABS_security           (void);
 /*---(review)----------*/
 char        tabs_global             (cchar* a_user, cchar a_action);
-char        tabs_local              (cchar* a_user, cchar a_action);
 /*---support-----------*/
 char        tabs__verify            (cchar *a_full);
 char        tabs__remove            (cchar *a_full);
@@ -716,7 +765,12 @@ char        tabs__remove            (cchar *a_full);
 char        tabs_rename             (char a_ext);
 char        tabs_clear_extfiles     (void);
 char        tabs_user               (cchar *a_user);
-char        tabs_install            (cchar *a_name);
+char        TABS_install            (cchar *a_name);
+char        TABS_verify             (cchar *a_name);
+char        TABS_verinst            (cchar *a_name);
+char        TABS_audit              (cchar *a_name);
+char        TABS_check              (cchar *a_name);
+char        TABS_remove             (cchar *a_name);
 char        tabs_delete             (cchar *a_name);
 /*> char        crontab_test       (cchar*);                                          <*/
 char        tabs_hup                (void);
@@ -744,12 +798,10 @@ char*       FILE__memory            (tFILE *a_cur);
 char        FILE__new               (tFILE **a_new);
 char        FILE__free              (tFILE **a_old);
 /*---(support)--------------*/
-char        FILE__user_local        (cchar *a_path, cchar *a_prefix, char *a_user);
-char        FILE_user               (cchar *a_user, cchar a_loc);
-char        FILE__description       (cchar *a_desc);
-char        FILE_parse              (cchar *a_file, cchar a_loc);
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
 char        FILE_acceptable         (cchar *a_name);
+char        FILE_central            (cchar *a_name);
+char        FILE_assimilate         (char a_loc, cchar *a_full);
 /*---(unittest)-------------*/
 char*       file__unit              (char *a_question, int a_num);
 
@@ -767,11 +819,9 @@ char        LINE__free              (tLINE **a_old);
 char        LINE__prepare           (void);
 char        LINE__original          (int n, uchar *a_verb);
 char        LINE__revised           (int n, uchar *a_verb, int c);
-char        LINE__handler           (int n, uchar *a_verb, char a_exist, void *a_handler);
 char        LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
 char        LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
-char        LINE__parse             (void);
-char        LINE_assimilate         (cchar *a_full);
+char        LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler);
 
 int         line_prune              (void);
 char        line_kill               (char *a_file, char *a_line);

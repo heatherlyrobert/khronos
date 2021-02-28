@@ -200,345 +200,43 @@ FILE_create             (char *a_name, char *a_user, int a_uid)
 
 
 /*====================------------------------------------====================*/
-/*===----                     crontab file names                       ----===*/
+/*===----                    contirm good crontabs                     ----===*/
 /*====================------------------------------------====================*/
-static void      o___NAMES___________________o (void) {;}
+static void      o___CONFIRM_________________o (void) {;}
 
-char
-FILE__user_local        (cchar *a_path, cchar *a_prefix, char *a_user)
-{  /*---(design notes)-------------------*/
-   /*
-    *  non-active crontabs must be prefixed with "crontab." and be stored in
-    *  a valid home directory (including /root).  they can not be anywhere
-    *  else including in "/etc" as the security is more shared/liberal.
-    *  system-wide crontabs are stored in "/home/machine".
-    */
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        x_root      =  '-';
-   char        x_path      [LEN_PATH]  = "";
-   int         l           =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_INPT   yLOG_point   ("a_user"    , a_user);
-   --rce;  if (a_user == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   strlcpy (a_user, "", LEN_USER);
-   DEBUG_INPT   yLOG_point   ("a_path"    , a_path);
-   --rce;  if (a_path == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("a_path"    , a_path);
-   DEBUG_INPT   yLOG_point   ("a_prefix"  , a_prefix);
-   --rce;  if (a_prefix == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("a_prefix"  , a_prefix);
-   /*---(naming)-------------------------*/
-   --rce;  if (strcmp (a_prefix, "crontab") != 0) {
-      DEBUG_INPT   yLOG_note    ("all locals must have user crontab");
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_note    ("this is a generic (non-active) crontab");
-   /*---(right location)-----------------*/
-   --rce;  if (strncmp (a_path, my.n_home, strlen (my.n_home)) == 0) {
-      DEBUG_INPT   yLOG_note    ("normal user home directory");
-      x_root = '-';
-   } else if (strncmp (a_path, my.n_root, strlen (my.n_root)) == 0) {
-      DEBUG_INPT   yLOG_note    ("root user home directory");
-      x_root = 'y';
-   } else {
-      DEBUG_INPT   yLOG_note    ("crontabs must be stored in user directories");
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(set user)-----------------------*/
-   --rce;  if (x_root == 'y')  strlcpy (a_user, "root", LEN_USER);
-   else {
-      l = strlen (my.n_home);
-      if (strlen (a_path) <= l + 3) {
-         DEBUG_INPT   yLOG_note    ("home directory simply too short");
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      strlcpy  (x_path, a_path + l, LEN_PATH);
-      strldchg (x_path, '/', '\0', LEN_PATH);
-      strlcpy  (a_user, x_path, LEN_USER);
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char         /*--> verify a user name ----------------------------------------*/
-FILE_user               (cchar *a_prefix, cchar a_loc)
+FILE__defaults          (void)
 {
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   int         l           =    0;
-   char        x_user      [LEN_USER]  = "";
-   int         x_uid       =   -1;
-   char        x_home      [LEN_USER]  = "";
-   /*---(header)-------------------------*/
-   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
-   /*---(prepare)------------------------*/
-   strlcpy (my.f_user, "", LEN_USER);
-   my.f_uid = -1;
-   /*---(defense)------------------------*/
-   DEBUG_INPT   yLOG_point   ("a_prefix"  , a_prefix);
-   --rce;  if (a_prefix == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("a_prefix"  , a_prefix);
-   DEBUG_INPT   yLOG_value   ("a_loc"     , a_loc);
-   DEBUG_INPT   yLOG_info    ("LOC_ALL"   , LOC_ALL);
-   --rce;  if (a_loc == 0 || strchr (LOC_ALL, a_loc) == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(check for locals)---------------*/
-   --rce;  if (a_loc == LOC_LOCAL) {
-      rc = FILE__user_local (my.f_path, a_prefix, x_user);
-      if (rc < 0) {
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      DEBUG_INPT   yLOG_note    ("this is a non-active crontab");
-   } else {
-      DEBUG_INPT   yLOG_note    ("this is an active crontab");
-      strlcpy (x_user, a_prefix, LEN_USER);
-   }
-   DEBUG_INPT   yLOG_info    ("x_user"    , x_user);
-   /*---(check for globals)--------------*/
-   rc = yEXEC_userdata (x_user, &x_uid, NULL, x_home, NULL);
-   DEBUG_INPT   yLOG_value   ("userdata"  , rc);
-   if (rc < 0) {
-      DEBUG_INPT   yLOG_note    ("user is not registered in the system");
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(check correct source)-----------*/
-   DEBUG_INPT   yLOG_value   ("x_uid"     , x_uid);
-   DEBUG_INPT   yLOG_info    ("x_home"    , x_home);
-   DEBUG_INPT   yLOG_info    ("f_path"    , my.f_path);
-   --rce;  if (a_loc == LOC_CENTRAL) {
-      if (strcmp (my.f_path, my.n_central) != 0) {
-         DEBUG_INPT   yLOG_note    ("looking for active crontabs in non-central directory");
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      if (my.m_uid != 0) {
-         DEBUG_INPT   yLOG_note    ("only root can process active crontabs");
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-   }
-   --rce;  if (a_loc == LOC_LOCAL) {
-      if (my.m_uid == 0) {
-         DEBUG_INPT   yLOG_note    ("root can process any non-active crontabs");
-      } else {
-         if (strcmp (my.m_user, x_user) != 0) {
-            DEBUG_INPT   yLOG_note    ("user is not the owner of the directory");
-            DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-            return rce;
-         }
-         l = strlen (x_home);
-         DEBUG_INPT   yLOG_complex ("path"      , "%2d[%s]", strlen (my.f_path), my.f_path);
-         DEBUG_INPT   yLOG_complex ("home"      , "%2d[%s]", l, x_home);
-         if (strncmp (my.f_path, x_home, l) != 0) {
-            DEBUG_INPT   yLOG_note    ("crontab not in specific user home sub-directory");
-            DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-            return rce;
-         }
-      }
-   }
-   /*---(save)---------------------------*/
-   strlcpy (my.f_user, x_user, LEN_USER);
-   my.f_uid  = x_uid;
-   /*---(complete)-----------------------*/
-   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char         /*--> verify a crontab description ------------------------------*/
-FILE__description       (cchar *a_desc)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         x_len       =    0;
-   int         i           =    0;
-   char       *x_valid     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
-   /*---(header)-------------------------*/
-   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
-   /*---(prepare)------------------------*/
-   strlcpy (my.f_desc, "", LEN_USER);       /* dup action for unit testing */
-   /*---(defense)------------------------*/
-   DEBUG_INPT   yLOG_point   ("a_desc"    , a_desc);
-   --rce;  if (a_desc == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("a_desc"    , a_desc);
-   /*---(check length)-------------------*/
-   x_len = strlen (a_desc);
-   DEBUG_INPT   yLOG_value   ("x_len"     , x_len);
-   DEBUG_INPT   yLOG_value   ("min"       , 3);
-   --rce;  if (x_len <=  3) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_value   ("max"       , LEN_DESC);
-   --rce;  if (x_len >= LEN_DESC) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(check letters)------------------*/
-   --rce;  for (i = 0; i < x_len; ++i) {
-      if (strchr (x_valid, a_desc [i]) != NULL)  continue;
-      DEBUG_INPT   yLOG_value   ("position"  , i);
-      DEBUG_INPT   yLOG_char    ("illegal"   , a_desc [i]);
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(save)---------------------------*/
-   strlcpy (my.f_desc, a_desc, LEN_DESC);
-   /*---(header)-------------------------*/
-   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-FILE_parse          (cchar *a_file, cchar a_loc)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   char       *p           = NULL;
-   char       *q           = NULL;
-   int         x_len       =    0;
-   char        x_name     [LEN_HUND];
-   char        x_generic   =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
-   /*---(prepare)------------------------*/
-   my.f_ready = '-';
-   strlcpy (my.f_name, "", LEN_HUND);
-   strlcpy (my.f_user, "", LEN_USER);
-   my.f_uid = -1;
-   strlcpy (my.f_desc, "", LEN_DESC);
-   /*---(defense)------------------------*/
-   DEBUG_INPT   yLOG_point   ("a_file"    , a_file);
-   --rce;  if (a_file == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("a_file"    , a_file);
-   DEBUG_INPT   yLOG_char    ("first char", a_file [0]);
-   --rce;  if (a_file [0] == '.') {
-      DEBUG_INPT   yLOG_note    ("will not process hidden crontabs");
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   x_len = strllen (a_file, LEN_HUND);
-   DEBUG_INPT   yLOG_value   ("x_len"     , x_len);
-   DEBUG_INPT   yLOG_value   ("min"       , 7);
-   --rce;  if (x_len <  0) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_value   ("max"       , LEN_HUND);
-   --rce;  if (x_len >= LEN_HUND) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(parse)--------------------------*/
-   strlcpy (x_name, a_file, LEN_HUND);
-   p = strtok (x_name, ".");
-   DEBUG_INPT   yLOG_point   ("p"         , p);
-   /*---(check user)---------------------*/
-   rc = FILE_user (p, a_loc);
-   DEBUG_INPT   yLOG_value   ("check user", rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(parse again)--------------------*/
-   p = strtok (NULL  , ".");
-   DEBUG_INPT   yLOG_point   ("p"         , p);
-   /*---(check desc)---------------------*/
-   rc = FILE__description (p);
-   DEBUG_INPT   yLOG_value   ("check desc", rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(parse again)--------------------*/
-   p = strtok (NULL  , ".");
-   DEBUG_INPT   yLOG_point   ("p"         , p);
-   --rce;  if (p != NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(save)---------------------------*/
-   strlcpy (my.f_name, a_file , LEN_DESC);
-   if (a_loc == LOC_CENTRAL)  my.f_ready = 'y';
-   /*---(set full name)------------------*/
-   if (a_loc == LOC_CENTRAL) {
-      snprintf (my.f_full, LEN_RECD, "%s%s.%s", my.n_central, my.f_user, my.f_desc);
-   }
-   /*---(header)-------------------------*/
-   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-
-
-/*====================------------------------------------====================*/
-/*===----                       file info                              ----===*/
-/*====================------------------------------------====================*/
-static void      o___CHECK___________________o (void) {;}
-
-char
-FILE_acceptable         (cchar *a_name)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   char        x_cwd       [LEN_PATH]  = "";
-   char       *p           = NULL;
-   char        t           [LEN_HUND]  = "";
-   char        x_user      [LEN_PATH]  = "";
-   int         x_uid       =   -1;
-   char        x_flag      =  '-';
-   int         l           =    0;
-   int         i           =    0;
-   int         c           =    0;
-   tSTAT       s;
-   /*---(defaults)-----------------------*/
    yURG_clearerror ();
    my.f_ready = '-';
    strlcpy (my.f_name, "", LEN_HUND);
    strlcpy (my.f_user, "", LEN_USER);
    my.f_uid = -1;
    strlcpy (my.f_desc, "", LEN_DESC);
+   strlcpy (my.f_full, "", LEN_DESC);
    strlcpy (my.f_new , "", LEN_DESC);
+   return 0;
+}
+
+char
+FILE__naming            (char a_loc, uchar *a_name)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         l           =    0;
+   int         i           =    0;
+   int         c           =    0;
+   char       *p           = NULL;
    /*---(defense)------------------------*/
    DEBUG_INPT   yLOG_point   ("a_name"    , a_name);
-   --rce;  if (a_name == NULL) {
+   --rce;  if (a_name == NULL || strlen (a_name) <= 0) {
       yURG_error ("crontab name can not be null or empty");
       DEBUG_INPT   yLOG_note    ("crontab name can not be null or empty");
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    DEBUG_INPT   yLOG_info    ("a_name"    , a_name);
+   yURG_message ("  -- name <<%s>> is not empty/null", a_name);
    /*---(path)---------------------------*/
    p = strchr (a_name, '/');
    DEBUG_INPT   yLOG_point   ("/"         , p);
@@ -549,59 +247,7 @@ FILE_acceptable         (cchar *a_name)
       return rce;
    }
    DEBUG_INPT   yLOG_note    ("cronfile name is path local (pathless)");
-   /*---(check directory)----------------*/
-   p = getcwd (x_cwd, LEN_PATH);
-   DEBUG_INPT   yLOG_spoint  (p);
-   --rce;  if (p == NULL) {
-      DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("x_cwd"     , x_cwd);
-   --rce;  if (my.m_uid != 0) {
-      sprintf (t, "%s%s", my.n_home, my.m_user);
-      l = strlen (t);
-      if (strncmp (x_cwd, t, l) != 0) {
-         yURG_error ("user not in or below their own home directory (security risk)");
-         DEBUG_INPT   yLOG_note    ("user not in or below their own home directory");
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      strlcpy (x_user, my.m_user, LEN_USER);
-   }
-   --rce;  if (x_flag == '-') {
-      sprintf (t, "%s", my.n_root);
-      l = strlen (t);
-      if (strncmp (x_cwd, t, l) == 0) {
-         DEBUG_INPT   yLOG_note    ("root in root user home directory tree");
-         x_flag = 'y';
-         strlcpy (x_user, "root", LEN_USER);
-      } else {
-         sprintf (t, "%s", my.n_home);
-         l = strlen (t);
-         if (strncmp (x_cwd, t, l) == 0) {
-            DEBUG_INPT   yLOG_note    ("root in another user home directory tree");
-            strlcpy  (x_user, x_cwd + l, LEN_PATH);
-            strldchg (x_user, '/', '\0', LEN_PATH);
-            x_flag = 'y';
-         }
-      }
-      if (x_flag != 'y') {
-         yURG_error ("root, but not in or below a valid user home directory (security risk)");
-         DEBUG_INPT   yLOG_note    ("root, but not in or below a valid user home directory");
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-   }
-   /*---(verify user)--------------------*/
-   DEBUG_INPT   yLOG_info    ("x_user"    , x_user);
-   rc = yEXEC_userdata (x_user, &x_uid, NULL, NULL, NULL);
-   DEBUG_INPT   yLOG_value   ("userdata"  , rc);
-   if (rc < 0) {
-      yURG_error ("user directory not associated with a registered user (security risk)");
-      DEBUG_INPT   yLOG_note    ("user is not registered in the system");
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   yURG_message ("  -- crontab name is pathless/local");
    /*---(name quality)-------------------*/
    l = strlen (a_name);
    DEBUG_INPT   yLOG_value   ("l"         , l);
@@ -614,13 +260,7 @@ FILE_acceptable         (cchar *a_name)
       }
    }
    DEBUG_INPT   yLOG_note    ("all name characters are acceptable");
-   /*---(general length)-----------------*/
-   --rce;  if (l <= 10) {
-      yURG_error ("crontab description can not be shorter than 3 characters (lazy)");
-      DEBUG_INPT   yLOG_note    ("name is too short for prefix and description");
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   yURG_message ("  -- all the file name characters are legal [A-Za-z0-9_.]");
    /*---(hidden file)--------------------*/
    DEBUG_INPT   yLOG_char    ("first char", a_name [0]);
    --rce;  if (a_name [0] == '.') {
@@ -629,31 +269,158 @@ FILE_acceptable         (cchar *a_name)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_message ("  -- crontab is not a hidden file (no lead period)");
    /*---(exactly one period)-------------*/
    c = strldcnt (a_name, '.', LEN_RECD);
    DEBUG_INPT   yLOG_value   ("periods"   , c);
-   --rce;  if (c != 1) {
-      yURG_error ("crontab name can only have a single separator/period (standard)");
-      DEBUG_INPT   yLOG_note    ("name must have exactly one period");
+   --rce;  if (c < 1) {
+      yURG_error ("crontab name does not have at least one separator/period (standard)");
+      DEBUG_INPT   yLOG_note    ("name must have exactly one separator/period");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(name prefix)--------------------*/
-   --rce;  if (strncmp (a_name, "crontab.", 8) != 0) {
-      yURG_error ("crontab name must be prefixed with <<crontab.>> (standard)");
-      DEBUG_INPT   yLOG_note    ("name does not begin with crontab");
-      DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
+   yURG_message ("  -- has at least one period/separator");
+   /*---(description length)-------------*/
+   --rce;  if (a_loc == LOC_LOCAL && l <= 10) {
+      yURG_error ("crontab description can not be shorter than 3 characters (lazy)");
+      DEBUG_INPT   yLOG_note    ("description too short (< 3 chars)");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE__location          (char a_loc, uchar *a_name, char *a_user, int *a_uid, char *a_dir)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_cwd       [LEN_PATH]  = "";
+   char       *p           = NULL;
+   char        t           [LEN_HUND]  = "";
+   char        x_user      [LEN_PATH]  = "";
+   int         x_uid       =   -1;
+   int         l           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check directory)----------------*/
+   p = getcwd (a_dir, LEN_PATH);
+   DEBUG_INPT   yLOG_spoint  (p);
+   --rce;  if (p == NULL) {
+      yURG_error ("can not obtain current working directory");
+      DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   if (a_loc == LOC_LOCAL)  strlcat (a_dir, "/", LEN_PATH);
+   DEBUG_INPT   yLOG_info    ("a_dir"     , a_dir);
+   yURG_message ("  -- current working directory is %s", a_dir);
+   /*---(check normal install)-----------*/
+   --rce;  if (a_loc == LOC_LOCAL && my.m_uid != 0) {
+      sprintf (t, "%s%s", my.n_home, my.m_user);
+      l = strlen (t);
+      if (strncmp (a_dir, t, l) != 0) {
+         yURG_error ("user not in or below their own home directory (security risk)");
+         DEBUG_INPT   yLOG_note    ("user not in or below their own home directory");
+         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      strlcpy (a_user, my.m_user, LEN_USER);
+      yURG_message ("  -- normal user crontab in or below home directory");
+   }
+   /*---(check root install)-------------*/
+   --rce;  if (a_loc == LOC_LOCAL && my.m_uid == 0) {
+      sprintf (t, "%s", my.n_root);
+      l = strlen (t);
+      if (strncmp (a_dir, t, l) == 0) {
+         DEBUG_INPT   yLOG_note    ("root in root user home directory tree");
+         strlcpy (a_user, "root", LEN_USER);
+         yURG_message ("  -- root user crontab in or below root home directory");
+      } else {
+         sprintf (t, "%s", my.n_home);
+         l = strlen (t);
+         if (strncmp (a_dir, t, l) == 0) {
+            DEBUG_INPT   yLOG_note    ("root in another user home directory tree");
+            strlcpy  (x_user, a_dir + l, LEN_PATH);
+            strldchg (x_user, '/', '\0', LEN_PATH);
+            strlcpy (a_user, x_user, LEN_USER);
+            yURG_message ("  -- root user crontab in or below %s users home directory", x_user);
+         } else {
+            yURG_error ("root, but not in or below a valid user home directory (security risk)");
+            DEBUG_INPT   yLOG_note    ("root, but not in or below a valid user home directory");
+            DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+            return rce;
+         }
+      }
+   }
+   /*---(check central audit)------------*/
+   --rce;  if (a_loc == LOC_CENTRAL) {
+      /*---(verify user)--------------------*/
+      strlcpy  (x_user, a_name, LEN_USER);
+      strldchg (x_user, '.', '\0', LEN_USER);
+      strlcpy  (a_user, x_user, LEN_USER);
+      yURG_message ("  -- central cronfile prefix is %s", a_user);
+   }
+   DEBUG_INPT   yLOG_info    ("a_user"    , a_user);
+   /*---(check for registered)-----------*/
+   rc = yEXEC_userdata (a_user, a_uid, NULL, NULL, NULL);
+   DEBUG_INPT   yLOG_value   ("userdata"  , rc);
+   if (rc < 0) {
+      if (a_loc == LOC_LOCAL) {
+         yURG_error ("user directory not associated with a registered user (security risk)");
+      } else {
+         yURG_error ("user prefix not associated with a registered user (security risk)");
+      }
+      DEBUG_INPT   yLOG_note    ("user is not registered in the system");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_message ("  -- file user is registered with system, %s, uid %d", a_user, *a_uid);
+   /*---(name prefix)--------------------*/
+   --rce;  if (a_loc == LOC_LOCAL) {
+      if (strncmp (a_name, "khronos.", 8) != 0) {
+         yURG_error ("crontab name must be prefixed with <<khronos.>> (standard)");
+         DEBUG_INPT   yLOG_note    ("name does not begin with crontab");
+         DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      yURG_message ("  -- name is prefixed appropriately with <<khronos.>>");
+   }
+   --rce;  if (a_loc == LOC_CENTRAL && my.m_uid != 0) {
+      if (strcmp (my.m_user, a_user) != 0) {
+         yURG_error   ("  -- FATAL, run-time user <<%s>> can not review this file", my.m_user);
+         DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE__stats             (char a_loc, uchar *a_dir, uchar *a_name, uchar *a_user, int a_uid)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_full      [LEN_PATH]  = "";
+   tSTAT       s;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(get stats)----------------------*/
-   rc = lstat (a_name, &s);
+   sprintf (x_full, "%s%s", a_dir, a_name);
+   rc = lstat (x_full, &s);
    DEBUG_YEXEC  yLOG_value   ("stat"      , rc);
    --rce;  if (rc < 0) {
-      yURG_error ("crontab file could not be located in current working directory");
+      yURG_error ("crontab file could not be located in %s", a_dir);
       DEBUG_INPT   yLOG_note    ("actual crontab file could not be found");
       DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_message ("  -- located the actual file in %s", a_dir);
    /*---(check file type)----------------*/
    --rce;  if (S_ISDIR (s.st_mode))  {
       yURG_error ("crontab file actually refers to a directory (security risk)");
@@ -676,24 +443,45 @@ FILE_acceptable         (cchar *a_name)
       return rce;
    }
    DEBUG_YEXEC  yLOG_note    ("confirmed as regular file");
+   yURG_message ("  -- file is confirmed as a regular file, not a symlink/directory");
    /*---(ownership)----------------------*/
-   DEBUG_YEXEC  yLOG_complex ("owner"     , "dir %4d, run %4d, own %4d", x_uid, my.m_uid, s.st_uid);
-   --rce;  if (x_uid != s.st_uid) {
-      yURG_error ("crontab file owner does not match home directory owner (security risk)");
-      DEBUG_YEXEC  yLOG_note    ("file owner does not match home directory owner (security risk)");
-      DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+   DEBUG_YEXEC  yLOG_complex ("owner"     , "user %4d, run %4d, own %4d", a_uid, my.m_uid, s.st_uid);
+   --rce;  if (a_loc == LOC_LOCAL) {
+      if (s.st_uid != a_uid) {
+         yURG_error ("crontab file owner does not match home directory owner (security risk)");
+         DEBUG_YEXEC  yLOG_note    ("file owner does not match home directory owner (security risk)");
+         DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      if (my.m_uid == 0) {
+         yURG_message ("  -- running as root, can verify/install any user crontab");
+      } else if (my.m_uid == s.st_uid) {
+         yURG_message ("  -- run-time user matches file ownership");
+      } else {
+         yURG_error ("run-time user does not match crontab file owner (security risk)");
+         DEBUG_YEXEC  yLOG_note    ("file owner does not match home directory owner (security risk)");
+         DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
    }
-   --rce;  if (my.m_uid != 0) {
-      if (my.m_uid != s.st_uid) {
-         yURG_error ("crontab file ownership does not match run user ownership (security risk)");
+   --rce;  if (a_loc == LOC_CENTRAL) {
+      if (my.m_uid == 0) {
+         yURG_message ("  -- running as root, can audit any files");
+      } else if (strcmp (my.m_user, a_user) == 0) {
+         yURG_message ("  -- prefix matches user %s, can audit this file", my.m_user);
+      } else {
+         yURG_error ("user prefix in crontab name does not match run-time user (security risk)");
          DEBUG_YEXEC  yLOG_note    ("file owner is not runtime user");
          DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      DEBUG_YEXEC  yLOG_note    ("runtime user owns this file");
-   } else {
-      DEBUG_YEXEC  yLOG_note    ("root can handle anything");
+      if (s.st_uid != 0 || s.st_gid != 0) {
+         yURG_error ("central crontab file owner/group is not root (security risk)");
+         DEBUG_YEXEC  yLOG_note    ("central contab file owner/group is not root (security risk)");
+         DEBUG_YEXEC  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      yURG_message ("  -- central crontab owner and group is root");
    }
    /*---(permissions)--------------------*/
    DEBUG_ENVI   yLOG_value   ("perms"     , s.st_mode & 00777);
@@ -704,15 +492,199 @@ FILE_acceptable         (cchar *a_name)
       return rce;
    }
    DEBUG_YEXEC  yLOG_note    ("permissions are 0600 (private)");
+   yURG_message ("  -- file permissions confirmed as owner-only write/read (0600)");
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE_acceptable         (cchar *a_name)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_cwd       [LEN_PATH]  = "";
+   char       *p           = NULL;
+   char        t           [LEN_HUND]  = "";
+   char        x_user      [LEN_PATH]  = "";
+   int         x_uid       =   -1;
+   char        x_flag      =  '-';
+   int         l           =    0;
+   int         i           =    0;
+   int         c           =    0;
+   tSTAT       s;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   yURG_message ("file acceptabliity...");
+   /*---(defaults)-----------------------*/
+   FILE__defaults ();
+   /*---(naming)-------------------------*/
+   rc = FILE__naming (LOC_LOCAL, a_name);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(verify user)--------------------*/
+   rc = FILE__location (LOC_LOCAL, a_name, x_user, &x_uid, x_cwd);
+   /*> yURG_error   ("rc = %d", rc);                                                  <*/
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(stats)--------------------------*/
+   rc = FILE__stats (LOC_LOCAL, x_cwd, a_name, x_user, x_uid);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(update globals)-----------------*/
    strlcpy (my.f_name, a_name, LEN_HUND);
    strlcpy (my.f_user, x_user, LEN_USER);
    my.f_uid   = x_uid;
    strlcpy (my.f_desc, a_name + 8, LEN_DESC);
+   sprintf (my.f_full, "%s%s", x_cwd, a_name);
    sprintf (my.f_new, "%s.%s", my.f_user, my.f_desc);
    my.f_ready = 'y';
+   yURG_message ("  -- SUCCESS");
+   yURG_message ("");
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE_central            (cchar *a_name)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char       *p           = NULL;
+   int         l           =    0;
+   int         i           =    0;
+   char        x_cwd       [LEN_PATH]  = "";
+   char        x_full      [LEN_PATH]  = "";
+   char        x_user      [LEN_PATH]  = "";
+   int         x_uid       =   -1;
+   tSTAT       s;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(naming)-------------------------*/
+   rc = TABS_security ();
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(defaults)-----------------------*/
+   FILE__defaults ();
+   yURG_message ("crontab file audit...");
+   /*---(naming)-------------------------*/
+   rc = FILE__naming (LOC_CENTRAL, a_name);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(verify user)--------------------*/
+   rc = FILE__location (LOC_CENTRAL, a_name, x_user, &x_uid, x_cwd);
+   /*> yURG_error   ("rc = %d", rc);                                                  <*/
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(stats)--------------------------*/
+   rc = FILE__stats (LOC_CENTRAL, my.n_central, a_name, x_user, x_uid);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(update globals)-----------------*/
+   strlcpy (my.f_name, a_name, LEN_HUND);
+   strlcpy (my.f_user, x_user, LEN_HUND);
+   my.f_uid   =  x_uid;
+   strlcpy (my.f_desc, a_name + strlen (x_user) + 1 , LEN_DESC);
+   sprintf (my.f_full, "%s%s", my.n_central, a_name);
+   my.f_ready = 'y';
+   yURG_message ("  -- SUCCESS");
+   yURG_message ("");
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE_assimilate        (char a_loc, cchar *a_full)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   int         c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(parse file)---------------------*/
+   if      (a_loc == LOC_CENTRAL)   rc = FILE_central    (a_full);
+   else if (a_loc == LOC_LOCAL  )   rc = FILE_acceptable (a_full);
+   DEBUG_INPT   yLOG_value   ("parse"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(create file)--------------------*/
+   yURG_message ("assimilate file lines...");
+   rc = FILE_create (my.f_name, my.f_user, my.f_uid);
+   DEBUG_INPT   yLOG_value   ("file"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_message ("  -- created a list to house the lines");
+   /*---(get current file)---------------*/
+   yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
+      yURG_message ("  -- file failed");
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(prepare)------------------------*/
+   rc = ySCHED_newfile ();
+   DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);
+   --rce;  if (rc < 0) {
+      yURG_message ("  -- schedule failed");
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_message ("  -- initialized the valid date for scheduling");
+   yURG_message ("  -- calling auto-reader");
+   yURG_message ("");
+   /*---(pull all lines)-----------------*/
+   DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
+   rc = yPARSE_autoread (my.f_full, NULL, LINE_handler);
+   DEBUG_PROG  yLOG_value   ("read"      , rc);
+   --rce;  if (rc <  0) {
+      strlcpy (x_file->note, "NO FILE" , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   c  = yDLST_line_count (YDLST_LOCAL);
+   --rce;  if (c != x_file->lines) {
+      yURG_message ("ERRORS, reviewed %d, accepted %d", x_file->lines, c);
+      yURG_message ("");
+      strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   } else if (c == 0) {
+      yURG_message ("EMPTY, reviewed %d, accepted %d", x_file->lines, c);
+      yURG_message ("");
+      strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_message ("SUCCESS, reviewed %d, accepted %d", x_file->lines, c);
+   yURG_message ("");
+   strlcpy (x_file->note, "success"  , LEN_TERSE);
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -752,7 +724,7 @@ file__unit              (char *a_question, int a_num)
       snprintf (unit_answer, LEN_HUND, "FILE new         : %2d[%.35s]", strlen (my.f_new), my.f_new);
    }
    else if (strcmp (a_question, "full"          )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "FILE full        : %2d[%.35s]", strlen (my.f_full), my.f_full);
+      snprintf (unit_answer, LEN_HUND, "FILE full        : %2d[%.60s]", strlen (my.f_full), my.f_full);
    }
    else if (strcmp (a_question, "count"   )        == 0) {
       snprintf (unit_answer, LEN_HUND, "FILE count       : %d", yDLST_list_count ());

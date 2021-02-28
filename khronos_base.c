@@ -47,7 +47,7 @@ base_every_hour         (int a_hour)
    DEBUG_LOOP  yLOG_note    ("hourly break -- check crontabs and reset fast list");
    DEBUG_LOOP  yLOG_value   ("a_hour"    , a_hour);
    /*---(just in case)-------------------*/
-   rc = tabs_global  ("ALL", ACT_HUP);  /* just in case a signal was missed */
+   /*> rc = tabs_global  ("ALL", ACT_HUP);  /+ just in case a signal was missed +/    <*/
    DEBUG_LOOP  yLOG_value   ("global"    , rc);
    /*---(reset focus)--------------------*/
    rc = exec_focus   ();
@@ -79,7 +79,7 @@ base_daemon_mode        (void)
    x_hour  = exec_time (0);
    /*> rc      = rptg_beg_watch ();                                                   <*/
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-   tabs_global ("ALL", ACT_LOAD);
+   /*> tabs_global ("ALL", ACT_LOAD);                                                 <*/
    rptg_status ();
    /*> catchup();                                                                     <*/
    exec_wait_min ();

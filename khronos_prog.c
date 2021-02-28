@@ -104,7 +104,7 @@ PROG__files_normal      (void)
 char
 PROG__files_unit        (void)
 {
-   snprintf (my.n_central     , LEN_PATH, "%s%s", DIR_UNIT, "crontabs/");
+   snprintf (my.n_central     , LEN_PATH, "%s%s", DIR_UNIT, "khronos/");
    snprintf (my.n_home        , LEN_PATH, "%s"  , DIR_UNIT);
    snprintf (my.n_root        , LEN_PATH, "%s%s", DIR_UNIT, "root");
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", "/tmp/" , FILE_HEARTBEAT);
@@ -135,10 +135,13 @@ PROG_init          (void)
    DEBUG_TOPS   yLOG_info    ("ySTR"    , ySTR_version    ());
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(yURG output control)------------*/
+   yURG_noout  ();
+   yURG_stderr ();
+   ySCHED_config_by_date (11,  5, 14);    /* MUST FIX FIX FIX */
    /*---(begin)--------------------------*/
    PROG__files_normal ();
    g_seq = 0;
-   yURG_stderr ();
    my.user_mode = MODE_DAEMON;
    rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
@@ -202,32 +205,33 @@ PROG_args          (int argc, char *argv[])
          return -1;
       }
       /*---(usage/help)------------------*/
-      else if (strcmp(a, "-h"        ) == 0)    PROG_usage();
-      else if (strcmp(a, "--help"    ) == 0)    PROG_usage();
+      else if (strcmp (a, "-h"         ) == 0)    PROG_usage();
+      else if (strcmp (a, "--help"     ) == 0)    PROG_usage();
       /*---(lists)-----------------------*/
-      else if (strcmp(a, "--list"    ) == 0)    tabs_global  (my.m_user, 'l');
-      else if (strcmp(a, "--all"     ) == 0)    tabs_global  ("ALL" , 'l');
-      else if (strcmp(a, "--here"    ) == 0)    tabs_local   (my.m_user, 'l');
+      else if (strcmp (a, "--list"     ) == 0)    TABS_review  ("*", ACT_LIST);
       /*---(installing)------------------*/
-      else if (a[0] != '-'           )          tabs_install (a);
+      else if (strcmp (a, "--install"  ) == 0)  { TWOARG  TABS_install (argv[++i]); }
+      else if (strcmp (a, "--verify"   ) == 0)  { TWOARG  TABS_verify  (argv[++i]); }
+      else if (strcmp (a, "--verinst"  ) == 0)  { TWOARG  TABS_verinst (argv[++i]); }
+      else if (strcmp (a, "--remove"   ) == 0)  { TWOARG  TABS_remove  (argv[++i]); }
+      else if (strcmp (a, "--check"    ) == 0)  { TWOARG  TABS_check   (argv[++i]); }
+      else if (strcmp (a, "--audit"    ) == 0)  { TWOARG  TABS_audit   (argv[++i]); }
+      else if (strcmp (a, "--fullcheck") == 0)    TABS_review  ("*", ACT_FULLCHECK);
       /*> else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }   <*/
-      else if (strcmp(a, "--reload"  ) == 0)    tabs_local   (my.m_user, 'i');
       /*---(removing)--------------------*/
-      else if (strcmp(a, "-d"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
-      else if (strcmp(a, "-r"        ) == 0)  { TWOARG  tabs_delete   (argv[++i]); }
-      else if (strcmp(a, "--purge"   ) == 0)    tabs_global  (my.m_user, 'p');
-      else if (strcmp(a, "--cleanse" ) == 0)    tabs_global  ("ALL" , 'p');
+      /*> else if (strcmp (a, "--purge"   ) == 0)    tabs_global  (my.m_user, 'p');   <*/
+      /*> else if (strcmp (a, "--cleanse" ) == 0)    tabs_global  ("ALL" , 'p');      <*/
       /*---(user switches)---------------*/
-      else if (strcmp(a, "-u"        ) == 0)  { TWOARG  tabs_user     (argv[++i]); }
-      else if (strcmp(a, "--user"    ) == 0)  { TWOARG  tabs_user     (argv[++i]); }
+      /*> else if (strcmp (a, "-u"        ) == 0)  { TWOARG  tabs_user     (argv[++i]); }   <* 
+       *> else if (strcmp (a, "--user"    ) == 0)  { TWOARG  tabs_user     (argv[++i]); }   <*/
       /*---(warnings)--------------------*/
-      else if (strcmp(a, "-l"        ) == 0)    tabs_cat_stub   ();
-      else if (strcmp(a, "-c"        ) == 0)    tabs_dir_stub   ();
-      else if (strcmp(a, "-e"        ) == 0)    tabs_edit_stub  ();
-      else if (strcmp(a, "-"         ) == 0)    tabs_stdin_stub ();
+      /*> else if (strcmp (a, "-l"        ) == 0)    tabs_cat_stub   ();              <* 
+       *> else if (strcmp (a, "-c"        ) == 0)    tabs_dir_stub   ();              <* 
+       *> else if (strcmp (a, "-e"        ) == 0)    tabs_edit_stub  ();              <* 
+       *> else if (strcmp (a, "-"         ) == 0)    tabs_stdin_stub ();              <*/
       /*---(for testing)-----------------*/
       else if (strcmp (a, "--who"    ) == 0) {
-         printf ("launched as %s (%d)\n", my.m_user, my.m_uid);
+         printf ("launched as %s (%d) at (%d)\n", my.m_user, my.m_uid, geteuid ());
          exit (0);
       }
       /*---(unknown)---------------------*/
@@ -390,7 +394,7 @@ PROG__unit_prepare      (void)
    chdir  ("/tmp");
    sprintf (x_dir, "%s", DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:users"    , "0777");
-   sprintf (x_dir, "%s/crontabs", DIR_UNIT);
+   sprintf (x_dir, "%s/khronos" , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:root"     , "0700");
    sprintf (x_dir, "%s/root"    , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:root"     , "0700");
@@ -423,6 +427,7 @@ prog__unit_quiet   (void)
    yURG_urgs      (x_argc, x_argv);
    PROG_init      ();
    PROG__unit_prepare ();
+   yURG_noout   ();
    yURG_noerror ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
@@ -440,6 +445,7 @@ prog__unit_loud    (void)
    yURG_urgs      (x_argc, x_argv);
    PROG_init      ();
    PROG__unit_prepare ();
+   yURG_noout   ();
    yURG_noerror ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();

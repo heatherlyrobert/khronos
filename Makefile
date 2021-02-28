@@ -8,7 +8,7 @@ NAME_BASE  = khronos
 # additional standard and outside libraries
 LIB_STD    = 
 # all heatherly libraries used, debug versions whenever available
-LIB_MINE   = -lyDLST_debug -lyPARSE_debug -lySTR_debug -lyEXEC_debug -lySCHED_debug
+LIB_MINE   = -lyDLST_debug -lyPARSE_debug -lySTR_debug -lyEXEC_debug -lySCHED_debug -lyREGEX_debug
 # directory for production code, no trailing slash
 INST_DIR   = /usr/sbin
 
@@ -39,6 +39,7 @@ include /usr/local/sbin/make_program
 #===(post-processing)======================================#
 # create a rule for...
 install_post       :
+	chmod u+s /usr/sbin/khronos
 	ln --force --physical /usr/sbin/khronos  /usr/sbin/crond
 	@sha1sum  /usr/sbin/crond
 	ln --force --physical /usr/sbin/khronos  /usr/bin/crontab
