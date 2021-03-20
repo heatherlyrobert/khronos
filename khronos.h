@@ -5,14 +5,14 @@
 /*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 
 #define     P_FOCUS     "SA (system administration)"
-#define     P_NICHE     "bp (batch processing)"
-#define     P_SUBJECT   "time-based job scheduling"
-#define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling
+#define     P_NICHE     "ba (batch automation)"
+#define     P_SUBJECT   "time-based batch automation and job scheduling"
+#define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling"
 
 #define     P_NAMESAKE  "khronos-ageraton (unaging)"
 #define     P_HERITAGE  "incorporeal protogenoi god of creation and unyielding time"
-#define     P_IMAGERY   "winged serpent (drakon) with three heads -- bull, lion, man"
-#define     P_REASON    ""
+#define     P_IMAGERY   "winged serpent (drakon) with three heads; bull, lion, and man"
+#define     P_REASON    "khronos is the embodiment of the merciless march of time"
 
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
 
@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.4-, simplify old design, simple == reliable"
-#define     P_VERNUM    "1.4i"
-#define     P_VERTXT    "put verinst, install, check, audit, and fullcheck in place"
+#define     P_VERNUM    "1.4y"
+#define     P_VERTXT    "reworked argument testing and rebuilt tabs unit testing"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -40,6 +40,44 @@
 
 /*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 /*===[[ END ONE_LINERS ]]=====================================================*/
+
+/*   NEXT STEPS
+ *
+ *   1) add system impact indicators for cpu, desk, and network
+ *      -- maybe 0 none, 1 trivial, 2 low, 3 medium, 4 high, 5 maxing out
+ *      -- this could be added to job spec [--·---·cdn]
+ *
+ *   2) khronos to read system use flag from sysadmin to make decisions
+ *      -- note is every 5, 6, or 10 minutes
+ *      -- indicates what system is using and for how long, like "going to lunch"
+ *      -- value Absolute and Need will run, may be delayed or fulled forward
+ *      -- value Value, Crave, and Want are optional (maybe one day miss?)
+ *      -- value Like, Might, and Unset are just skipped as needed
+ *
+ *   3) monitor the system usage database from SA that runs every 2 minutes
+ *      -- predict system load based on other days
+ *      -- give an indication of present load and use to delay
+ *
+ *   4) temporary black-out periods, for downtime, maintenance, emergencies
+ *      -- somehow tell khronos to run nothing
+ *      -- maybe just kill the daemon
+ *
+ *   5) specific no-run or cancel, e.g., don't run helios today
+ *      -- trouble this is not for all entries in file
+ *      -- could update actual cronfile, but how to remember to fix later
+ *      -- could be command-line, but no auditing
+ *      -- like file update with "exception" verb with dates and a *reason*
+ *      -- all exceptions appear after the crontab entry to appear readable
+ *      -- exceptions are valid for one crontab entry only
+ *      -- write the exception to the log when encountered (for backup)
+ *
+ *   6) bring back "black-out" list of dates at top of crontab
+ *      -- maybe make a line per with a *reason* for documentation
+ *
+ *
+ *
+ */
+
 
 /*
  *   DESIGN DECISIONS
@@ -61,6 +99,90 @@
  */
 
 
+/*> .SH DESCRIPTION (backstory)                                                       <* 
+ *> crond is a well-worn, familiar, time-tested, and posix-defined daemon that        <* 
+ *> provides time-based job scheduling.  while this is just one aspect of batch       <* 
+ *> automation, it is the most commonly used and crond does it exceptionally          <* 
+ *> well.  many attempts have been made to "do it better", but its still here ;)      <* 
+ *>                                                                                   <* 
+ *> brian kernighan nailed it in the original (1979) by focusing on a real and        <* 
+ *> definite need by folks that understood automation on low power systems.  he       <* 
+ *> coupled it with an elegant, expressive, and terse scheduling grammar built        <* 
+ *> by computer science folks and kept it simple and robust.  bloody brilliant.       <* 
+ *>                                                                                   <* 
+ *> but, there are now many implementations of crond screaming out for use,           <* 
+ *> each of which comes with its own set of creeping featurism, cruft, and            <* 
+ *> accessibility "improvements."  they all just tend to piss me off as               <* 
+ *> everything seems to be trending towards the closely coupled, gui-focused,         <* 
+ *> kitchen-sink mentality that then tends to display well but never gets used.       <* 
+ *>                                                                                   <* 
+ *> the one thing these advancements truly improved were the algorithms.              <* 
+ *> the original cron apparently could not scale to a large number of users --        <* 
+ *> not that helpful for them.  in our case, we won't have a ton of different         <* 
+ *> users, but we will have tons of jobs running -- we want the better algorithms     <* 
+ *> to make up for the primitiveness of our coding ;)                                 <* 
+ *>                                                                                   <* 
+ *> khronos will attempt to implement the original simplicity, clarity, and           <* 
+ *> power with updated algorithms, automated testing, strong logging and              <* 
+ *> monitoring, stronger security, and a few added recovery/notification              <* 
+ *> features.  we will maintain much backward compatibility while focusing on         <* 
+ *> an automation-intensive, power-user environment for our own personal use.         <* 
+ *>                                                                                   <* 
+ *> "do one thing and do it well (securely) and focus on technical users"             <* 
+ *>                                                                                   <* 
+ *> khronos will provide...                                                           <* 
+ *>    - near posix compatibility to do the full job on core features                 <* 
+ *>    - backwards compatible with existing crontab formats (great design)            <* 
+ *>    - additional, specific job recovery features (better lights out)               <* 
+ *>    - strict glibc/ansi-c so it can be ported to and compilied anywhere            <* 
+ *>    - fast and efficient because we want to enable tons of automation              <* 
+ *>    - solid logging and status updates so you never have to guess                  <* 
+ *>    - ablilty to be very verbose in interactive use also (tracing)                 <* 
+ *>    - clean, clear code so we can maintain it after long absences                  <* 
+ *>    - fullsome unit testing and regression testing suite                           <* 
+ *>    - eliminate known and potential security gaps and hacking vectors              <* 
+ *>    - ability to test/verify crontabs before installation                          <* 
+ *>                                                                                   <* 
+ *> khronos will not provide...                                                       <* 
+ *>    - automatic email -- everyone ultimately hates it (security risk)              <* 
+ *>    - alternate shells (we're gonna run pure posix dash)                           <* 
+ *>    - extended shell variables (gonna have a spartan shell environment)            <* 
+ *>    - run-time configuration (no, its only for us, we can update code)             <* 
+ *>    - names for days and months, just use the numbers and like it ;)               <* 
+ *>    - special symbols for easly expressible things (@hourly, @weekly)              <* 
+ *>                                                                                   <* 
+ *> khronos will break backward compatiblilty in the following areas...               <* 
+ *>    - crontabs will be stored in /var/spool/crontabs (not a big deal)              <* 
+ *>    - crontab names will allow for many files per user (like dcron)                <* 
+ *>    - crontabs will only be pulled from ~/c_quani/crontabs (std for us)            <* 
+ *>    - not allow -c option as it is a security nightmare (no way)                   <* 
+ *>    - not allow -e option as it is a traceablilty nightmare (no loss)              <* 
+ *>    - not allow - option as it is even worse thatn -e (who cares)                  <* 
+ *>    - no mail at all (we will use other features to do it right)                   <* 
+ *>                                                                                   <* 
+ *> on a large scale, khronos will not provide...                                     <* 
+ *>    - dependency-based scheduling (like init systems provide)                      <* 
+ *>    - event-based launches like @reboot (daemons should do this)                   <* 
+ *>    - resource-based changes to schedules, system load, or avail                   <* 
+ *>                                                                                   <* 
+ *> we don't want to just use the system, we want to *own* it; so that means          <* 
+ *> we have to fundmentally understand the critical services which only tearing       <* 
+ *> down and rebuilding can really teach -- even if its more basic in the end.        <* 
+ *>                                                                                   <* 
+ *> as luck would have it, dcron (dillon's cron) is a wonderfully straight            <* 
+ *> forward and clean implementation that we can learn from.  it is licenced          <* 
+ *> under the gnu gpl and so is perfect as our base.  so, we study dcron...           <* 
+ *>                                                                                   <* 
+ *> so, as always, there are many stable, accepted, existing programs and             <* 
+ *> utilities written by better programmers which are likely superior in              <* 
+ *> speed, size, capability, and reliability; BUT, i would not have learned           <* 
+ *> nearly as much just using them, so i follow the adage..                           <* 
+ *>                                                                                   <* 
+ *> TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;         <* 
+ *> seek what they sought ~ Matsuo Basho                                              <* 
+ *>                                                                                   <* 
+ *> at the end of the day, this is wicked critical and deserves the attention.        <* 
+ *> it is also full of learning opportunities ;)                                      <*/
 
 
 
@@ -497,17 +619,29 @@
 
 
  /*===[[ ACTIONS ]]=============================*/
-/*---(central)--------------*/
-#define     ACT_LIST        'l'
-#define     ACT_CHECK       'c'
-#define     ACT_AUDIT       'a'
-#define     ACT_FULLCHECK   'f'
-/*---(incomming)------------*/
+/*---(local)----------------*/
 #define     ACT_VERIFY      'v'
+#define     ACT_VVERIFY     'V'
+#define     ACT_CVERIFY     'ÿ'
+/*---(incomming)------------*/
 #define     ACT_INSTALL     'i'
-#define     ACT_VERINST     'I'
+#define     ACT_VINSTALL    'I'
+#define     ACT_CINSTALL    'ð'
+/*---(central/installed)----*/
+#define     ACT_COUNT       'l'
+#define     ACT_LIST        'L'
+#define     ACT_CHECK       'c'
+#define     ACT_VCHECK      'C'
+#define     ACT_CCHECK      'ý'
+/*---(central/security)-----*/
+#define     ACT_AUDIT       'a'
+#define     ACT_VAUDIT      'A'
+#define     ACT_CAUDIT      'è'
+#define     ACT_FULLCHECK   'f'
 /*---(outgoing)-------------*/
 #define     ACT_REMOVE      'r'
+#define     ACT_VREMOVE     'R'
+#define     ACT_CREMOVE     'ø'
 
 #define     ACT_RELOAD      'H'
 
@@ -672,6 +806,7 @@ struct cFILE {
    int         uid;                         /* execution user uid             */
    char        note        [LEN_TERSE];     /* processing note for sysadmin   */
    int         lines;                       /* number of lines attempted      */
+   char        retired;                     /* special file of retired lines  */
    /*---(done)-----------------*/
 };
 
@@ -682,8 +817,11 @@ struct cLINE {
    void       *sched;                       /* schedule structure             */
    char        command     [LEN_RECD];      /* shell command                  */
    /*---(working)--------------*/
+   char        retire;                      /* line no longer in use          */
    int         rpid;                        /* pid if executing               */
    int         start;                       /* time started                   */
+   int         runs;                        /* count of times run             */
+   int         fails;                       /* count of failures              */
    /*---(estimates)------------*/
    int         est;                         /* expected duration from ysched  */
    int         est_min;                     /* calculated min duration        */
@@ -715,23 +853,28 @@ char        wait_minute        (void);
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(program)--------------*/
 char*       PROG_version            (void);
+/*---(startup)--------------*/
 char        PROG__files_normal      (void);
 char        PROG__files_unit        (void);
-char        PROG_init               (void);
-char        PROG_args               (int argc, char *argv[]);
-char        PROG_usage              (void);
-char        PROG_begin              (void);
-char        PROG_final              (void);
+char        PROG__init              (void);
+char        PROG__args              (int a_argc, char *a_argv[]);
+char        PROG__usage             (void);
+char        PROG__begin             (void);
+char        PROG__final             (void);
+char        PROG_debugging          (int a_argc, char *a_argv[], char a_unit);
+char        PROG_startup            (int a_argc, char *a_argv[], char a_unit);
+/*---(driver)---------------*/
+char        PROG_driver             (void);
+/*---(shutdown)-------------*/
 char        PROG_term               (void);
 char        PROG_end                (void);
 /*---(unit testing)---------*/
-/*> char*       PROG_getter        (char *a_question, int a_num);                     <*/
-
-char        PROG__unit_prepare (void);
-char        PROG__unit_cleanup (void);
-char        prog__unit_quiet   (void);
-char        prog__unit_loud    (void);
-char        prog__unit_end     (void);
+char*       prog__unit              (char *a_question);
+char        PROG__unit_prepare      (void);
+char        PROG__unit_cleanup      (void);
+char        prog__unit_quiet        (void);
+char        prog__unit_loud         (void);
+char        prog__unit_end          (void);
 
 
 
@@ -761,20 +904,15 @@ char        tabs_global             (cchar* a_user, cchar a_action);
 /*---support-----------*/
 char        tabs__verify            (cchar *a_full);
 char        tabs__remove            (cchar *a_full);
-/*---actions-----------*/
-char        tabs_rename             (char a_ext);
-char        tabs_clear_extfiles     (void);
-char        tabs_user               (cchar *a_user);
-char        TABS_install            (cchar *a_name);
-char        TABS_verify             (cchar *a_name);
-char        TABS_verinst            (cchar *a_name);
-char        TABS_audit              (cchar *a_name);
-char        TABS_check              (cchar *a_name);
-char        TABS_remove             (cchar *a_name);
-char        tabs_delete             (cchar *a_name);
-/*> char        crontab_test       (cchar*);                                          <*/
-char        tabs_hup                (void);
+/*---(incomming)-------*/
+char        TABS_verify             (cchar a_act, cchar *a_name);
+char        TABS_install            (cchar a_act, cchar *a_name);
+/*---(central)---------*/
+char        TABS_check              (cchar a_act, cchar *a_name);
+/*---(outgoing)--------*/
+char        TABS_remove             (cchar a_act, cchar *a_name);
 /*---specialty---------*/
+char        tabs_hup                (void);
 char        crontab_help       (void);
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---stubs-------------*/
@@ -802,6 +940,10 @@ char        FILE_create             (char *a_name, char *a_user, int a_uid);
 char        FILE_acceptable         (cchar *a_name);
 char        FILE_central            (cchar *a_name);
 char        FILE_assimilate         (char a_loc, cchar *a_full);
+/*---(retire)---------------*/
+char        FILE_init               (void);
+char        FILE_prune              (void);
+char        FILE_retire             (char *a_name);
 /*---(unittest)-------------*/
 char*       file__unit              (char *a_question, int a_num);
 
@@ -814,6 +956,7 @@ char        file_retire             (void);
 char        LINE__wipe              (tLINE *a_cur);
 char*       LINE__memory            (tLINE *a_cur);
 char        LINE__new               (tLINE **a_new);
+char        LINE_dup                (tLINE *a_orig, tLINE **a_new);
 char        LINE__free              (tLINE **a_old);
 
 char        LINE__prepare           (void);
@@ -837,7 +980,6 @@ int         exec_check              (void);
 char*       exec__unit              (char *a_question, int a_num);
 
 char        base_daemon_mode        (void);
-char        base_check_dir          (void);
 char        base_daemon             (void);
 
 char        rptg_heartbeat          (void);

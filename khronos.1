@@ -1,614 +1,333 @@
-.TH khronos 1 2010-Dec "linux" "heatherly custom tools manual"
+.TH khronos 1 2010-Dec "linux" "command-line initiation, use, and options"
 
 .SH NAME
-khronos-ageraton (unaging) \- fast and technical time-based job scheduler
-
-.SH IMAGERY (see HERITAGE at bottom for more)
-winged serpent khronos is the primeval god of creation and unyielding time
-
-.SH SYNOPSIS
-.nf
-.B khronos [OPTIONS] [<FILE>]
-.nf
-which is the primary production version
-.sp
-.B khronos_debug [URGENTS] [OPTIONS] [<FILE>]
-.nf
-which will perform all production actions, but with debugging and tracing
-.sp
-.B crond   [OPTIONS] [<FILE>]
-.nf
-which is a hard-link to provide the traditional crond interface
-.sp
-.B crontab [OPTIONS] [<FILE>]
-.nf
-which is a hard-link to provide the traditional crontab interface
-.nf
-
-.SH DESCRIPTION (short)
-khronos is a fast, simplified, modernized, and technical version of the
-classic posix-defined crond time-based job scheduler that merges crond and
-crontab to allow deeper verification, flexibility, and traceablity.
-
-.SH DESCRIPTION (backstory)
-crond is a well-worn, familiar, time-tested, and posix-defined daemon that
-provides time-based job scheduling.  while this is just one aspect of batch
-automation, it is the most commonly used and crond does it exceptionally
-well.  many attempts have been made to "do it better", but its still here ;)
-
-brian kernighan nailed it in the original (1979) by focusing on a real and
-definite need by folks that understood automation on low power systems.  he
-coupled it with an elegant, expressive, and terse scheduling grammar built
-by computer science folks and kept it simple and robust.  bloody brilliant.
-
-but, there are now many implementations of crond screaming out for use,
-each of which comes with its own set of creeping featurism, cruft, and
-accessibility "improvements."  they all just tend to piss me off as
-everything seems to be trending towards the closely coupled, gui-focused,
-kitchen-sink mentality that then tends to display well but never gets used.
-
-the one thing these advancements truly improved were the algorithms.
-the original cron apparently could not scale to a large number of users --
-not that helpful for them.  in our case, we won't have a ton of different
-users, but we will have tons of jobs running -- we want the better algorithms
-to make up for the primitiveness of our coding ;)
-
-khronos will attempt to implement the original simplicity, clarity, and
-power with updated algorithms, automated testing, strong logging and
-monitoring, stronger security, and a few added recovery/notification
-features.  we will maintain much backward compatibility while focusing on
-an automation-intensive, power-user environment for our own personal use.
-
-"do one thing and do it well (securely) and focus on technical users"
-
-khronos will provide...
-   - near posix compatibility to do the full job on core features
-   - backwards compatible with existing crontab formats (great design)
-   - additional, specific job recovery features (better lights out)
-   - strict glibc/ansi-c so it can be ported to and compilied anywhere
-   - fast and efficient because we want to enable tons of automation
-   - solid logging and status updates so you never have to guess
-   - ablilty to be very verbose in interactive use also (tracing)
-   - clean, clear code so we can maintain it after long absences
-   - fullsome unit testing and regression testing suite
-   - eliminate known and potential security gaps and hacking vectors
-   - ability to test/verify crontabs before installation
-
-khronos will not provide...
-   - automatic email -- everyone ultimately hates it (security risk)
-   - alternate shells (we're gonna run pure posix dash)
-   - extended shell variables (gonna have a spartan shell environment)
-   - run-time configuration (no, its only for us, we can update code)
-   - names for days and months, just use the numbers and like it ;)
-   - special symbols for easly expressible things (@hourly, @weekly)
-
-khronos will break backward compatiblilty in the following areas...
-   - crontabs will be stored in /var/spool/crontabs (not a big deal)
-   - crontab names will allow for many files per user (like dcron)
-   - crontabs will only be pulled from ~/c_quani/crontabs (std for us)
-   - not allow -c option as it is a security nightmare (no way)
-   - not allow -e option as it is a traceablilty nightmare (no loss)
-   - not allow - option as it is even worse thatn -e (who cares)
-   - no mail at all (we will use other features to do it right)
-
-on a large scale, khronos will not provide...
-   - dependency-based scheduling (like init systems provide)
-   - event-based launches like @reboot (daemons should do this)
-   - resource-based changes to schedules, system load, or avail
-
-we don't want to just use the system, we want to *own* it; so that means
-we have to fundmentally understand the critical services which only tearing
-down and rebuilding can really teach -- even if its more basic in the end.
-
-as luck would have it, dcron (dillon's cron) is a wonderfully straight
-forward and clean implementation that we can learn from.  it is licenced
-under the gnu gpl and so is perfect as our base.  so, we study dcron...
-
-so, as always, there are many stable, accepted, existing programs and
-utilities written by better programmers which are likely superior in
-speed, size, capability, and reliability; BUT, i would not have learned
-nearly as much just using them, so i follow the adage..
-
-TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;
-seek what they sought ~ Matsuo Basho
-
-at the end of the day, this is wicked critical and deserves the attention.
-it is also full of learning opportunities ;)
-
-.SH OPTIONS
-
 .B khronos
-run without options launches the process scheduling daemon if one is not
-already running (only one can run at a time).  it then reads all installed
-crontab files, inventories the list of schedule entries, and runs them at
-the appropriate time.
+- time-based batch automation and job scheduling
 
-when options are included
+.SH PATRON
+.B khronos-ageraton (unaging)
+god of creation and unyielding time
+
+.SH IMAGERY
+winged serpent (drakon) with the heads of a bull, a lion, and a man
+
+.SH SUMMARY
+khronos is a personal, simplified, traceable, and technical version of the
+classic posix-defined crond time-based job scheduler that strips away modern
+cruftiness and targets transparency and maintainability.
+
+.SH DOCUMENTATION FILES (see also)
+.nf  
+.B khronos (1)········command-line initiation, use, and options
+khronos (5)        structure of config, files, and streams
+khronos (7)        decision rationale, scope, and objectives
+
+.SH TABLE OF CONTENTS
+.nf  
+a) synopsis        standard command line overview
+b) overview        general overview of program
+c) user-mode       detailed command line options
+d) daemon-mode     detailed command line options
+e) debugging       logging, debugging, and tracing
+
+.SH A) SYNOPSIS
+.nf
+.B khronos [OPTIONS]
+.nf
+   the primary production version
+.sp
+.B khronos_debug [URGENTS] [OPTIONS]
+.nf
+   performs all production actions, but with debugging and tracing
+
+.SH B) GENERAL OVERVIEW
+.B primarily,
+khronos is a daemon (see DAEMON-MODE).  a time-based scheduler specificially.
+normally sleeping, it periodically wakes, checks its requested jobs, launches
+those that are scheduled, checks for completion of already running jobs,
+then goes back to sleep.  that's it.
+
+since khronos depends entirely on the contents of installed crontab files
+(see man 5), it may be launched, killed, replaced, updgraded, and restarted
+with zero data loss.  BUT, if it is not running when a particular job should
+have launched, that opportunity is lost.
+
+.B secondarily,
+khronos administers its own environment.  when launched with any of the
+user-mode options (see USER-MODE) it allow users to verify, install, check,
+audit, and remove crontabs to/from its central location.  in user-mode,
+khronos exits after performing its task without upsetting the daemon version.
+
+if you attempt to mix daemon-mode and user-mode actions, the program will
+simply quit with an informative, but insulting, error message ;)
+
+.SH C) USER-MODE
+executing
 .B khronos
-runs in interactive mode and allows anyone to work with their respective
-crontab files -- installing, deleting, purging, listing, etc.
+at the command line with any of the options below causes the program to be
+in user-mode.  to understand crontabs, their contents, and locations please
+refer to 
+.B khronos(5).
 
-the following options are posix-defined and implemented...
+all options below provide a consistent return code of 0 for success and <0
+for failure.  base options are completely silent and perfect for scripts.
+confirm options provide a single text line indicating SUCCESS or FAILURE,
+because silence can hide a lot ;) verbose option are very detailed and
+excellent for crontab/input problem solving.
 
-.B <desc>
-.RS 8
-installs a crontab with the description listed into the systems crontab spool
-directory and notifies khronos to read it for immediate processing.
+.SS local crontabs
+all local crontabs MUST be stored at or below the users home directory (even
+root's).  only the user owning the home directory may install those files,
+except root can install any users crontabs.
+
+.B --verify [file]
+.RS 3
+quietly reviews a crontab file for security and quality, but does not
+install it for execution.
 .RE
 
-.B -r <desc>,
-.B -d <desc>
-.RS 8
-deletes a crontab with the description listed from the systems crontab spool
-directory, stops it jobs, and notifies khronos to removed it inactive.
+.B --cverify [file]
+.RS 3
+same as --verify, but provides a single line of feedback on the first error
+or a success message.  helpful for assurance.
 .RE
 
-.B -u <user>
-.RS 8
-allows the super-user to act for another user to install, delete, purge,
-reload, etc their crontab jobs. this is only supported for root.
+.B --vverify [file]
+.RS 3
+same as --verify, but provides all the detailed feedback from the --verify
+process also.
 .RE
 
-.B -l
-.RS 8
-list the contents of all the users installed crontabs to stdout.  in the
-posix version, this was singular, but we allow multiple.
+.SS incomming crontabs
+all local crontabs MUST be stored at or below the users home directory (even
+root's).  only the user owning the home directory may install those files,
+except root can install any users crontabs.
+
+.B --install [file]
+.RS 3
+quietly performs the --verify process, only providing fatal errors; if it
+passes, then installs it in a central location for execution.
 .RE
 
-the following options are posix-defined and NOT implemented...
-
-.B -c <dir>
-.RS 8
-NOT ALLOWED.  in the posix version, this allowed the super-user to change the
-crontab directory which cron read from -- huge security risk.
+.B --cinstall [file]
+.RS 3
+same as --install, but provides a single line of feedback on the first error
+or a success message.  helpful for assurance.
 .RE
 
-.B -e <desc>
-.RS 8
-NOT ALLOWED.  in the posix version, this allowed a user to immediately edit an
-installed crontab, but left no file to be backed up -- no traceability.
+.B --vinstall [file]
+.RS 3
+same as --install, but provides all the detailed feedback from the --verify
+and --install processes also.
 .RE
 
-.B -
-.RS 8
-NOT ALLOWED.  in the posix version, this allowed a user to install their
-crontab from stdin, but left to backup -- huge security risk.
-.RE
-
-the following options have been added to our version (non-posix)...
-
-.B --test <desc>
-.RS 8
-this is an advancement on the installation above as it tests the crontab entries
-using the actual khronos code to give the user essentially a compilation.
-.RE
-
-.B --here
-.RS 8
-lists the names of all the local crontabs that could be installed by the current
-user.  this will avoid having to travel to the directory and list them.
-.RE
+.SS central/installed crontabs
+users may only list or check their own crontabs, except root who may list or
+check all.
 
 .B --list
-.RS 8
-lists the names of all installed crontabs by the current user.  this can be
-very handy for confirmation purposes.
+.RS 3
+provides a single column list of all crontabs installed in the central
+location for execution.
 .RE
 
-.B --all
-.RS 8
-this is a version of "--list" for the super-user that lists all the crontabs
-installed by any user.  another time saver.
+.B --check [file]
+.RS 3
+quietly reviews an installed crontab file for security and quality, to
+ensure it is in working order.
 .RE
 
-.B --purge
-.RS 8
-delete all the installed crontabs by the current user as if each was
-requested using "-r" one at a time.
+.B --ccheck [file]
+.RS 3
+same as --check, but provides a single line of feedback on the first error
+or a success message.  helpful for assurance.
 .RE
 
-.B --cleanse
-.RS 8
-this is a version of "--purge" for the super-user that deletes all crontabs
-no matter what user installed them.  good for a graceful slowdown.
+.B --vcheck [file]
+.RS 3
+same as --check, but provides all the detailed feedback from the --check
+process.
 .RE
+
+.SS central/security review
+an audit can only be performed by root.
+
+.B --audit
+.RS 3
+quietly reviews all installed crontabs and the security environment, to
+ensure it is in working order.
+.RE
+
+.B --caudit
+.RS 3
+same as --audit, but provides a single line of feedback for each installed
+crontab as well as the environment.
+.RE
+
+.B --vaudit
+.RS 3
+same as --audit, but provides all the detailed feedback from the --audit
+and security check process.
+.RE
+
+.SS central/outgoing crontabs
+users may only remove their own crontabs, except root who may remove any or
+all crontabs.
+
+.B --remove [file]
+.RS 3
+quietly preforms --check; if it passes, the crontab is retired from execution
+and removed from the central directory.
+.RE
+
+.B --cremove [file]
+.RS 3
+same as --remove, but provides a single line of feedback on the first error
+or a success message.  helpful for assurance.
+.RE
+
+.B --vremove [file]
+.RS 3
+same as --remove, but provides all the detailed feedback from the --check
+and --remove processes also.
+.RE
+
+.SS daemon control
+only root may request the daemon to reload the contab files.
 
 .B --reload
-.RS 8
-this option deletes all installed crontabs by the current user and then
-installs all that they have in their local directory.  another time saver.
-.RE
-
-.B --help, -h
-.RS 8
-this provides a page of one-lines on each option khronos accepts and a little
-background on the tool.
-.RE
-
-.SH SCHEDULING GRAMMAR
-the magic of our khronos is a slightly modified form of the kernighan scheduling
-grammar he implemented in the original cron in 1978.
-
-a crontab line is composed of six scheduling grammar fields which have no
-fixed length and are separated by spaces...
-
-.B <minutes>
-.RS 8
-minute marks on which the job should launch (00-59)
-.RE
-
-.B <hours>
-.RS 8
-hours on which the job should launch (00-23)
-.RE
-
-.B <days>
-.RS 8
-days on which the job should launch (01-31)
-.RE
-
-.B <months>
-.RS 8
-months in which the job should launch (01-12)
-.RE
-
-.B <days of the week>
-.RS 8
-weekdays on which the job should launch (1/Mo -7/Su)
-.RE
-
-.B <weeks of the year>
-.RS 8
-weeks in which the job should launch (01-53)
-.RE
-
-all these fields are combined through AND logic to determine when a job is
-scheduled to launch.  As a note, most crons use OR logic with day/dow and do
-not include the weeks field.
-
-each of these six fields uses the same foundational grammar...
-
-.B wildcard (*)
-.RS 8
-all possible values in a field, i.e., no restriction
-.RE
-
-.B range (<nn>-<nn>)
-.RS 8
-all values between two numbers (inclusive)
-.RE
-
-.B step (/<nn>)
-.RS 8
-modifies a range or wildcard to skip by a value
-.RE
-
-.B list (<nn>,<nn>)
-.RS 8
-creates the union between two values, ranges, etc.
-.RE
-
-.B modifier (<nn><ch>)
-.RS 8
-modifies a value within its context
-.RE
-
-.B prefixes (<ch><nn>)
-.RS 8
-significantly modifies the value
-.RE
-
-.B constant (<ch>)
-.RS 8
-stands in for a value or range of values
-.RE
-
-some basic examples to explain are...
-
-#min-- -hrs-- day--- mon--- dow--- wks---
-
-00     02     *      *      *      *       2am every day
-
-00     00     1      *      *      *       midnight on the first
-
-10     *      *      *      *      *       10min after every hour
-
-30     8,17   *      *      *      *       8:30a and 5:30p
-
-00,30  8-17   *      *      *      *       half hours from 8a to 5p
-
-00     12     *      *      1      *       noon every monday
-
-00     20     *      *      5      1       8p friday in first week
-
-00     00     31     *      *      *       midnight on jan 31st
-
-00     00     */2    *      *      *       midnight every other day
-
-00     3-9/3  *      *      *      *       3a, 6a, and 9a
-
-00     15     *      *      *      */2     3p very other week
-
-in order to make the crontab more readable, some contants may be used...
-
-.B L (last)
-.RS 8
-may be used in any field, e.g., L in days is last day of month
-.RE
-
-.B B (business hours)
-.RS 8
-9a to 5p only (only in hours)
-.RE
-
-.B Mo, Tu, We, Th, Fr, Sa, Su (weekdays)
-.RS 8
-to keep it quickly readable -- can't be in ranges
-.RE
-
-.B W, E (weekdays)
-.RS 8
-abbreviated standin for all weekdays (W) and weekends (E)
-.RE
-
-some days are hard to specify and require modifiers...
-
-.B <nn>a (after)
-.RS 8
-first weekday (Mo-Fr) on or after the date (only in days)
-.RE
-
-.B <nn>b (before)
-.RS 8
-closest weekday (Mo-Fr) on or before the date (only in days)
-.RE
-
-.B <nn>n (nearest)
-.RS 8
-nearest weekday (Mo-Fr) to date (only in days)
-.RE
-
-.B <n>w (full week)
-.RS 8
-stands in for 1st, 2nd, ... week of the month (only in days)
-.RE
-
-.B <n>q (full quarter)
-.RS 8
-stands in for 1st, 2nd, ... quarter of year (only in months)
-.RE
-
-some further examples to explain are...
-
-#min-- -hrs-- day--- mon--- dow--- wks---
-
-00     08     *      *      Tu,Fr  *       8a on Tuesday and Friday
-
-00     13     *      *      W      *       1p on all weekdays
-
-00     15     15n    *      *      *       3p workday nearest the 15th
-
-00     15     15b    *      *      *       ... on or before the 15th
-
-00     15     15a    *      *      *       ... on or after the 15th
-
-00     10     2w     *      Mo     *       10a on the 2nd Monday
-
-00     B      *      *      W      *       each bus. hour on weekday
-
-
-
-
-
-.SH FILES
-most versions of crond allow directories to be changed which creates a
-potential security gap.  khronos will only use standard directories and
-file naming to close this gap.  it will also not allow the /etc entries
-to be used as then packages can sneak cronjobs onto my system.
-
-.B /home/machine/contabs/
 .RS 3
-this directory is where khronos will source the system-wide crontabs
--- it can not be set to be elsewhere or do otherwise.
+sends the executing daemon a instant message to purge itself and reload all
+crontabs with the most recent version.
 .RE
 
-.B ~/c_quani/contabs/
+.SS disallowed options
+khronos is modeled after cron and posix with respect for many other options
+available.  as such, i may have adapted, but there are some options which i
+have specifically not provided as i deem them security or traceability risks.
+
+.B -
 .RS 3
-this directory is where khronos will source the local crontabs for a specific
-user -- it can not be set to be elsewhere or do otherwise.
+NOT ALLOWED.  in posix, this allowed a user to install their crontab from
+stdin, zero source/tracing -- no traceability.
 .RE
 
-.B /var/spool/crontabs/
+.B -e [file]
 .RS 3
-this is the system directory where installed crontabs are kept and khronos
-reads these files either when launched, hourly, or sent a SIGHUP.
+NOT ALLOWED.  in posix, this allowed a user to immediately edit an installed
+crontab, no backup -- no traceability
 .RE
 
-
-.SH DEPENDENCIES
-khronos attempts to keep most processing within the application to minimize
-dependencies, but several capabilities are useful elsewhere and so placed
-into libraries.
-
-.B ySCHED (dynamic-link)
-.RS 8
-required dependency on this custom library which interprets the standard
-kernighan scheduling grammar created for the original cron.
-.RE
-.B yEXEC (dynamic-link)
-.RS 8
-required dependency on this custom library which launches and monitors
-processes for the host application.
-.RE
-.B yLOG (dynamic-link)
-.RS 8
-only required for khronos_debug in order to implement clean, consistent
-logging to standard output files.
-.RE
-.B dash
-.RS 8
-khronos uses this posix-compliant, minimal shell to launch jobs to prevent
-security gaps due to bash's huge power and flexibility.
+.B -u [user]
+.RS 3
+NOT NEEDED.  in posix, this allowed the super-user to act for another user
+which is automatically supported in khronos.
 .RE
 
-.SH DEBUGGING and LOGGING
-khronos_debug uses the heatherly standard debugging model and options.
-calling the program through any other executable name, such as khronos or
-crond, will result in all logging requests through urgents being ignored.
+.SH D) DAEMON-MODE
+if khronos is launched with no user-mode options, it will automatically
+become a daemon, if another instance is not already running.  only root
+can launch the daemon.
 
-debugging urgents are processed at one time and before normal argument
-processing and therefore the order of urgents and arguments is almost never
-significant.  logging output is sent to a standard system logging directory.
-the use of any urgent will turn on logging output and set the @@tops urgent.
+to refresh the data from the central directory, either terminate khronos and
+relaunch, or use the user-mode option of --reload.
 
-.nf
-.B /var/yLOG/
+.SS main options
 
-and, the file name follows the standard heatherly logging format.  any number
-of debugging output files may be kept as the name is always unique.
-
-.nf
-.B yy.mm.dd.hh.mm.ss.khronos_________.ww.ulog
-   -- yy   last two digits of year
-   -- mm   month number 01-12
-   -- dd   day number 01-31
-   -- hh   hour number 00-23
-   -- mm   minute number 00-59
-   -- ss   second number 00-59
-   -- ww   week of the year number 00-53
-
-.B --- mass urgent setting -------------------------------
-
-.B @f, @@full
-.RS 8
-turn on all standard urgents
+.B --aggressive
+.RS 3
+kill long-running jobs according to job control flags.
 .RE
 
-.B @k, @@kitchen
-.RS 8
-turn on all standard and custom urgents
+.B --busy-codes
+.RS 3
+react to administrator busy-codes to push work back and forth.
 .RE
 
-.B @q, @@quiet
-.RS 8
-turn off all standard and custom urgents
+.B --khaos
+.RS 3
+produce update file for khaos machine monitor.
 .RE
 
-.B @t, @@tops
-.RS 8
-log the general flow of the program
+.SS general server/network
+
+.B --clustering
+.RS 3
+ability to treat multiple machines as a single instance.
 .RE
 
-.B @s, @@summ
-.RS 8
-provide summary statistics and analytical output
+.B --multi-node
+.RS 3
+coordinate with all local network khronos instances.
 .RE
 
-.B --- startup and shutdown urgents ----------------------
-
-.B @a, @@args
-.RS 8
-log details of urgent and argument processing
+.B --external
+.RS 3
+abilty to coordinate with non-local instances.
 .RE
 
-.B @c, @@conf
-.RS 8
-log details of configuration file processing
+.B --hardened
+.RS 3
+taking a stricter security stance.
 .RE
 
-.B @p, @@prog
-.RS 8
-log details of program setup and teardown
+.B --threaded
+.RS 3
+support for multi-threaded processes.
 .RE
 
-.B --- file processing urgents ---------------------------
+.SS temporary options
 
-.B @i, @@inpt, @I, @@INPT
-.RS 8
-log details of input text file reading/parsing (caps means deeper)
+.B --catch-up [HH]
+.RS 3
+catch up jobs labeled absolute/need since the hour HH (24 hour reference)
+running them sequentially until complete.
 .RE
 
-.B @o, @@outp, @O, @@OUTP
-.RS 8
-log details of output text file writing (caps means deeper)
+.B --shift [HH] [HH] [HH]
+.RS 3
+move work between HH and HH till HH.  this is dangerous.
 .RE
 
-.B --- event handling urgents ----------------------------
+.SS disallowed options
+khronos is modeled after cron and posix with respect for many other options
+available.  as such, i may have adapted, but there are some options which i
+have specifically not provided as i deem them security or traceability risks.
 
-.B @l, @@loop
-.RS 8
-log details of main program loop
+.B -c [dir]
+.RS 3
+NOT ALLOWED.  in posix, this allowed the super-user to change the central
+crontab directory -- huge security risk.
 .RE
 
-.B @u, @@user
-.RS 8
-log details of interactive user input processing
+.B -m [command]
+.RS 3
+NOT NEEDED.  in posix, this changed the mail command for crond to send email
+updates, khronos will never use email -- clumsy.
 .RE
 
-.B @z, @@apis
-.RS 8
-log details of interprocess communication channels
+.B -s
+.RS 3
+NOT NEEDED.  in posix, this changed the update output from email to the
+system log, khronos will never use the syslog -- clumsy.
 .RE
 
-.B @x, @@sign
-.RS 8
-log details of operating system signal processing
+.B -i
+.RS 3
+NOT NEEDED.  in posix, this disabled inotify support.  khronos refuses any
+inotify involvement -- crutch and complex.
 .RE
 
-.B @b, @@scrp
-.RS 8
-log details of batch script processing
-.RE
+.SH E) DEBUGGING
+.B khronos_debug
+launches the daemon with heatherly debugging and logging.  all the
+same options are available and debug can be either daemon-mode or user-mode.
 
-.B @h, @@hist
-.RS 8
-log details of history, undo, and redo processing
-.RE
-
-.B --- processing urgents --------------------------------
-
-.B @g, @@graf
-.RS 8
-log details of graphics, drawing, and display
-.RE
-
-.B @d, @@data
-.RS 8
-log details of complex data structure handling
-.RE
-
-.B @e, @@envi, @E, @@ENVI
-.RS 8
-log details of environmental processing (caps means deeper)
-.RE
-
-.B --- helios-specific urgents ---------------------------
-
-.B ((none))
-.RS 8
-no khronos specific urgents are currently required
-.RE
-
+khronos_debug only uses the universal yURG urgents, so please see yURG and yLOG
+for details of the options and output.
 
 .SH AUTHOR
 heatherlyrobert at gmail dot com
-
-.SH HERITAGE
-khronos-ageraton (unaging) is the primeval god (protogenos) of time who emerged
-self-formed at the beginning of everything.  khronos is an incorporial god
-in serpentine form (drakon) with wings on its shoulders and three heads --
-that of a man, a bull, and a lion.
-
-khronos' consort was ananke (inevitability and compulsion) who was also
-serpentine.  together they created the ordered universe and continue to
-circle it in their coils thereby driving the movement of the heavens and the
-wind/passage of time.
-
-khronos and ananke gave birth to aither (light), unbounded khaos (chasm),
-and erebos (darkness).  khronos and ananke also created the world-egg and
-split it into earth (gaia), sea (hydros), and sky (ouranos).
-
-khronos must not be confused with the titan cronos, zeus' father.
 
 .SH COLOPHON
 this page is part of a documentation package meant to make use of the

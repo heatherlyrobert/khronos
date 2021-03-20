@@ -20,6 +20,8 @@
 
 
 char          unit_answer [ LEN_HUND ];
+static char   s_act  = '-';
+static char   s_file  [LEN_PATH] = "";
 
 
 
@@ -72,7 +74,7 @@ static void      o___PROGRAM_________________o (void) {;}
 char      verstring    [500];
 
 char*        /*--: return versioning information ---------[ ------ [ ------ ]-*/
-PROG_version       (void)
+PROG_version            (void)
 {
    char    t [20] = "";
 #if    __TINYC__ > 0
@@ -115,7 +117,7 @@ PROG__files_unit        (void)
 }
 
 char         /*--: pre-argument program initialization ---[ leaf   [ ------ ]-*/
-PROG_init          (void)
+PROG__init              (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -136,8 +138,9 @@ PROG_init          (void)
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(yURG output control)------------*/
-   yURG_noout  ();
-   yURG_stderr ();
+   yURG_msg_none ();
+   yURG_err_std  ();
+   yURG_err_live ();
    ySCHED_config_by_date (11,  5, 14);    /* MUST FIX FIX FIX */
    /*---(begin)--------------------------*/
    PROG__files_normal ();
@@ -165,155 +168,166 @@ PROG_init          (void)
       return rce;
    }
    DEBUG_TOPS   yLOG_info    ("m_path"    , my.m_path);
+   /*---(retirement list)----------------*/
+   rc = FILE_init  ();
+   DEBUG_PROG  yLOG_value   ("init"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-#define    TWOARG      if (two_arg == 1)
+char
+PROG__setaction         (cchar a_act, cchar *a_file)
+{
+   s_act = a_act;
+   strlcpy (s_file, a_file, LEN_PATH);
+   /*> printf ("s_act = %c, s_file = %s\n", s_act, s_file);                           <*/
+   return 0;
+}
+
+#define    TWOARG         if (two_arg == 1)
+#define    ELSEONE(r)     else { yURG_err ('F', "action å%sæ requires a file name as an argument", a);  rc = r; }
 
 char       /* PURPOSE : process the command line arguments -------------------*/
-PROG_args          (int argc, char *argv[])
+PROG__args              (int a_argc, char *a_argv[])
 {
    /*---(locals)-------------------------*/
+   char      rce       =  -10;
+   char      rc        =    0;
    char     *a         = NULL;         /* current argument                    */
    int       i         = 0;            /* loop iterator -- arguments          */
    int       len       = 0;            /* argument length                     */
    char      two_arg   = 0;
    /*---(begin)--------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   DEBUG_TOPS   yLOG_value   ("argc"      , argc);
-   if (argc == 1) {
+   DEBUG_TOPS   yLOG_value   ("a_argc"    , a_argc);
+   if (a_argc == 1) {
       DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
       return 0;
    }
    /*---(program name)--------------------------*/
-   strlcpy (my.m_prog, argv [0], LEN_DESC);
-   DEBUG_TOPS   yLOG_value   ("prog name" , my.m_prog);
+   strlcpy (my.m_prog, a_argv [0], LEN_DESC);
+   DEBUG_TOPS   yLOG_info    ("prog name" , my.m_prog);
+   /*---(defaults)------------------------------*/
+   s_act      = '-';
+   strlcpy (s_file, "", LEN_PATH);
    /*---(process)------------------------*/
-   for (i = 1; i < argc; ++i) {
-      a = argv[i];
-      if (i < argc - 1) two_arg = 1; else two_arg = 0;
+   --rce;  for (i = 1; i < a_argc; ++i) {
+      a = a_argv[i];
+      if (a == NULL) {
+         DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      DEBUG_TOPS   yLOG_complex ("curr"      , "#%02d, %s", i, a);
+      if (i < a_argc - 1) two_arg = 1; else two_arg = 0;
       len = strlen (a);
       /*---(skip debugging)--------------*/
       if      (a[0] == '@')                     continue;
       my.user_mode = MODE_USER;
-      /*---(version)---------------------*/
+      /*---(usage/help)------------------*/
       if      (strcmp (a, "--version"      ) == 0 || strcmp (a, "-V") == 0) {
          PROG_version ();
          printf ("%s\n", verstring);
-         return -1;
+         DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+         return 0;
       }
-      /*---(usage/help)------------------*/
-      else if (strcmp (a, "-h"         ) == 0)    PROG_usage();
-      else if (strcmp (a, "--help"     ) == 0)    PROG_usage();
-      /*---(lists)-----------------------*/
-      else if (strcmp (a, "--list"     ) == 0)    TABS_review  ("*", ACT_LIST);
-      /*---(installing)------------------*/
-      else if (strcmp (a, "--install"  ) == 0)  { TWOARG  TABS_install (argv[++i]); }
-      else if (strcmp (a, "--verify"   ) == 0)  { TWOARG  TABS_verify  (argv[++i]); }
-      else if (strcmp (a, "--verinst"  ) == 0)  { TWOARG  TABS_verinst (argv[++i]); }
-      else if (strcmp (a, "--remove"   ) == 0)  { TWOARG  TABS_remove  (argv[++i]); }
-      else if (strcmp (a, "--check"    ) == 0)  { TWOARG  TABS_check   (argv[++i]); }
-      else if (strcmp (a, "--audit"    ) == 0)  { TWOARG  TABS_audit   (argv[++i]); }
-      else if (strcmp (a, "--fullcheck") == 0)    TABS_review  ("*", ACT_FULLCHECK);
-      /*> else if (strcmp(a, "--test"    ) == 0)  { TWOARG  crontab_test  (argv[++i]); }   <*/
-      /*---(removing)--------------------*/
-      /*> else if (strcmp (a, "--purge"   ) == 0)    tabs_global  (my.m_user, 'p');   <*/
-      /*> else if (strcmp (a, "--cleanse" ) == 0)    tabs_global  ("ALL" , 'p');      <*/
-      /*---(user switches)---------------*/
-      /*> else if (strcmp (a, "-u"        ) == 0)  { TWOARG  tabs_user     (argv[++i]); }   <* 
-       *> else if (strcmp (a, "--user"    ) == 0)  { TWOARG  tabs_user     (argv[++i]); }   <*/
-      /*---(warnings)--------------------*/
-      /*> else if (strcmp (a, "-l"        ) == 0)    tabs_cat_stub   ();              <* 
-       *> else if (strcmp (a, "-c"        ) == 0)    tabs_dir_stub   ();              <* 
-       *> else if (strcmp (a, "-e"        ) == 0)    tabs_edit_stub  ();              <* 
-       *> else if (strcmp (a, "-"         ) == 0)    tabs_stdin_stub ();              <*/
-      /*---(for testing)-----------------*/
-      else if (strcmp (a, "--who"    ) == 0) {
-         printf ("launched as %s (%d) at (%d)\n", my.m_user, my.m_uid, geteuid ());
-         exit (0);
-      }
+      else if (strcmp (a, "--help"     ) == 0)    PROG__usage();
+      /*---(local)-----------------------*/
+      else if (strcmp (a, "--verify"   ) == 0)  { TWOARG  PROG__setaction (ACT_VERIFY  , a_argv [++i]); ELSEONE(-1); }
+      else if (strcmp (a, "--cverify"  ) == 0)  { TWOARG  PROG__setaction (ACT_CVERIFY , a_argv [++i]); ELSEONE(-2); }
+      else if (strcmp (a, "--vverify"  ) == 0)  { TWOARG  PROG__setaction (ACT_VVERIFY , a_argv [++i]); ELSEONE(-3); }
+      /*---(incomming)-------------------*/
+      else if (strcmp (a, "--install"  ) == 0)  { TWOARG  PROG__setaction (ACT_INSTALL , a_argv [++i]); ELSEONE(-4); }
+      else if (strcmp (a, "--cinstall" ) == 0)  { TWOARG  PROG__setaction (ACT_CINSTALL, a_argv [++i]); ELSEONE(-5); }
+      else if (strcmp (a, "--vinstall" ) == 0)  { TWOARG  PROG__setaction (ACT_VINSTALL, a_argv [++i]); ELSEONE(-6); }
+      /*---(outgoing)--------------------*/
+      else if (strcmp (a, "--remove"   ) == 0)  { TWOARG  PROG__setaction (ACT_REMOVE  , a_argv [++i]); ELSEONE(-7); }
+      else if (strcmp (a, "--cremove"  ) == 0)  { TWOARG  PROG__setaction (ACT_CREMOVE , a_argv [++i]); ELSEONE(-8); }
+      else if (strcmp (a, "--vremove"  ) == 0)  { TWOARG  PROG__setaction (ACT_VREMOVE , a_argv [++i]); ELSEONE(-9); }
+      /*---(central)---------------------*/
+      else if (strcmp (a, "--count"    ) == 0)  { PROG__setaction (ACT_COUNT   , ""); }
+      else if (strcmp (a, "--list"     ) == 0)  { PROG__setaction (ACT_LIST    , ""); }
+      else if (strcmp (a, "--check"    ) == 0)  { TWOARG  PROG__setaction (ACT_CHECK   , a_argv [++i]); ELSEONE(-10); }
+      else if (strcmp (a, "--ccheck"   ) == 0)  { TWOARG  PROG__setaction (ACT_CCHECK  , a_argv [++i]); ELSEONE(-11); }
+      else if (strcmp (a, "--vcheck"   ) == 0)  { TWOARG  PROG__setaction (ACT_VCHECK  , a_argv [++i]); ELSEONE(-12); }
+      /*---(auditing)--------------------*/
+      else if (strcmp (a, "--audit"    ) == 0)  { PROG__setaction (ACT_AUDIT   , ""); }
+      else if (strcmp (a, "--caudit"   ) == 0)  { PROG__setaction (ACT_CAUDIT  , ""); }
+      else if (strcmp (a, "--vaudit"   ) == 0)  { PROG__setaction (ACT_VAUDIT  , ""); }
+      /*---(speciality)------------------*/
+      else if (strcmp (a, "--reload"   ) == 0)  { PROG__setaction (ACT_RELOAD, "");     }
       /*---(unknown)---------------------*/
-      else    printf("requested action not understood or incomplete\n");
+      else  {
+         yURG_err ('F', "requested action å%sæ not understood or incomplete", a);
+         rc = -99;
+      }
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char       /* PURPOSE : display usage help information -----------------------*/
+PROG__usage             (void)
+{
+   printf ("see man pages for a better understanding of khronos...\n");
+   printf ("  man 1 khronos      command-line initiation, use, and options\n");
+   printf ("  man 5 khronos      structure of config, files, and streams\n");
+   printf ("  man 7 khronos      decision rationale, scope, and objectives\n");
+   exit   (0);
+}
+
+char             /* [------] post-argument program initialization ------------*/
+PROG__begin             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rce         =  -10;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT  yLOG_char    ("s_act"     , s_act);
+   /*---(set output routing)-------------*/
+   switch (s_act) {
+   case ACT_VERIFY   : case ACT_INSTALL  : case ACT_REMOVE   :
+   case ACT_AUDIT    : case ACT_CHECK    : case ACT_LIST     :
+      DEBUG_INPT  yLOG_note    ("silent, turning off all output and errors");
+      yURG_msg_std  (); yURG_msg_mute ();
+      yURG_err_std  (); yURG_err_mute ();
+      break;
+   case ACT_CVERIFY  : case ACT_CINSTALL : case ACT_CREMOVE  :
+   case ACT_CAUDIT   : case ACT_CCHECK   :
+      DEBUG_INPT  yLOG_note    ("confirm, muting output and errors until summary");
+      yURG_msg_std  (); yURG_msg_mute ();
+      yURG_err_std  (); yURG_err_mute ();
+      break;
+   case ACT_VVERIFY  : case ACT_VINSTALL : case ACT_VREMOVE  :
+   case ACT_VAUDIT   : case ACT_VCHECK   :
+      DEBUG_INPT  yLOG_note    ("verbose, turning on all output and errors");
+      yURG_msg_std  (); yURG_msg_live ();
+      yURG_err_std  (); yURG_err_live ();
+      break;
+   }
+   /*---(check security)-----------------*/
+   --rce;  switch (s_act) {
+   case ACT_AUDIT      : case ACT_CAUDIT     : case ACT_VAUDIT     :
+      DEBUG_INPT  yLOG_note    ("audit, caudit, and vaudit require root privlege");
+      if (my.m_uid != 0) {
+         yURG_err ('F', "--audit, --caudit, and --vaudit require root privlege");
+         DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      break;
    }
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-char       /* PURPOSE : display usage help information -----------------------*/
-PROG_usage         (void)
-{
-   printf ("\n");
-   printf ("usage : khronos [URGENTS] [OPTIONS] [<FILE>]\n");
-   printf ("the winged serpent khronos is the primeval god of creation and unyielding time\n");
-   printf ("\n");
-   printf ("khronos is a fast, simplified, modernized, and technical version of the\n");
-   printf ("classic posix-defined crond time-based process scheduler which merges\n");
-   printf ("crond and crontab to allow deeper verification, verbosity, and traceability\n");
-   printf ("\n");
-   printf ("crontab file naming: \"crontab.<desc>\"\n");
-   printf ("   crontab.         all crontab files must begin with this prefix\n");
-   printf ("   <desc>           unique specifier of file [A-Za-z0-9_]\n");
-   printf ("\n");
-   printf ("posix/standard crontab options implemented:\n");
-   printf ("   <file>           install/replace a crontab file\n");
-   printf ("   -l               list all your installed crontabs to stdout\n");
-   printf ("   -d <desc>        delete one of your crontabs by name\n");
-   printf ("   -r <desc>        delete one of your crontabs by name\n");
-   printf ("   -u <user>        act as another user (root only)\n");
-   printf ("\n");
-   printf ("posix/standard crontab options rejected:\n");
-   printf ("   - or null        install from stdin (no traceability, over-write risk)\n");
-   printf ("   -e               edit your crontab (no traceability or backup)\n");
-   printf ("   -c <dir>         change the crontab dir (no way, security risk)\n");
-   printf ("\n");
-   printf ("extended crontab options:\n");
-   printf ("   --all            list all installed crontabs (root only)\n");
-   printf ("   --list           list all your installed crontabs\n");
-   printf ("   --here           list all local crontabs that could be installed\n");
-   printf ("   --test <desc>    test a crontab file for formatting correctness\n");
-   printf ("   --system <desc>  install system crontab (root only)\n");
-   printf ("   --purge          delete all your installed crontabs\n");
-   printf ("   --cleanse        delete all installed crontabs (root only)\n");
-   printf ("   --reload         delete all then install your crontabs\n");
-   printf ("   --help, -h       print usage information\n");
-   printf ("\n");
-   printf ("extended crond options rejected:\n");
-   printf ("   -n               foreground operation (using logging instead)\n");
-   printf ("   -x <option>      debugging options (using @ urgents instead)\n");
-   printf ("   -p               allows weaker security on crontabs (no, no)\n");
-   printf ("   -m <script>      special email handling (not useful anyway)\n");
-   printf ("\n");
-   printf ("heatherly debugging \"urgents\"\n");
-   printf ("   @a               verbosely traces argument parsing\n");
-   printf ("   @p               verbosely traces interactive/crontab logic\n");
-   printf ("\n");
-   printf ("changes to crontab file naming rules\n");
-   printf ("   - must be formatted as \"crontab.<description>\"\n");
-   printf ("   - our version allows multiple crontabs per user (different descritions)\n");
-   printf ("   - description is '.' plus 1 to 50 characters\n");
-   printf ("   - valid characters in the description are [A-Za-z0-9_] only\n");
-   printf ("   - if you have only one crontab, likely just call it \"crontab.base\"\n");
-   printf ("   - options above only require <desc> part of crontab name\n");
-   printf ("\n");
-   printf ("NOTE : all arguments will be processed in the order supplied\n");
-   printf ("\n");
-   exit   (0);
-}
-
 char             /* [------] post-argument program initialization ------------*/
-PROG_begin         (void)
-{
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char             /* [------] post-argument program initialization ------------*/
-PROG_final         (void)
+PROG__final             (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(complete)-----------------------*/
@@ -322,7 +336,85 @@ PROG_final         (void)
 }
 
 char
-PROG_term          (void)
+PROG_debugging          (int a_argc, char *a_argv[], char a_unit)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(startup)------------------------*/
+   if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
+   if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
+   DEBUG_TOPS  yLOG_value   ("debugging" , rc);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+PROG_startup            (int a_argc, char *a_argv[], char a_unit)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(startup)------------------------*/
+   if (rc >= 0)  rc = PROG__init   ();
+   if (rc >= 0)  rc = PROG__args   (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG__begin  ();
+   if (rc >= 0)  rc = PROG__final  ();
+   if (a_unit == 'y') {
+      my.user_mode = MODE_UNIT;
+      PROG__unit_prepare ();
+      yURG_msg_tmp ();
+      yURG_err_tmp ();
+   }
+   if (a_unit == 'k') {
+      yURG_msg_tmp ();
+      yURG_err_tmp ();
+   }
+   DEBUG_TOPS  yLOG_value   ("startup"   , rc);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+PROG_driver             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rce         =  -10;
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(route action)-------------------*/
+   --rce;  switch (s_act) {
+   case ACT_VERIFY     : case ACT_CVERIFY    : case ACT_VVERIFY    :
+      rc = TABS_verify   (s_act, s_file);
+      break;
+   case ACT_INSTALL    : case ACT_CINSTALL   : case ACT_VINSTALL   :
+      rc = TABS_install  (s_act, s_file);
+      break;
+   case ACT_CHECK      : case ACT_CCHECK     : case ACT_VCHECK     :
+      rc = TABS_check    (s_act, s_file);
+      break;
+   case ACT_REMOVE     : case ACT_CREMOVE    : case ACT_VREMOVE    :
+      rc = TABS_remove   (s_act, s_file);
+      break;
+   case ACT_LIST       : case ACT_COUNT      :
+      rc = TABS_review  ("*", s_act);
+      break;
+   case ACT_AUDIT      : case ACT_CAUDIT     : case ACT_VAUDIT     :
+      rc = TABS_review  ("*", s_act);
+      break;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+PROG_term               (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    int   rc = 0;
@@ -335,7 +427,7 @@ PROG_term          (void)
 }
 
 char
-PROG_end           (void)
+PROG_end                (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    yDLST_wrap ();
@@ -354,33 +446,33 @@ PROG_end           (void)
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
 
-/*> char*            /+ [------] unit test accessor ------------------------------+/      <* 
- *> PROG_getter        (char *a_question, int a_num)                                      <* 
- *> {                                                                                     <* 
- *>    /+---(locals)-------------------------+/                                           <* 
- *>    int       xfore  = 0, xback  = 0;  /+ counts to verify doubly-linked list +/       <* 
- *>    tCFILE   *xlist    = NULL;                                                         <* 
- *>    /+---(prepare)------------------------+/                                           <* 
- *>    strlcpy  (unit_answer, "PROG_getter      : question not understood", LEN_HUND);    <* 
- *>    /+---(pulser)-------------------------+/                                           <* 
- *>    if        (strncmp(a_question, "pulse_name"     , 20)   == 0) {                    <* 
- *>       snprintf (unit_answer, LEN_HUND, "PROG pulse name  : %.35s", my.name_pulser);   <* 
- *>    }                                                                                  <* 
- *>    /+---(complete)-----------------------+/                                           <* 
- *>    return unit_answer;                                                                <* 
- *> }                                                                                     <*/
+char*            /*--> unit test accessor ------------------------------*/
+prog__unit              (char *a_question)
+{ 
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(prepare)------------------------*/
+   strlcpy  (unit_answer, "PROG             : question not understood", LEN_HUND);
+   /*---(crontab name)-------------------*/
+   if      (strcmp (a_question, "action"        )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG action      : %c  %2d å%sæ", s_act, strlen (s_file), s_file);
+   }
+   /*---(complete)-----------------------*/
+   return unit_answer;
+}
 
 char
 PROG__unit_mkdir        (char *a_dir, char *a_own, char *a_perms)
 {
    char        x_cmd       [LEN_RECD]  = "";
-   sprintf (x_cmd, "rm -fr %s > /dev/null", a_dir);
+   /*> sprintf (x_cmd, "rm -fr %s > /dev/null", a_dir);                               <* 
+    *> system  (x_cmd);                                                               <*/
+   sprintf (x_cmd, "mkdir %s    > /dev/null  2>&1", a_dir);
    system  (x_cmd);
-   sprintf (x_cmd, "mkdir %s > /dev/null", a_dir);
+   sprintf (x_cmd, "chown %s %s > /dev/null  2>&1", a_own  , a_dir);
    system  (x_cmd);
-   sprintf (x_cmd, "chown %s %s > /dev/null", a_own  , a_dir);
-   system  (x_cmd);
-   sprintf (x_cmd, "chmod %s %s > /dev/null", a_perms, a_dir);
+   sprintf (x_cmd, "chmod %s %s > /dev/null  2>&1", a_perms, a_dir);
    system  (x_cmd);
    return 0;
 }
@@ -389,21 +481,26 @@ char
 PROG__unit_prepare      (void)
 {
    char        x_cmd       [LEN_RECD]  = "";
+   char        x_home      [LEN_PATH];
    char        x_dir       [LEN_RECD]  = "";
    PROG__files_unit ();
+   /*---(directories)--------------------*/
+   getcwd (x_home, LEN_PATH);
    chdir  ("/tmp");
    sprintf (x_dir, "%s", DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:users"    , "0777");
-   sprintf (x_dir, "%s/khronos" , DIR_UNIT);
+   sprintf (x_dir, "%skhronos" , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:root"     , "0700");
-   sprintf (x_dir, "%s/root"    , DIR_UNIT);
+   sprintf (x_dir, "%sroot"    , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:root"     , "0700");
-   sprintf (x_dir, "%s/member"  , DIR_UNIT);
+   sprintf (x_dir, "%smember"  , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "member:root"   , "0700");
-   sprintf (x_dir, "%s/machine" , DIR_UNIT);
+   sprintf (x_dir, "%smachine" , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "machine:root"  , "0700");
-   sprintf (x_dir, "%s/monkey"  , DIR_UNIT);
+   sprintf (x_dir, "%smonkey"  , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "monkey:root"   , "0700");
+   chdir  (x_home);
+   /*---(complete)-----------------------*/
    return 0;
 }
 
@@ -411,47 +508,38 @@ char
 PROG__unit_cleanup      (void)
 {
    char        x_cmd       [LEN_RECD];
+   char        x_home      [LEN_PATH];
+   /*---(directories)--------------------*/
+   getcwd (x_home, LEN_PATH);
    chdir  ("/tmp");
-   sprintf (x_cmd, "rm -fr %s > /dev/null", DIR_UNIT);
+   sprintf (x_cmd, "rm -fr %s   > /dev/null  2>&1", DIR_UNIT);
    system  (x_cmd);
    strlcpy (my.n_central, DIR_CENTRAL, LEN_PATH);
+   chdir  (x_home);
+   /*---(complete)-----------------------*/
    return 0;
 }
 
 char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_quiet   (void)
 {
-   int         x_argc      = 1;
+   char        rc          =    0;
+   int         x_argc      =    1;
    char       *x_argv [1]  = { "khronos" };
-   yURG_logger    (x_argc, x_argv);
-   yURG_urgs      (x_argc, x_argv);
-   PROG_init      ();
-   PROG__unit_prepare ();
-   yURG_noout   ();
-   yURG_noerror ();
-   PROG_args      (x_argc, x_argv);
-   PROG_begin     ();
-   PROG_final     ();
-   my.user_mode = MODE_UNIT;
-   return 0;
+   rc = PROG_debugging (x_argc, x_argv, 'y');
+   rc = PROG_startup   (x_argc, x_argv, 'y');
+   return rc;
 }
 
 char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_loud    (void)
 {
-   int         x_argc      = 5;
+   char        rc          =    0;
+   int         x_argc      =    5;
    char       *x_argv [5]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched"  };
-   yURG_logger    (x_argc, x_argv);
-   yURG_urgs      (x_argc, x_argv);
-   PROG_init      ();
-   PROG__unit_prepare ();
-   yURG_noout   ();
-   yURG_noerror ();
-   PROG_args      (x_argc, x_argv);
-   PROG_begin     ();
-   PROG_final     ();
-   my.user_mode = MODE_UNIT;
-   return 0;
+   rc = PROG_debugging (x_argc, x_argv, 'y');
+   rc = PROG_startup   (x_argc, x_argv, 'y');
+   return rc;
 }
 
 char       /*----: set up program urgents/debugging --------------------------*/

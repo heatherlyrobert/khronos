@@ -1,18 +1,69 @@
-.TH khronos 7 2010-dec "linux" "heatherly custom tools manual"
-.na
+.TH khronos 7 2010-dec "linux" "decision rationale, scope and objectives"
 
 .SH NAME
-khronos-ageraton - decision rationale, objectives, and overview
+.B khronos
+- time-based batch automation and job scheduling
+
+.SH PATRON
+.B khronos-ageraton (unaging)
+god of creation and unyielding time
+
+.SH IMAGERY
+winged serpent (drakon) with the heads of a bull, a lion, and a man
 
 .SH SUMMARY
-khronos is a simplified, reliable, trackable, and focused version of the
-classic posix-defined crond time-based job scheduler that strips away
-modern cruftiness and adds more visibility and maintainability.
+khronos is a personal, simplified, traceable, and technical version of the
+classic posix-defined crond time-based job scheduler that strips away modern
+cruftiness and targets transparency and maintainability.
 
-.SH SCOPE, REASONING and DECISION
+.SH DOCUMENTATION FILES
+.nf  
+khronos (1)        command-line initiation, use, and options
+khronos (5)        structure of config, files, and streams
+.B khronos (7)········decision rationale, scope, and objectives
+
+.SH TABLE OF CONTENTS
+.nf  
+a) definition      niche, subdisciplines, value, focus, definition
+b) situation       situation, complication, intent, answer
+c) objectives      model, origin, alternatives, target, objectives
+d) requirements    traditional, accepted, rejected
+e) greek heritage  more about greek patron
+
+.SH A) DEFINITION (nsvfd)
+
+.B niche (n).
+batch automation is the shifting of workloads across time and space to balance
+and optimize/maximize the use of the available schedule, processing capacity,
+storage, and human interaction time.
+
+.B sub-disciplines (s).
+   -- time-based, common and easy (usually down to minutes, ranges)
+   -- event-based, easy but simplistic (reboot, hibernate, ...)
+   -- resource-based, rear window (cpu, disk, fragmentation, ...)
+   -- user-triggered (activity, meetings, lunch, leave for day, ...)
+   -- predictive (based on past usage, normal schedules, routines)
+   -- plus, multi-machine coordination and load-balancing
+
+.B value (v).
+interactive and real-time applications make deplorable use of resources --
+architecting systems to do batch work lights-out in less utilited times and
+places adds an order-of-magnitude to capacity.
+
+.B focus (f).
+will focus on time-based and user-triggered.  resource-based will be
+done with periodic time-based jobs taking stock of resource utiliation.
+not multi-machine, maybe some predictive.
+
+.B definition (d).
+time-based job scheduling is the most common and scalable aspect of batch
+automation, focusing on manually balancing workload by launching tasks based
+on expected (not real) availability.
+
+.SH B) SITUATION (SCIWD)
 
 .B situation (S).  
-modern desktop (and many server) environments are sized for interactive peak
+modern desktop (and most server) environments are sized for interactive peak
 loads and therefore wildly underutilized ninety-five percent of the time,
 likely fully idle over half the time.
 
@@ -21,10 +72,70 @@ most system designers are not computer scientists and so tend to design
 complicated systems for interactive human use that waste a huge amount of
 resources, capability, and potential.
 
-.B answer (A).  
-deeply understand cron (and batch systems) by rebuilding it.  own it.
-expand it.  adapt it.  get dirty and figure out better ways of tracking and
-maintaining higher visibility.
+.B intent (I).
+use real-time processing only where data will be reviewed frequently/constantly
+and much of the data volume changes quickly -- save all other updates for
+hourly, daily, or weekly batch work.
+
+.B what-the-phuk (W).
+everyone buys their way out of constraints, then gets fatter and complains.
+i must make the most of every cycle.  but, batch has become a misunderstood,
+rarely-used afterthought.
+
+.B decision (D).
+gonna make my own.  crazy, unrealistic, blisteringly hard.  i need to rapidly
+explore, fail, adapt, and grow.  get focused on transparent, adaptable,
+maintainable, resilient, and heavy-use.
+
+.SH C) OBJECTIVES (bomat!#)
+.B base model (b).
+crond is a well-worn, heavily-used, and posix-defined daemon that does
+time-based job scheduling exceptionally well.  many attempts have been made to
+"do it better", but its still here ;)
+
+.B origin (o).
+brian kernighan nailed it in the original (1979) by focusing on real needs,
+power users, and low-power systems.  i need this same type of thinking to
+keep my system relevant.
+
+.B magic (m).
+kernighan also coupled it with an elegant, expressive, and terse scheduling
+grammar built by computer science folks and kept it simple and robust.
+bloody brilliant.
+
+.B alternatives (a).
+many implementations scream out, many add flexibility, but come with
+creeping featurism, gui's, and cruft -- crond, anacron, vixie, hcron, jobber,
+systemd, jenkins, chronos, rundeck.
+
+.B target user/platform (t).
+technical, informed, command-line using power-users running automation-intensive
+real-time linux systems, doing serious work, on resource-limited machines.
+
+.B objective short-list (!).
+   -- simple command-line interface for all aspects (like original)
+   -- reasonably backward-compatable to reduce learning workload
+   -- pure ascii input files structured similar to original
+   -- expand kernighan scheduling grammar to weeks and years
+   -- add job and duration attributes to control execution
+   -- add detailed verification of jobs before and after installation
+   -- add historical tracking of jobs for later analysis
+   -- add higher transparency, traceability and rapid debugging
+
+.B as always, universal objectives (#).  
+   -- run on any linux box from raspberry to cray
+   -- stay focused, small, tight, reliable, and secure
+   -- as always, tight and portable glibc/ansi-c code
+   -- stay away from dependency on external code libraries, like boost
+   -- only human-readable, 8-bit safe, ascii streams (not database)
+   -- have dedicated, maintained, automated unit testing
+   -- integrated debugging/logging for rapid problem solving
+   -- use secure communications between systems where required
+   -- clean, clean code so i can maintain after long absences
+   -- no international, multi-lang, multi-byte support (freaking ever)
+   -- one-hundred percent keyboard driven and centric
+   -- all tables must be self describing with labels and queries
+   -- all data structures must include dumps, reports, and audits
 
 .B drawbacks...
    -- many cron variations are already built, why waste the time
@@ -33,53 +144,49 @@ maintaining higher visibility.
    -- impossible to release to others due to all my libraries
 
 .B benefits...
-   -- stay with one, rather than keep changing flavors of cron
+   -- long stability rather than updates, migrations, etc.
    -- improve daemon coding skills on a critical service
-   -- learn a ton about batch processing, and keep learning
+   -- learn a ton about batch automation, and keep learning
    -- gain the abilty to adapt rather that accept existing features
 
-.B universal technical requirements...
-   -- stay focused, small, tight, reliable, and secure
-   -- always glibc/ansi-c (can be ported and complied anywhere)
-   -- no dependencies on external code libraries, like boost
-   -- only use human maintainable, 7-bit safe, ascii streams
-   -- clear, not clever, code (maintenance after long absences)
-   -- have dedicated, maintained, automated unit testing
-   -- integrated debugging for fast problem resolution
-   -- verbose logging and status updates (never have to guess)
-   -- use secure communications between systems where required
-   -- no international, multi-language, multi-byte support (ever)
+.SH D) REQUIREMENTS
 
 .B traditional requirements accepted...
    -- simple, ascii, human editable crontab and cron line framework
-   -- use of a /var/spool/crontabs directory to keep crontabs
+   -- use of a /var/spool/ directory to keep crontabs
    -- elegant kerrnighan scheduling grammar (but expanded)
    -- near posix compatibility (can do the full job on core features)
    -- combination of interactive (crontab) and daemon (crond)
 
 .B added requirements...
-   -- short titles for jobs to help tracking
-   -- add importance to decide what to run in recovery situations
+   -- ability to test/verify crontabs before actual installation
+   -- add short title for jobs to help tracking and reporting
    -- add duration expectations to control behaviour (min/max/exp)
+   -- add importance and recovery to guide failure remedies
    -- accumulate run statistics to help adapt and tune jobs
    -- expanded tracking details for more complex jobs
-   -- fast and efficient (we want to enable tons of automation)
-   -- ability to test/verify crontabs before actual installation
+   -- keep fast and efficient (we want to enable tons of automation)
 
 .B traditional requirements rejected...
-   -- automatic email, everyone ultimately hates it (security risk)
-   -- alternate shells (we're gonna run pure posix dash)
-   -- extended shell variables (use a spartan shell environment)
-   -- run-time configuration (no, its only for us, we can update code)
-   -- special symbols for easily expressible things (@hourly, @weekly)
-   -- no -c, -e or - options to edit crontabs (untraceable)
+   -- no automatic email, everyone ultimately hates it (security risk)
+   -- no alternate shells (we're gonna run pure posix dash)
+   -- no extended shell variables (use a spartan shell environment)
+   -- no run-time configuration (no, always a hacking vector)
+   -- no symbols for easily expressible things (@hourly, @weekly)
+   -- no -e (edit) of crontabs (untraceable)
+   -- no - (stdin) creation of crontabs (untraceable)
+   -- no cron.allow or cron.deny files (maybe later)
+   -- no syslog or inotify support (just use HUP, not hard)
+   -- no PAM support, ever, never, not even funny
+   -- no crontabs outside user directories can be installed
+   -- no symlinked files allowed (makes security less clear)
 
 .B expanded requirements rejected...
    -- dependency-based scheduling (like init systems provide)
    -- event-based launches like @reboot (daemons should do this)
    -- resource-based changes to schedules (system load or avail)
 
-.SH HERITAGE
+.SH E) GREEK HERITAGE
 khronos-ageraton (unaging) is the primeval, protogenoi god of time who emerged
 self-formed at the beginning of everything.  khronos is an incorporial god
 in serpentine form (drakon) with wings on its shoulders and three heads --
@@ -92,14 +199,18 @@ wind/passage of time.
 
 khronos and ananke gave birth to aither (light), unbounded khaos (chasm),
 and erebos (darkness).  khronos and ananke also created the world-egg and
-split it into earth (gaia), sea (hydros), and sky (ouranos).
+split it into earth (gaea), sea (hydros), and sky (ouranos).
 
-khronos must not be confused with the titan cronos, zeus' father.
+the protogenoi khronos must not be confused with the titan cronos.  chaos
+created khronos/ananke (protogenoi) who fathered gaea/ouranos (and the other
+primordial gods) who fathered cronos/rhea (and the titans) who fathered zeus
+(and the olympians).
 
 .SH SEE ALSO
 this documentation is layered to provide easier navigation.
-   polymnia (6), interactive system usage and navigation
-   polymnia (7), decision rationale, objectives, and overview
+   khronos (1), command-line initiation and options
+   khronos (5), configuration and file structures
+   khronos (7), decision rationale and objectives
 
 .SH AUTHOR
 jelloshrike at gmail dot com

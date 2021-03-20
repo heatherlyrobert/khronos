@@ -1,0 +1,228 @@
+.TH khronos 5 2010-Dec "linux" "structure of config, files, and streams"
+
+.SH NAME
+.B khronos
+- time-based batch automation and job scheduling
+
+.SH PATRON
+.B khronos-ageraton (unaging)
+god of creation and unyielding time
+
+.SH IMAGERY
+winged serpent (drakon) with the heads of a bull, a lion, and a man
+
+.SH SUMMARY
+khronos is a personal, simplified, traceable, and technical version of the
+classic posix-defined crond time-based job scheduler that strips away modern
+cruftiness and targets transparency and maintainability.
+
+.SH DOCUMENTATION FILES
+.nf  
+khronos (1)        command-line initiation, use, and options
+.B khronos (5)········structure of config, files, and streams
+khronos (7)        decision rationale, scope, and objectives
+
+.SH TABLE OF CONTENTS
+.nf  
+a) synopsis        command line options overview
+b) user-mode       detailed command line options
+c) daemon-mode     detailed command line options
+
+.SH SCHEDULING GRAMMAR
+the magic of our khronos is a slightly modified form of the kernighan scheduling
+grammar he implemented in the original cron in 1978.
+
+a crontab line is composed of six scheduling grammar fields which have no
+fixed length and are separated by spaces...
+
+.B <minutes>
+.RS 8
+minute marks on which the job should launch (00-59)
+.RE
+
+.B <hours>
+.RS 8
+hours on which the job should launch (00-23)
+.RE
+
+.B <days>
+.RS 8
+days on which the job should launch (01-31)
+.RE
+
+.B <months>
+.RS 8
+months in which the job should launch (01-12)
+.RE
+
+.B <days of the week>
+.RS 8
+weekdays on which the job should launch (1/Mo -7/Su)
+.RE
+
+.B <weeks of the year>
+.RS 8
+weeks in which the job should launch (01-53)
+.RE
+
+all these fields are combined through AND logic to determine when a job is
+scheduled to launch.  As a note, most crons use OR logic with day/dow and do
+not include the weeks field.
+
+each of these six fields uses the same foundational grammar...
+
+.B wildcard (*)
+.RS 8
+all possible values in a field, i.e., no restriction
+.RE
+
+.B range (<nn>-<nn>)
+.RS 8
+all values between two numbers (inclusive)
+.RE
+
+.B step (/<nn>)
+.RS 8
+modifies a range or wildcard to skip by a value
+.RE
+
+.B list (<nn>,<nn>)
+.RS 8
+creates the union between two values, ranges, etc.
+.RE
+
+.B modifier (<nn><ch>)
+.RS 8
+modifies a value within its context
+.RE
+
+.B prefixes (<ch><nn>)
+.RS 8
+significantly modifies the value
+.RE
+
+.B constant (<ch>)
+.RS 8
+stands in for a value or range of values
+.RE
+
+some basic examples to explain are...
+
+#min-- -hrs-- day--- mon--- dow--- wks---
+
+00     02     *      *      *      *       2am every day
+
+00     00     1      *      *      *       midnight on the first
+
+10     *      *      *      *      *       10min after every hour
+
+30     8,17   *      *      *      *       8:30a and 5:30p
+
+00,30  8-17   *      *      *      *       half hours from 8a to 5p
+
+00     12     *      *      1      *       noon every monday
+
+00     20     *      *      5      1       8p friday in first week
+
+00     00     31     *      *      *       midnight on jan 31st
+
+00     00     */2    *      *      *       midnight every other day
+
+00     3-9/3  *      *      *      *       3a, 6a, and 9a
+
+00     15     *      *      *      */2     3p very other week
+
+in order to make the crontab more readable, some contants may be used...
+
+.B L (last)
+.RS 8
+may be used in any field, e.g., L in days is last day of month
+.RE
+
+.B B (business hours)
+.RS 8
+9a to 5p only (only in hours)
+.RE
+
+.B Mo, Tu, We, Th, Fr, Sa, Su (weekdays)
+.RS 8
+to keep it quickly readable -- can't be in ranges
+.RE
+
+.B W, E (weekdays)
+.RS 8
+abbreviated standin for all weekdays (W) and weekends (E)
+.RE
+
+some days are hard to specify and require modifiers...
+
+.B <nn>a (after)
+.RS 8
+first weekday (Mo-Fr) on or after the date (only in days)
+.RE
+
+.B <nn>b (before)
+.RS 8
+closest weekday (Mo-Fr) on or before the date (only in days)
+.RE
+
+.B <nn>n (nearest)
+.RS 8
+nearest weekday (Mo-Fr) to date (only in days)
+.RE
+
+.B <n>w (full week)
+.RS 8
+stands in for 1st, 2nd, ... week of the month (only in days)
+.RE
+
+.B <n>q (full quarter)
+.RS 8
+stands in for 1st, 2nd, ... quarter of year (only in months)
+.RE
+
+some further examples to explain are...
+
+#min-- -hrs-- day--- mon--- dow--- wks---
+
+00     08     *      *      Tu,Fr  *       8a on Tuesday and Friday
+
+00     13     *      *      W      *       1p on all weekdays
+
+00     15     15n    *      *      *       3p workday nearest the 15th
+
+00     15     15b    *      *      *       ... on or before the 15th
+
+00     15     15a    *      *      *       ... on or after the 15th
+
+00     10     2w     *      Mo     *       10a on the 2nd Monday
+
+00     B      *      *      W      *       each bus. hour on weekday
+
+
+
+
+
+.SH FILES
+most versions of crond allow directories to be changed which creates a
+potential security gap.  khronos will only use standard directories and
+file naming to close this gap.  it will also not allow the /etc entries
+to be used as then packages can sneak cronjobs onto my system.
+
+.B /home/machine/contabs/
+.RS 3
+this directory is where khronos will source the system-wide crontabs
+-- it can not be set to be elsewhere or do otherwise.
+.RE
+
+.B ~/c_quani/contabs/
+.RS 3
+this directory is where khronos will source the local crontabs for a specific
+user -- it can not be set to be elsewhere or do otherwise.
+.RE
+
+.B /var/spool/crontabs/
+.RS 3
+this is the system directory where installed crontabs are kept and khronos
+reads these files either when launched, hourly, or sent a SIGHUP.
+.RE

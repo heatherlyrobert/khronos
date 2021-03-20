@@ -23,8 +23,11 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->sched       =  NULL;
    strlcpy (a_cur->command, ""   , LEN_RECD);
    /*---(working)--------------*/
+   a_cur->retire      =  '-';
    a_cur->rpid        =    0;
    a_cur->start       =    0;
+   a_cur->runs        =    0;
+   a_cur->fails       =    0;
    /*---(estimates)------------*/
    a_cur->est         =    0;
    a_cur->est_min     =    0;
@@ -45,14 +48,17 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "[____.__.___._______]", LEN_RECD);
+   strlcpy (s_print, "[____._____.___._______]", LEN_RECD);
    ++n;  if (a_cur->tracker [0] != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->recdno      >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->sched       != NULL)        s_print [n] = 'X';
    ++n;  if (a_cur->command [0] != '\0')        s_print [n] = 'X';
    ++n;
+   ++n;  if (a_cur->retire      != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->rpid        >  0)           s_print [n] = 'X';
    ++n;  if (a_cur->start       >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->runs        >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->fails       >  0)           s_print [n] = 'X';
    ++n;
    ++n;  if (a_cur->est         >  0)           s_print [n] = 'X';
    ++n;  if (a_cur->est_min     >  0)           s_print [n] = 'X';
@@ -124,6 +130,68 @@ LINE__new               (tLINE **a_new)
    *a_new = x_new;
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_sexit   (__FUNCTION__);
+   return 0;
+}
+
+char
+LINE_dup                (tLINE *a_orig, tLINE **a_new)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rce         =  -10;
+   int         rc          =    0;
+   int         x_tries     =    0;
+   tLINE      *x_new       = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check return)-------------------*/
+   DEBUG_INPT  yLOG_spoint  (a_new);
+   --rce;  if (a_new == NULL) {
+      DEBUG_INPT  yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT  yLOG_spoint  (*a_new);
+   --rce;  if (*a_new != NULL) {
+      DEBUG_INPT  yLOG_snote   ("already set");
+      DEBUG_INPT  yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(create new)---------------------*/
+   rc = LINE__new (&x_new);
+   DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
+   --rce;  if (x_new == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(master)-------------------------*/
+   DEBUG_INPT   yLOG_note    ("master data");
+   strlcpy (x_new->tracker  , a_orig->tracker  , LEN_TITLE);
+   x_new->recdno   = a_orig->recdno;
+   x_new->sched    = a_orig->sched;
+   strlcpy (x_new->command  , a_orig->command  , LEN_RECD);
+   /*---(working)------------------------*/
+   DEBUG_INPT   yLOG_note    ("working");
+   x_new->rpid        = a_orig->rpid;
+   x_new->start       = a_orig->start;
+   x_new->retire      = a_orig->retire;
+   /*---(estimates)----------------------*/
+   DEBUG_INPT   yLOG_note    ("estimates");
+   x_new->est         = a_orig->est;
+   x_new->est_min     = a_orig->est_min;
+   x_new->est_max     = a_orig->est_max;
+   /*---(flags)--------------------------*/
+   DEBUG_INPT   yLOG_note    ("flags");
+   x_new->value       = a_orig->value;
+   x_new->track       = a_orig->track;
+   x_new->handoff     = a_orig->handoff;
+   x_new->strict      = a_orig->strict;
+   x_new->lower       = a_orig->lower;
+   x_new->upper       = a_orig->upper;
+   x_new->remedy      = a_orig->remedy;
+   /*---(save back)----------------------*/
+   DEBUG_INPT   yLOG_note    ("save back");
+   *a_new = x_new;
+   /*---(complete)-----------------------*/
+   DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -200,7 +268,7 @@ LINE__original          (int n, uchar *a_verb)
    int         x_pos       =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_message ("  -- found an original-style record");
+   yURG_msg ('-', "found an original-style record");
    /*---(get record)---------------------*/
    DEBUG_INPT   yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL) {
@@ -228,9 +296,8 @@ LINE__original          (int n, uchar *a_verb)
    /*---(set to ready)-------------------*/
    my.t_recdno = n;
    my.t_ready  = 'y';
-   yURG_message ("  -- schedule  %s", my.t_schedule);
-   yURG_message ("  -- command   %s", my.t_command);
-   yURG_message ("");
+   yURG_msg ('-', "schedule  %s", my.t_schedule);
+   yURG_msg ('-', "command   %s", my.t_command);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -244,7 +311,7 @@ LINE__revised           (int n, uchar *a_verb, int c)
    int         rc          =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_message ("  -- found a revised-style record");
+   yURG_msg ('-', "found a revised-style record");
    /*---(get record)---------------------*/
    DEBUG_INPT   yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL) {
@@ -270,11 +337,11 @@ LINE__revised           (int n, uchar *a_verb, int c)
    /*---(set to ready)-------------------*/
    my.t_recdno = n;
    my.t_ready  = 'y';
-   yURG_message ("  -- schedule  %s", my.t_schedule);
-   yURG_message ("  -- tracker   %s", my.t_tracker);
-   yURG_message ("  -- duration  %s", my.t_duration);
-   yURG_message ("  -- flags     %s", my.t_flags);
-   yURG_message ("  -- command   %s", my.t_command);
+   yURG_msg ('-', "schedule  %s", my.t_schedule);
+   yURG_msg ('-', "tracker   %s", my.t_tracker);
+   yURG_msg ('-', "duration  %s", my.t_duration);
+   yURG_msg ('-', "flags     %s", my.t_flags);
+   yURG_msg ('-', "command   %s", my.t_command);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -317,23 +384,23 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    rc = ySCHED_create (&(a_new->sched), a_schedule);
    DEBUG_INPT   yLOG_value   ("sched_rc"  , rc);
    ySCHED_feedback (&x_line, x_focus, x_issue, &x_pos, &x_len, x_fancy);
-   yURG_message ("  -- fancy     %s", x_fancy);
+   yURG_msg ('-', "fancy     %s", x_fancy);
    --rce;  if (rc < 0) {
-      yURG_message ("  -- FATAL     %d, %s, %s, %d, %d", x_line, x_focus, x_issue, x_pos, x_len);
-      yURG_message ("");
+      yURG_err ('f', "%d, %s, %s, %d, %d", x_line, x_focus, x_issue, x_pos, x_len);
+      yURG_msg (' ', "");
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(feedback)--------------------*/
    rc = ySCHED_details (my.s_min, my.s_hrs, my.s_dys, my.s_mos, my.s_dow, my.s_wks, my.s_yrs, my.s_beg, my.s_end, &my.s_valid);
-   yURG_message ("  -- min       %s", my.s_min);
-   yURG_message ("  -- hrs       %s", my.s_hrs);
-   yURG_message ("  -- dys       %s", my.s_dys);
-   yURG_message ("  -- mos       %s", my.s_mos);
-   yURG_message ("  -- dow       %s", my.s_dow);
-   yURG_message ("  -- wks       %s", my.s_wks);
-   yURG_message ("  -- yrs       %s", my.s_yrs);
-   yURG_message ("  -- valid     %s to %s, %c", my.s_beg, my.s_end, my.s_valid);
+   yURG_msg ('-', "min       %s", my.s_min);
+   yURG_msg ('-', "hrs       %s", my.s_hrs);
+   yURG_msg ('-', "dys       %s", my.s_dys);
+   yURG_msg ('-', "mos       %s", my.s_mos);
+   yURG_msg ('-', "dow       %s", my.s_dow);
+   yURG_msg ('-', "wks       %s", my.s_wks);
+   yURG_msg ('-', "yrs       %s", my.s_yrs);
+   yURG_msg ('-', "valid     %s to %s, %c", my.s_beg, my.s_end, my.s_valid);
    /*---(tracker)---------------------*/
    --rce;  if (a_tracker != NULL) {
       DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
@@ -361,8 +428,8 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
             &(a_new->upper), &(a_new->est_max), 
             &(a_new->remedy));
       yEXEC_flags_feedback (x_terse, x_fancy);
-      yURG_message ("  -- fancy     %s", x_terse);
-      yURG_message ("  -- details   %s", x_fancy);
+      yURG_msg ('-', "fancy     %s", x_terse);
+      yURG_msg ('-', "details   %s", x_fancy);
    }
    /*---(command)---------------------*/
    DEBUG_INPT   yLOG_info    ("command"   , a_command);
@@ -373,10 +440,10 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       return rce;
    }
    switch (a_command [0]) {
-   case '!' : yURG_message ("  -- WARNING, demanded OFF-PATH executable with !-bang (security risk)"); break;
-   case '@' : yURG_message ("  -- WARNING, demanded SYMLINK executable with @-worm (security risk)"); break;
+   case '!' : yURG_err ('w', "demanded OFF-PATH executable with !-bang (security risk)"); break;
+   case '@' : yURG_err ('w', "demanded SYMLINK executable with @-worm (security risk)"); break;
    }
-   yURG_message ("  -- executable is found, real, absolute, and runable");
+   yURG_msg ('-', "executable is found, real, absolute, and runable");
    strlcpy (a_new->command, a_command, LEN_FULL);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
@@ -404,11 +471,11 @@ LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_durat
    DEBUG_INPT   yLOG_value   ("populate"  , rc);
    --rce;  if (rc < 0) {
       LINE__free (&x_new);
-      yURG_message ("");
+      yURG_msg (' ', "");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(create list)--------------------*/
+   /*---(create line)--------------------*/
    rc = yDLST_line_create (x_new->tracker, x_new);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
@@ -437,7 +504,7 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
    char        x_fancy     [LEN_RECD]  = "";
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_message ("handle line number %d...", n);
+   yURG_msg ('>', "handle line number %d...", n);
    /*---(increment count)----------------*/
    rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
    DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
@@ -456,20 +523,20 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
    /*---(check for valid dates)----------*/
    --rce;  if (strncmp (a_verb, ".valid ", 7) == 0) {
       --x_file->lines;
-      yURG_message ("  -- found a validity record <<%s>>", a_verb);
+      yURG_msg ('-', "found a validity record <<%s>>", a_verb);
       DEBUG_INPT  yLOG_note    ("found a .valid record");
       rc = ySCHED_valid (a_verb);
       DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);
       ySCHED_feedback (&x_line, x_focus, x_issue, &x_pos, &x_len, x_fancy);
-      yURG_message ("  -- fancy     %s", x_fancy);
+      yURG_msg ('-', "fancy     %s", x_fancy);
       if (rc < 0) {
-         yURG_message ("  -- FATAL     %d, %s, %s, %d, %d", x_line, x_focus, x_issue, x_pos, x_len);
-         yURG_message ("");
+         yURG_err ('f', "%d, %s, %s, %d, %d", x_line, x_focus, x_issue, x_pos, x_len);
+         yURG_msg (' ', "");
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      yURG_message ("  -- SUCCESS");
-      yURG_message ("");
+      yURG_msg ('-', "SUCCESS");
+      yURG_msg (' ', "");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return 0;
    }
@@ -521,8 +588,8 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   yURG_message ("  -- created new line on crontab");
-   yURG_message ("");
+   yURG_msg ('-', "SUCCESS, created a new line from the crontab entry");
+   yURG_msg (' ', "");
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -550,7 +617,7 @@ line_prune              (void)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(check all lines)----------------*/
-   rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DEAD, NULL, &x_line);
+   rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_line);
    DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
    while (x_line != NULL) {
       /*---(mark retired)----------------*/
@@ -559,7 +626,7 @@ line_prune              (void)
       if (x_line->rpid > 1) {
          DEBUG_INPT   yLOG_note    ("found running process");
          ++x_running;
-         rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DEXT, NULL, &x_line);
+         rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DNEXT, NULL, &x_line);
          DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
          continue;
       }
@@ -572,7 +639,7 @@ line_prune              (void)
       }
       /*---(start fresh)-----------------*/
       x_running = 0;
-      rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DEAD, NULL, &x_line);
+      rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_line);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/
