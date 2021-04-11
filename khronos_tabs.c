@@ -189,7 +189,7 @@ TABS__prepare      (cchar *a_regex, cchar a_act, DIR **a_dir, char *a_prefix)
    *a_dir = opendir (my.n_central);
    DEBUG_INPT   yLOG_point   ("*a_dir"    , *a_dir);
    --rce;  if (*a_dir == NULL) {
-      RUN_USER     printf ("fatal, can not open khronos central directory\n");
+      /*> printf ("fatal, can not open khronos central directory\n");                 <*/
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }

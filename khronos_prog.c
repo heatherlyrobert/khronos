@@ -20,8 +20,6 @@
 
 
 char          unit_answer [ LEN_HUND ];
-static char   s_act  = '-';
-static char   s_file  [LEN_PATH] = "";
 
 
 
@@ -93,28 +91,37 @@ PROG_version            (void)
 char
 PROG__files_normal      (void)
 {
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    snprintf (my.n_central     , LEN_PATH, "%s"  , DIR_CENTRAL);
    snprintf (my.n_home        , LEN_PATH, "%s"  , "/home/");
    snprintf (my.n_root        , LEN_PATH, "%s"  , "/root");
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
    snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_YHIST, FILE_TRACK);
-   snprintf (my.n_exec        , LEN_PATH, "%s%s", DIR_YLOG , FILE_EXEC);
    snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char
 PROG__files_unit        (void)
 {
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    snprintf (my.n_central     , LEN_PATH, "%s%s", DIR_UNIT, "khronos/");
    snprintf (my.n_home        , LEN_PATH, "%s"  , DIR_UNIT);
    snprintf (my.n_root        , LEN_PATH, "%s%s", DIR_UNIT, "root");
-   snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", "/tmp/" , FILE_HEARTBEAT);
-   snprintf (my.n_track       , LEN_PATH, "%s%s", "/tmp/" , FILE_TRACK);
-   snprintf (my.n_exec        , LEN_PATH, "%s%s", "/tmp/" , FILE_EXEC);
-   snprintf (my.n_status      , LEN_PATH, "%s%s", "/tmp/" , FILE_STATUS);
+   snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_UNIT, FILE_HEARTBEAT);
+   snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACK);
+   snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_UNIT, FILE_STATUS);
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      startup functions                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___STARTUP_________________o (void) {;}
 
 char         /*--: pre-argument program initialization ---[ leaf   [ ------ ]-*/
 PROG__init              (void)
@@ -125,8 +132,9 @@ PROG__init              (void)
    char        x_home      [LEN_HUND]  = "";
    char       *p           = NULL;
    /*---(log header)---------------------*/
-   DEBUG_TOPS   yLOG_info    ("purpose" , "provide consistent, reliable, time-based job scheduling");
-   DEBUG_TOPS   yLOG_info    ("namesake", "winged serpent khronos is the god of creation and unyielding time");
+   DEBUG_TOPS   yLOG_info    ("oneline" , P_ONELINE);
+   DEBUG_TOPS   yLOG_info    ("purpose" , P_PURPOSE);
+   DEBUG_TOPS   yLOG_info    ("imagery" , P_IMAGERY);
    DEBUG_TOPS   yLOG_info    ("khronos" , PROG_version    ());
    DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOGS_version   ());
    DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
@@ -145,7 +153,9 @@ PROG__init              (void)
    /*---(begin)--------------------------*/
    PROG__files_normal ();
    g_seq = 0;
-   my.user_mode = MODE_DAEMON;
+   my.run_as   = IAM_KHRONOS;
+   my.run_mode = ACT_NONE;
+   strcpy (my.run_file, "");
    rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
    rc = yPARSE_delimiters  ("§");
@@ -180,91 +190,50 @@ PROG__init              (void)
    return 0;
 }
 
-char
-PROG__setaction         (cchar a_act, cchar *a_file)
-{
-   s_act = a_act;
-   strlcpy (s_file, a_file, LEN_PATH);
-   /*> printf ("s_act = %c, s_file = %s\n", s_act, s_file);                           <*/
-   return 0;
-}
-
-#define    TWOARG         if (two_arg == 1)
-#define    ELSEONE(r)     else { yURG_err ('F', "action å%sæ requires a file name as an argument", a);  rc = r; }
-
 char       /* PURPOSE : process the command line arguments -------------------*/
 PROG__args              (int a_argc, char *a_argv[])
 {
    /*---(locals)-------------------------*/
-   char      rce       =  -10;
-   char      rc        =    0;
-   char     *a         = NULL;         /* current argument                    */
-   int       i         = 0;            /* loop iterator -- arguments          */
-   int       len       = 0;            /* argument length                     */
-   char      two_arg   = 0;
+   char        rce         =  -10;
+   char        rc          =    0;
+   char       *a           = NULL;         /* current argument                    */
+   char       *b           = NULL;          /* next argument                  */
+   int         i           =    0;            /* loop iterator -- arguments          */
+   int         len         =    0;            /* argument length                     */
+   char        two_arg     =    0;
+   int         x_args      =    0;          /* argument count                 */
    /*---(begin)--------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   yURG_msg ('>', "command line arguments handling...");
+   yURG_msg ('-', "total of %d arguments, including name", a_argc);
+   /*---(program name)--------------------------*/
+   strlcpy (my.m_prog, a_argv [0], LEN_DESC);
+   DEBUG_TOPS   yLOG_info    ("prog name" , my.m_prog);
+   /*---(check for no args)--------------*/
    DEBUG_TOPS   yLOG_value   ("a_argc"    , a_argc);
    if (a_argc == 1) {
       DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
       return 0;
    }
-   /*---(program name)--------------------------*/
-   strlcpy (my.m_prog, a_argv [0], LEN_DESC);
-   DEBUG_TOPS   yLOG_info    ("prog name" , my.m_prog);
-   /*---(defaults)------------------------------*/
-   s_act      = '-';
-   strlcpy (s_file, "", LEN_PATH);
-   /*---(process)------------------------*/
-   --rce;  for (i = 1; i < a_argc; ++i) {
-      a = a_argv[i];
+   /*---(walk args)-----------------------------*/
+   for (i = 1; i < a_argc; ++i) {
+      /*---(prepare)---------------------*/
+      a = a_argv [i];
       if (a == NULL) {
+         yURG_err ('f', "arg %d is NULL", i);
+         DEBUG_TOPS   yLOG_note    ("FATAL, found a null argument, really bad news");
          DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      DEBUG_TOPS   yLOG_complex ("curr"      , "#%02d, %s", i, a);
-      if (i < a_argc - 1) two_arg = 1; else two_arg = 0;
-      len = strlen (a);
-      /*---(skip debugging)--------------*/
-      if      (a[0] == '@')                     continue;
-      my.user_mode = MODE_USER;
-      /*---(usage/help)------------------*/
-      if      (strcmp (a, "--version"      ) == 0 || strcmp (a, "-V") == 0) {
-         PROG_version ();
-         printf ("%s\n", verstring);
-         DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-         return 0;
-      }
-      else if (strcmp (a, "--help"     ) == 0)    PROG__usage();
-      /*---(local)-----------------------*/
-      else if (strcmp (a, "--verify"   ) == 0)  { TWOARG  PROG__setaction (ACT_VERIFY  , a_argv [++i]); ELSEONE(-1); }
-      else if (strcmp (a, "--cverify"  ) == 0)  { TWOARG  PROG__setaction (ACT_CVERIFY , a_argv [++i]); ELSEONE(-2); }
-      else if (strcmp (a, "--vverify"  ) == 0)  { TWOARG  PROG__setaction (ACT_VVERIFY , a_argv [++i]); ELSEONE(-3); }
-      /*---(incomming)-------------------*/
-      else if (strcmp (a, "--install"  ) == 0)  { TWOARG  PROG__setaction (ACT_INSTALL , a_argv [++i]); ELSEONE(-4); }
-      else if (strcmp (a, "--cinstall" ) == 0)  { TWOARG  PROG__setaction (ACT_CINSTALL, a_argv [++i]); ELSEONE(-5); }
-      else if (strcmp (a, "--vinstall" ) == 0)  { TWOARG  PROG__setaction (ACT_VINSTALL, a_argv [++i]); ELSEONE(-6); }
-      /*---(outgoing)--------------------*/
-      else if (strcmp (a, "--remove"   ) == 0)  { TWOARG  PROG__setaction (ACT_REMOVE  , a_argv [++i]); ELSEONE(-7); }
-      else if (strcmp (a, "--cremove"  ) == 0)  { TWOARG  PROG__setaction (ACT_CREMOVE , a_argv [++i]); ELSEONE(-8); }
-      else if (strcmp (a, "--vremove"  ) == 0)  { TWOARG  PROG__setaction (ACT_VREMOVE , a_argv [++i]); ELSEONE(-9); }
-      /*---(central)---------------------*/
-      else if (strcmp (a, "--count"    ) == 0)  { PROG__setaction (ACT_COUNT   , ""); }
-      else if (strcmp (a, "--list"     ) == 0)  { PROG__setaction (ACT_LIST    , ""); }
-      else if (strcmp (a, "--check"    ) == 0)  { TWOARG  PROG__setaction (ACT_CHECK   , a_argv [++i]); ELSEONE(-10); }
-      else if (strcmp (a, "--ccheck"   ) == 0)  { TWOARG  PROG__setaction (ACT_CCHECK  , a_argv [++i]); ELSEONE(-11); }
-      else if (strcmp (a, "--vcheck"   ) == 0)  { TWOARG  PROG__setaction (ACT_VCHECK  , a_argv [++i]); ELSEONE(-12); }
-      /*---(auditing)--------------------*/
-      else if (strcmp (a, "--audit"    ) == 0)  { PROG__setaction (ACT_AUDIT   , ""); }
-      else if (strcmp (a, "--caudit"   ) == 0)  { PROG__setaction (ACT_CAUDIT  , ""); }
-      else if (strcmp (a, "--vaudit"   ) == 0)  { PROG__setaction (ACT_VAUDIT  , ""); }
-      /*---(speciality)------------------*/
-      else if (strcmp (a, "--reload"   ) == 0)  { PROG__setaction (ACT_RELOAD, "");     }
-      /*---(unknown)---------------------*/
-      else  {
-         yURG_err ('F', "requested action å%sæ not understood or incomplete", a);
-         rc = -99;
-      }
+      if (i < a_argc - 1)  b = a_argv [i + 1];
+      else                 b = NULL;
+      /*---(debugging--------------------*/
+      if (a [0] == '@')       continue;
+      /*---(two arg check)---------------*/
+      ++x_args;
+      DEBUG_ARGS  yLOG_info     ("argument"  , a);
+      rc = yEXEC_args_handle (&(my.run_as), &(my.run_mode), my.run_file, &i, a, b);
+      if (rc < 0)  break;
    }
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
@@ -288,39 +257,7 @@ PROG__begin             (void)
    int         rce         =  -10;
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   DEBUG_INPT  yLOG_char    ("s_act"     , s_act);
-   /*---(set output routing)-------------*/
-   switch (s_act) {
-   case ACT_VERIFY   : case ACT_INSTALL  : case ACT_REMOVE   :
-   case ACT_AUDIT    : case ACT_CHECK    : case ACT_LIST     :
-      DEBUG_INPT  yLOG_note    ("silent, turning off all output and errors");
-      yURG_msg_std  (); yURG_msg_mute ();
-      yURG_err_std  (); yURG_err_mute ();
-      break;
-   case ACT_CVERIFY  : case ACT_CINSTALL : case ACT_CREMOVE  :
-   case ACT_CAUDIT   : case ACT_CCHECK   :
-      DEBUG_INPT  yLOG_note    ("confirm, muting output and errors until summary");
-      yURG_msg_std  (); yURG_msg_mute ();
-      yURG_err_std  (); yURG_err_mute ();
-      break;
-   case ACT_VVERIFY  : case ACT_VINSTALL : case ACT_VREMOVE  :
-   case ACT_VAUDIT   : case ACT_VCHECK   :
-      DEBUG_INPT  yLOG_note    ("verbose, turning on all output and errors");
-      yURG_msg_std  (); yURG_msg_live ();
-      yURG_err_std  (); yURG_err_live ();
-      break;
-   }
-   /*---(check security)-----------------*/
-   --rce;  switch (s_act) {
-   case ACT_AUDIT      : case ACT_CAUDIT     : case ACT_VAUDIT     :
-      DEBUG_INPT  yLOG_note    ("audit, caudit, and vaudit require root privlege");
-      if (my.m_uid != 0) {
-         yURG_err ('F', "--audit, --caudit, and --vaudit require root privlege");
-         DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      break;
-   }
+   DEBUG_INPT  yLOG_char    ("my.run_mode"     , my.run_mode);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -330,13 +267,15 @@ char             /* [------] post-argument program initialization ------------*/
 PROG__final             (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(set output routing)-------------*/
+   yEXEC_final (my.m_uid);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char
-PROG_debugging          (int a_argc, char *a_argv[], char a_unit)
+PROG_debugging          (int a_argc, char *a_argv[])
 {
    /*---(locals)-----------+-----+-----+-*/
    int         rc          =    0;
@@ -352,7 +291,7 @@ PROG_debugging          (int a_argc, char *a_argv[], char a_unit)
 }
 
 char
-PROG_startup            (int a_argc, char *a_argv[], char a_unit)
+PROG_startup            (int a_argc, char *a_argv[])
 {
    /*---(locals)-----------+-----+-----+-*/
    int         rc          =    0;
@@ -363,21 +302,19 @@ PROG_startup            (int a_argc, char *a_argv[], char a_unit)
    if (rc >= 0)  rc = PROG__args   (a_argc, a_argv);
    if (rc >= 0)  rc = PROG__begin  ();
    if (rc >= 0)  rc = PROG__final  ();
-   if (a_unit == 'y') {
-      my.user_mode = MODE_UNIT;
-      PROG__unit_prepare ();
-      yURG_msg_tmp ();
-      yURG_err_tmp ();
-   }
-   if (a_unit == 'k') {
-      yURG_msg_tmp ();
-      yURG_err_tmp ();
-   }
+   if (my.run_as == IAM_UKHRONOS)  PROG__unit_prepare ();
    DEBUG_TOPS  yLOG_value   ("startup"   , rc);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return rc;
 }
+
+
+
+/*====================------------------------------------====================*/
+/*===----                       run-time routing                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___DRIVER__________________o (void) {;}
 
 char
 PROG_driver             (void)
@@ -388,30 +325,53 @@ PROG_driver             (void)
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(route action)-------------------*/
-   --rce;  switch (s_act) {
+   --rce;  switch (my.run_mode) {
    case ACT_VERIFY     : case ACT_CVERIFY    : case ACT_VVERIFY    :
-      rc = TABS_verify   (s_act, s_file);
+      rc = yEXEC_act_verify  (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
       break;
    case ACT_INSTALL    : case ACT_CINSTALL   : case ACT_VINSTALL   :
-      rc = TABS_install  (s_act, s_file);
+      rc = yEXEC_act_install (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate, my.f_new);
       break;
    case ACT_CHECK      : case ACT_CCHECK     : case ACT_VCHECK     :
-      rc = TABS_check    (s_act, s_file);
+      rc = yEXEC_act_check   (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
       break;
    case ACT_REMOVE     : case ACT_CREMOVE    : case ACT_VREMOVE    :
-      rc = TABS_remove   (s_act, s_file);
+      rc = yEXEC_act_remove  (my.run_as, my.run_mode, P_ONELINE, my.run_file);
       break;
    case ACT_LIST       : case ACT_COUNT      :
-      rc = TABS_review  ("*", s_act);
+      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
       break;
    case ACT_AUDIT      : case ACT_CAUDIT     : case ACT_VAUDIT     :
-      rc = TABS_review  ("*", s_act);
+      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
+      break;
+   case ACT_DAEMON     : case ACT_CDAEMON    : case ACT_VDAEMON    :
+      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
+      /*> rc = TABS_review  ("*", my.run_mode);                                       <*/
+      /* launch daemon, unless security breach or no crontabs */
+      /*  damaged crontabs don't effect this one as they did not assimilate */
+      break;
+   case ACT_PRICKLY    : case ACT_CPRICKLY   : case ACT_VPRICKLY   :
+      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
+      /*> rc = TABS_review  ("*", my.run_mode);                                       <*/
+      /* then, if passed perfectly, launch in daemon mode */
+      /* ANYTHING damaged or funky caused a no launch     */
+      break;
+   case ACT_NORMAL     : case ACT_CNORMAL    : case ACT_VNORMAL    :
+      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
+      /* then, run in foreground                          */
       break;
    }
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return rc;
 }
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      shutdown functions                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___SHUTDOWN________________o (void) {;}
 
 char
 PROG_term               (void)
@@ -452,11 +412,36 @@ prog__unit              (char *a_question)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   char        s           [LEN_HUND]  = "";
+   char        t           [LEN_HUND]  = "";
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "PROG             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
-   if      (strcmp (a_question, "action"        )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG action      : %c  %2d å%sæ", s_act, strlen (s_file), s_file);
+   if      (strcmp (a_question, "mode"          )  == 0) {
+      yEXEC_iam  (my.run_as  , s);
+      yEXEC_mode (my.run_mode, t);
+      snprintf (unit_answer, LEN_HUND, "PROG mode        : (%c) %-18.18s, (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
+   }
+   else if (strcmp (a_question, "action"        )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG action      : %c  %c  %2då%sæ", my.run_as, my.run_mode, strlen (my.run_file), my.run_file);
+   }
+   else if (strcmp (a_question, "n_central"     )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG central     : %2då%sæ", strlen (my.n_central  ), my.n_central);
+   }
+   else if (strcmp (a_question, "n_home"        )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG home        : %2då%sæ", strlen (my.n_home     ), my.n_home);
+   }
+   else if (strcmp (a_question, "n_root"        )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG root        : %2då%sæ", strlen (my.n_root     ), my.n_root);
+   }
+   else if (strcmp (a_question, "n_heartbeat"   )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG heartbeat   : %2då%sæ", strlen (my.n_heartbeat), my.n_heartbeat);
+   }
+   else if (strcmp (a_question, "n_track"       )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG tracking    : %2då%sæ", strlen (my.n_track    ), my.n_track);
+   }
+   else if (strcmp (a_question, "n_status"      )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG status      : %2då%sæ", strlen (my.n_status   ), my.n_status);
    }
    /*---(complete)-----------------------*/
    return unit_answer;
@@ -488,7 +473,7 @@ PROG__unit_prepare      (void)
    getcwd (x_home, LEN_PATH);
    chdir  ("/tmp");
    sprintf (x_dir, "%s", DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "root:users"    , "0777");
+   PROG__unit_mkdir (x_dir, "root:root"     , "0755");
    sprintf (x_dir, "%skhronos" , DIR_UNIT);
    PROG__unit_mkdir (x_dir, "root:root"     , "0700");
    sprintf (x_dir, "%sroot"    , DIR_UNIT);
@@ -526,8 +511,8 @@ prog__unit_quiet   (void)
    char        rc          =    0;
    int         x_argc      =    1;
    char       *x_argv [1]  = { "khronos" };
-   rc = PROG_debugging (x_argc, x_argv, 'y');
-   rc = PROG_startup   (x_argc, x_argv, 'y');
+   rc = PROG_debugging (x_argc, x_argv);
+   rc = PROG_startup   (x_argc, x_argv);
    return rc;
 }
 
@@ -537,8 +522,8 @@ prog__unit_loud    (void)
    char        rc          =    0;
    int         x_argc      =    5;
    char       *x_argv [5]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched"  };
-   rc = PROG_debugging (x_argc, x_argv, 'y');
-   rc = PROG_startup   (x_argc, x_argv, 'y');
+   rc = PROG_debugging (x_argc, x_argv);
+   rc = PROG_startup   (x_argc, x_argv);
    return rc;
 }
 

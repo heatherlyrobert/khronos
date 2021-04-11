@@ -18,9 +18,9 @@ main                    (int a_argc, char *a_argv [])
    long        x_hour      =    0;                       /* curr hour                */
    int         x_min       =    0;                       /* curr minute              */
    /*---(initialize)---------------------*/
-   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv, '-');
+   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv);
    DEBUG_PROG  yLOG_value   ("debugging" , rc);
-   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv, '-');
+   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv);
    DEBUG_PROG  yLOG_value   ("startup"   , rc);
    --rce;  if (rc <  0) {
       PROG_end ();
@@ -29,15 +29,6 @@ main                    (int a_argc, char *a_argv [])
    }
    /*---(main)---------------------------*/
    rc = PROG_driver ();
-   /*> switch (my.user_mode) {                                                                  <* 
-    *> case MODE_DAEMON :                                                                       <* 
-    *>    base_daemon_mode ();                                                                  <* 
-    *>    /+> rptg_end_watch ("normal end");                                              <+/   <* 
-    *>    break;                                                                                <* 
-    *> case MODE_USER   :                                                                       <* 
-    *> default          :                                                                       <* 
-    *>    break;                                                                                <* 
-    *> }                                                                                        <*/
    /*---(wrapup)-------------------------*/
    PROG_end  ();
    /*---(complete)-----------------------*/

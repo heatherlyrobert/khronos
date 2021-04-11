@@ -180,7 +180,7 @@ exec_dispatch           (int a_min)
       /*> if (x_line->track != 'y')    sprintf (x_cmd, "%s", x_line->command);          <* 
        *> else                         sprintf (x_cmd, "scythe %s", x_line->command);   <*/
       DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
-      x_rpid = yEXEC_full (t, x_file->user, x_cmd, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.n_exec);
+      x_rpid = yEXEC_full (t, x_file->user, x_cmd, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, NULL);
       DEBUG_INPT   yLOG_value   ("x_rpid"    , x_rpid);
       if (x_rpid <  0) {
          DEBUG_INPT  yLOG_note    ("line/process could not launch");

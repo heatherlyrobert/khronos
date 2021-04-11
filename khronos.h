@@ -30,9 +30,9 @@
 #define     P_CREATED   "2010-05"
 
 #define     P_VERMAJOR  "1.--, in production and working"
-#define     P_VERMINOR  "1.4-, simplify old design, simple == reliable"
-#define     P_VERNUM    "1.4y"
-#define     P_VERTXT    "reworked argument testing and rebuilt tabs unit testing"
+#define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
+#define     P_VERNUM    "1.5a"
+#define     P_VERTXT    "rebuilt tabs/testing for verify, install, check, and remove"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -607,11 +607,9 @@
 #define     DIR_UNIT_USER           "/tmp/khronos_test/user/"
 
 
-#define     FILE_LOCK               "khronos.pid"
 #define     FILE_HEARTBEAT          "khronos.heartbeat"
 #define     FILE_TRACK              "khronos.tracking"
-#define     FILE_EXEC               "khronos.execution_feedback"
-#define     FILE_STATUS             "khronos.status_reporting"
+#define     FILE_STATUS             "khronos.status"
 
 #define     LOC_CENTRAL     'C'
 #define     LOC_LOCAL       'L'
@@ -678,8 +676,6 @@
 #define    MODE_DAEMON   'd'
 #define    MODE_UNIT     'u'
 
-#define    RUN_DAEMON    if (my.user_mode == MODE_DAEMON) 
-#define    RUN_USER      if (my.user_mode == MODE_USER) 
 
 #define    FILE_ACTIVE   '-'
 #define    FILE_RETIRE   'y'
@@ -720,7 +716,9 @@ typedef struct cLINE     tLINE;
 struct cACCESSOR
 {
    /*---(files)----------------*/
-   char        user_mode;          /* interactive, daemon, or unittest        */
+   char        run_as;                      /* khronos, eos, heracles, ...    */
+   char        run_mode;                    /* verify, install, audit, ...    */
+   char        run_file    [LEN_PATH];      /* file to act on                 */
    /*---(warnings)-------------*/
    char        alt_dir;                     /* use of dir central             */
    /*---(current time)---------*/
@@ -738,7 +736,6 @@ struct cACCESSOR
    char        n_root      [LEN_PATH];      /* root directory                 */
    char        n_heartbeat [LEN_PATH];      /* pulser file name               */
    char        n_track     [LEN_PATH];      /* job tracker file name          */
-   char        n_exec      [LEN_PATH];      /* execution file name            */
    char        n_status    [LEN_PATH];      /* status update file name        */
    /*---(pulse)----------------*/
    char        pulse_time   [ 50]; /* last time string written to pulse       */
@@ -861,8 +858,8 @@ char        PROG__args              (int a_argc, char *a_argv[]);
 char        PROG__usage             (void);
 char        PROG__begin             (void);
 char        PROG__final             (void);
-char        PROG_debugging          (int a_argc, char *a_argv[], char a_unit);
-char        PROG_startup            (int a_argc, char *a_argv[], char a_unit);
+char        PROG_debugging          (int a_argc, char *a_argv[]);
+char        PROG_startup            (int a_argc, char *a_argv[]);
 /*---(driver)---------------*/
 char        PROG_driver             (void);
 /*---(shutdown)-------------*/
