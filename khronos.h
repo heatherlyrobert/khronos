@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5b"
-#define     P_VERTXT    "rebuilt tabs/testing for list, count, and audit"
+#define     P_VERNUM    "1.5c"
+#define     P_VERTXT    "rechecked, updated and confirmed khronos_file and _line testing"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -43,7 +43,7 @@
 
 /*   NEXT STEPS
  *
- *   1) add system impact indicators for cpu, desk, and network
+ *   1) add system impact indicators for cpu, disk, and network
  *      -- maybe 0 none, 1 trivial, 2 low, 3 medium, 4 high, 5 maxing out
  *      -- this could be added to job spec [--·---·cdn]
  *
@@ -831,6 +831,12 @@ struct cLINE {
    char        lower;
    char        upper;
    char        remedy;                      /* limit violation remedy         */
+   /*---(extended)-------------*/
+   char        flex;
+   char        throttle;
+   char        cpu;
+   char        disk;
+   char        net;
    /*---(done)-----------------*/
 };
 

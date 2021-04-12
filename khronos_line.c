@@ -40,6 +40,12 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->lower       =  '-';
    a_cur->upper       =  '-';
    a_cur->remedy      =  '-';
+   /*---(extended)-------------*/
+   a_cur->flex        =  '-';
+   a_cur->throttle    =  '-';
+   a_cur->cpu         =  '-';
+   a_cur->disk        =  '-';
+   a_cur->net         =  '-';
    /*---(complete)-------------*/
    return 1;
 }
@@ -48,7 +54,7 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "[____._____.___._______]", LEN_RECD);
+   strlcpy (s_print, "[____._____.___._______._____]", LEN_RECD);
    ++n;  if (a_cur->tracker [0] != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->recdno      >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->sched       != NULL)        s_print [n] = 'X';
@@ -71,6 +77,12 @@ LINE__memory            (tLINE *a_cur)
    ++n;  if (a_cur->lower       != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->upper       != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->remedy      != '-')         s_print [n] = 'X';
+   ++n;
+   ++n;  if (a_cur->flex        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->throttle    != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->cpu         != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->disk        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->net         != '-')         s_print [n] = 'X';
    return s_print;
 }
 
@@ -165,8 +177,8 @@ LINE_dup                (tLINE *a_orig, tLINE **a_new)
    /*---(master)-------------------------*/
    DEBUG_INPT   yLOG_note    ("master data");
    strlcpy (x_new->tracker  , a_orig->tracker  , LEN_TITLE);
-   x_new->recdno   = a_orig->recdno;
-   x_new->sched    = a_orig->sched;
+   x_new->recdno      = a_orig->recdno;
+   x_new->sched       = a_orig->sched;
    strlcpy (x_new->command  , a_orig->command  , LEN_RECD);
    /*---(working)------------------------*/
    DEBUG_INPT   yLOG_note    ("working");
@@ -187,6 +199,13 @@ LINE_dup                (tLINE *a_orig, tLINE **a_new)
    x_new->lower       = a_orig->lower;
    x_new->upper       = a_orig->upper;
    x_new->remedy      = a_orig->remedy;
+   /*---(extended)-----------------------*/
+   DEBUG_INPT   yLOG_note    ("extended");
+   x_new->flex        = a_orig->flex;
+   x_new->throttle    = a_orig->throttle;
+   x_new->cpu         = a_orig->cpu;
+   x_new->disk        = a_orig->disk;
+   x_new->net         = a_orig->net;
    /*---(save back)----------------------*/
    DEBUG_INPT   yLOG_note    ("save back");
    *a_new = x_new;
@@ -422,11 +441,13 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    }
    /*---(flags)-----------------------*/
    --rce;  if (a_flags != NULL) {
-      rc = yEXEC_flags (a_new->est, x_floor, a_flags,
-            &(a_new->value) , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
-            &(a_new->lower), &(a_new->est_min), 
-            &(a_new->upper), &(a_new->est_max), 
-            &(a_new->remedy));
+      rc = yEXEC_flags_more (a_new->est, x_floor, a_flags,
+            &(a_new->value)   , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
+            &(a_new->lower)   , &(a_new->est_min), 
+            &(a_new->upper)   , &(a_new->est_max), 
+            &(a_new->remedy)  , &(a_new->flex),
+            &(a_new->throttle), &(a_new->cpu),
+            &(a_new->disk)    , &(a_new->net));
       yEXEC_flags_feedback (x_terse, x_fancy);
       yURG_msg ('-', "fancy     %s", x_terse);
       yURG_msg ('-', "details   %s", x_fancy);

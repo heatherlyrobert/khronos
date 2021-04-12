@@ -391,6 +391,7 @@ PROG_end                (void)
    yDLST_wrap ();
    /*> rc = setuid(my.uid);                                                           <*/
    /*> printf("\n");                                                                  <*/
+   PROG__unit_cleanup ();
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    DEBUG_TOPS   yLOGS_end    ();
@@ -446,21 +447,6 @@ prog__unit              (char *a_question)
 }
 
 char
-PROG__unit_mkdir        (char *a_dir, char *a_own, char *a_perms)
-{
-   char        x_cmd       [LEN_RECD]  = "";
-   /*> sprintf (x_cmd, "rm -fr %s > /dev/null", a_dir);                               <* 
-    *> system  (x_cmd);                                                               <*/
-   sprintf (x_cmd, "mkdir %s    > /dev/null  2>&1", a_dir);
-   system  (x_cmd);
-   sprintf (x_cmd, "chown %s %s > /dev/null  2>&1", a_own  , a_dir);
-   system  (x_cmd);
-   sprintf (x_cmd, "chmod %s %s > /dev/null  2>&1", a_perms, a_dir);
-   system  (x_cmd);
-   return 0;
-}
-
-char
 PROG__unit_prepare      (void)
 {
    char        x_cmd       [LEN_RECD]  = "";
@@ -471,17 +457,17 @@ PROG__unit_prepare      (void)
    getcwd (x_home, LEN_PATH);
    chdir  ("/tmp");
    sprintf (x_dir, "%s", DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "root:root"     , "0755");
+   yURG_mkdir (x_dir, "root"   , "root"  , "0755");
    sprintf (x_dir, "%skhronos" , DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "root:root"     , "0700");
+   yURG_mkdir (x_dir, "root"   , "root"  , "0700");
    sprintf (x_dir, "%sroot"    , DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "root:root"     , "0700");
+   yURG_mkdir (x_dir, "root"   , "root"  , "0700");
    sprintf (x_dir, "%smember"  , DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "member:root"   , "0700");
+   yURG_mkdir (x_dir, "member" , "root"  , "0700");
    sprintf (x_dir, "%smachine" , DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "machine:root"  , "0700");
+   yURG_mkdir (x_dir, "machine", "root"  , "0700");
    sprintf (x_dir, "%smonkey"  , DIR_UNIT);
-   PROG__unit_mkdir (x_dir, "monkey:root"   , "0700");
+   yURG_mkdir (x_dir, "monkey" , "root"  , "0700");
    chdir  (x_home);
    /*---(complete)-----------------------*/
    return 0;
@@ -495,8 +481,7 @@ PROG__unit_cleanup      (void)
    /*---(directories)--------------------*/
    getcwd (x_home, LEN_PATH);
    chdir  ("/tmp");
-   sprintf (x_cmd, "rm -fr %s   > /dev/null  2>&1", DIR_UNIT);
-   system  (x_cmd);
+   yURG_rmdir (DIR_UNIT);
    strlcpy (my.n_central, DIR_CENTRAL, LEN_PATH);
    chdir  (x_home);
    /*---(complete)-----------------------*/
@@ -528,7 +513,6 @@ prog__unit_loud    (void)
 char       /*----: set up program urgents/debugging --------------------------*/
 prog__unit_end     (void)
 {
-   PROG__unit_cleanup ();
    PROG_end       ();
    return 0;
 }
