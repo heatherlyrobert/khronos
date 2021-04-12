@@ -346,13 +346,11 @@ PROG_driver             (void)
       break;
    case ACT_DAEMON     : case ACT_CDAEMON    : case ACT_VDAEMON    :
       rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      /*> rc = TABS_review  ("*", my.run_mode);                                       <*/
       /* launch daemon, unless security breach or no crontabs */
       /*  damaged crontabs don't effect this one as they did not assimilate */
       break;
    case ACT_PRICKLY    : case ACT_CPRICKLY   : case ACT_VPRICKLY   :
       rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      /*> rc = TABS_review  ("*", my.run_mode);                                       <*/
       /* then, if passed perfectly, launch in daemon mode */
       /* ANYTHING damaged or funky caused a no launch     */
       break;

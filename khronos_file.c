@@ -637,12 +637,6 @@ FILE_central            (cchar *a_name)
    tSTAT       s;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(naming)-------------------------*/
-   /*> rc = TABS_security ();                                                         <* 
-    *> --rce;  if (rc < 0) {                                                          <* 
-    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
-    *>    return rce;                                                                 <* 
-    *> }                                                                              <*/
    /*---(defaults)-----------------------*/
    FILE__defaults ();
    yURG_msg ('>', "crontab file audit...");

@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5a"
-#define     P_VERTXT    "rebuilt tabs/testing for verify, install, check, and remove"
+#define     P_VERNUM    "1.5b"
+#define     P_VERTXT    "rebuilt tabs/testing for list, count, and audit"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -894,20 +894,9 @@ char        BASE_unitshape     (char*);
 
 
 /*===[[ KHRONOS_TABS.C ]]======================================*/
-/*---(names)-----------*/
-char        TABS_security           (void);
-/*---(review)----------*/
-char        tabs_global             (cchar* a_user, cchar a_action);
 /*---support-----------*/
 char        tabs__verify            (cchar *a_full);
 char        tabs__remove            (cchar *a_full);
-/*---(incomming)-------*/
-char        TABS_verify             (cchar a_act, cchar *a_name);
-char        TABS_install            (cchar a_act, cchar *a_name);
-/*---(central)---------*/
-char        TABS_check              (cchar a_act, cchar *a_name);
-/*---(outgoing)--------*/
-char        TABS_remove             (cchar a_act, cchar *a_name);
 /*---specialty---------*/
 char        tabs_hup                (void);
 char        crontab_help       (void);
