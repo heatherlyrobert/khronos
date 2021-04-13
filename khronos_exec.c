@@ -11,21 +11,28 @@
 static void      o___EXECUTION_______________o (void) {;};
 
 long         /*--> set the cron times ----------------------------------------*/
-exec_time               (long a_now)
+EXEC_time               (long a_now)
 {
    /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
    tTIME      *x_broke     = NULL;
    int         x_year, x_month, x_day;
-   char        t           [LEN_LABEL];
+   char        t           [LEN_RECD]  = "";
+   /*---(header)-------------------------*/
+   DEBUG_LOOP   yLOG_enter   (__FUNCTION__);
    /*---(save)---------------------------*/
    x_year    = my.year;
    x_month   = my.month;
    x_day     = my.day;
    /*---(set time)-----------------------*/
+   DEBUG_LOOP   yLOG_value   ("a_now"     , a_now);
    if (a_now > 0)  my.now  = a_now;
    else            my.now  = time (NULL);
+   DEBUG_LOOP   yLOG_value   ("my.now"    , my.now);
    /*---(break it down)------------------*/
    my.clean  = my.now - (my.now % 3600);
+   DEBUG_LOOP   yLOG_value   ("my.clean"  , my.clean);
    x_broke   = localtime (&my.now);
    /*---(save values)--------------------*/
    my.minute = x_broke->tm_min;
@@ -34,14 +41,18 @@ exec_time               (long a_now)
    my.month  = x_broke->tm_mon   +   1;
    my.year   = x_broke->tm_year  - 100;
    /*---(heartbeat)----------------------*/
-   strftime (t, 20, "%y.%m.%d.%H.%M.%S", x_broke);
-   sprintf  (my.heartbeat, "%s  %-10d  now  %d", t, my.now, my.m_pid);
-   rptg_heartbeat ();
+   rc = yEXEC_heartbeat (my.m_pid, my.now, NULL, my.n_heartbeat, my.heartbeat);
+   DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(set the date)-------------------*/
    if (x_year != my.year || x_month != my.month || x_day != my.day) {
       ySCHED_config_by_date (my.year, my.month, my.day);
    }
    /*---(complete------------------------*/
+   DEBUG_LOOP   yLOG_exit    (__FUNCTION__);
    return my.clean;
 }
 
@@ -281,6 +292,7 @@ static void      o___UNITTEST________________o (void) {;}
 char*            /*--> unit test accessor ------------------------------*/
 exec__unit              (char *a_question, int a_num)
 {
+   char        x_heartbeat [LEN_HUND];
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "EXEC             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
@@ -295,6 +307,13 @@ exec__unit              (char *a_question, int a_num)
    }
    else if (strcmp (a_question, "active"  )        == 0) {
       snprintf (unit_answer, LEN_HUND, "EXEC active      : %d", yDLST_active_count ());
+   }
+   else if (strcmp (a_question, "heartbeat"     )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "EXEC heartbeat   : %2då%sæ", strlen (my.heartbeat), my.heartbeat);
+   }
+   else if (strcmp (a_question, "lastbeat"      )  == 0) {
+      yEXEC_heartbeat_check (my.n_heartbeat, x_heartbeat);
+      snprintf (unit_answer, LEN_HUND, "EXEC lastbeat    : %2då%sæ", strlen (x_heartbeat) , x_heartbeat);
    }
    /*---(complete)-----------------------*/
    return unit_answer;

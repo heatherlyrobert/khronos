@@ -13,29 +13,3 @@ PREP          v21  include the prototype headers                              
 
 
 
-#23456789-12  123  123456789-123456789-123456789-12345  123456789-123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  -  123456789-123456789- 
-#==(verb)===  ver  ===========(description)===========  =====(function)=====  ========================(arguments)===================================  ==(test)==  ==========================(results)===================================  t  ========(var)======= 
-SCRP          v21  (RPTG  ) verify heartbeat operations                         rptg_hearbeat, exec_time                                                ((01.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-
-   COND       v21  prepare for run                                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((02.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  initialize the system                prog__unit_quiet                                                                                                                  i_equal     0                                                                                                    
-
-   COND       v21  prepare time                                                       - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((04.018))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  set the date                         exec_time                   1320105600                                                                                            i_equal     1320105600
-     get      v21  ...check time                        exec__unit                  "time"                 , 0                                                                            s_equal     EXEC time        : 1320105600, 11y 10m 31d 17h 00m, 1320105600                                       
-     get      v21  ...check pid                         exec__unit                  "pid"                  , 0                                                                            s_equal     EXEC pid         : ¬¬¬¬¬                                                                             
-     get      v21  ...check heartbeat                   rptg__unit                  "heartbeat"            , 0                                                                            s_equal     RPTG heartbeat   : 11.10.31.17.00.¬¬  1320105600  now  ¬¬¬¬¬                                         
-     get      v21  ...check last heartbeat              rptg__unit                  "lastbeat"             , 0                                                                            s_equal     RPTG lastbeat    : 11.10.31.17.00.¬¬  1320105600  now  ¬¬¬¬¬                                         
-
-   COND       v21  prepare time                                                       - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((04.018))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  set the date                         exec_time                   1494680400                                                                                            i_equal     1494680400
-     get      v21  ...check time                        exec__unit                  "time"                 , 0                                                                            s_equal     EXEC time        : 1494680400, 17y 05m 13d 06h 00m, 1494680400                                       
-     get      v21  ...check pid                         exec__unit                  "pid"                  , 0                                                                            s_equal     EXEC pid         : ¬¬¬¬¬                                                                             
-     get      v21  ...check heartbeat                   rptg__unit                  "heartbeat"            , 0                                                                            s_equal     RPTG heartbeat   : 17.05.13.06.00.¬¬  1494680400  now  ¬¬¬¬¬                                         
-     get      v21  ...check last heartbeat              rptg__unit                  "lastbeat"             , 0                                                                            s_equal     RPTG lastbeat    : 17.05.13.06.00.¬¬  1494680400  now  ¬¬¬¬¬                                         
-
-   COND       v21  wrap up testing                                                    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((05.004))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     v21  wrap up                              prog__unit_end                                                                                                                    i_equal     0                                                                                                    
-
-
-

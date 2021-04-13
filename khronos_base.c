@@ -73,7 +73,7 @@ base_daemon_mode        (void)
       return rce;
    }
    /*---(startup)------------------------*/
-   x_hour  = exec_time (0);
+   x_hour  = EXEC_time (0);
    /*> rc      = rptg_beg_watch ();                                                   <*/
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
    rptg_status ();
@@ -81,7 +81,7 @@ base_daemon_mode        (void)
    exec_wait_min ();
    /*---(main loop)----------------------*/
    while (1) {
-      x_hour = x_save = exec_time (0);
+      x_hour = x_save = EXEC_time (0);
       DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
       rc     = base_every_hour (x_hour);
       DEBUG_PROG  yLOG_value   ("hourly"    , rc);
@@ -89,7 +89,7 @@ base_daemon_mode        (void)
          DEBUG_PROG  yLOG_value   ("minute"    , my.minute);
          rc     = base_every_min (my.minute);
          DEBUG_PROG  yLOG_value   ("minutely"  , rc);
-         x_hour = exec_time (0);
+         x_hour = EXEC_time (0);
          DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
          rptg_status ();
       }
