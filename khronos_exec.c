@@ -5,10 +5,50 @@
 #define   MIN2SEC     60
 
 
+
 /*====================------------------------------------====================*/
-/*===----                         job handling                         ----===*/
+/*===----                       signal handling                        ----===*/
 /*====================------------------------------------====================*/
-static void      o___EXECUTION_______________o (void) {;};
+static void      o___SIGNALS_________________o (void) {;};
+
+void             /* [------] receive signals ---------------------------------*/
+EXEC_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
+{
+   /*---(catch)--------------------------*/
+   switch (a_signal) {
+   case  SIGHUP:
+      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGHUP MEANS REFRESH CRONTABS BEFORE NEXT RUN");
+      my.resync = 'y';
+      break;
+   case  SIGTERM:
+      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGTERM means terminate daemon");
+      /*> rptg_end_watch ("SIGTERM");                                                 <*/
+      yEXEC_term    ("EXITING", 99);
+      break;
+   case  SIGSEGV:
+      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGSEGV means daemon blew up");
+      /*> rptg_end_watch ("SEGSEGV");                                                 <*/
+      yEXEC_term    ("EXITING", 99);
+      break;
+   case  SIGABRT:
+      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGABRT means daemon blew up");
+      /*> rptg_end_watch ("SIGABRT");                                                 <*/
+      yEXEC_term    ("EXITING", 99);
+      break;
+   default      :
+      DEBUG_PROG  yLOG_info     ("SIGNAL", "unknown signal recieved");
+      break;
+   }
+   /*---(complete)-----------------------*/
+   return;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                       timekeeping functions                  ----===*/
+/*====================------------------------------------====================*/
+static void      o___TIMEKEEP________________o (void) {;};
 
 long         /*--> set the cron times ----------------------------------------*/
 EXEC_time               (long a_now)
@@ -57,8 +97,19 @@ EXEC_time               (long a_now)
 }
 
 char         /*--> wait until next minute ------------------------------------*/
-exec_wait_min           (void)
+EXEC_wait_min           (void)
 {
+   /*---(design notes)-------------------*/
+   /*
+    *  always returns at :01 seconds after the minute, just-in-case.
+    *  must handle signal interruptions by updating countdown.
+    *
+    *  may not be right if a signal takes 60+ seconds to handle.
+    *  update check to look for status that it should be running, check that
+    *  never launched and mark to catch-up if high value (not little stuff).
+    *  will need this anyway for flexible launches.
+    *
+    */
    /* this function is impemented to perform even when signals interrupt      */
    /*---(locals)-----------+-----+-----+-*/
    long        x_now       =    0;          /* present time             */
@@ -79,8 +130,36 @@ exec_wait_min           (void)
    return 0;
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                          every hour                          ----===*/
+/*====================------------------------------------====================*/
+static void      o___HOUR____________________o (void) {;};
+
+char
+EXEC_every_hour         (int a_hour)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(break)--------------------------*/
+   DEBUG_LOOP  yLOG_break();
+   DEBUG_LOOP  yLOG_sync ();
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   DEBUG_LOOP  yLOG_note    ("hourly break -- check crontabs and reset fast list");
+   DEBUG_LOOP  yLOG_value   ("a_hour"    , a_hour);
+   /*---(reset focus)--------------------*/
+   rc = EXEC_focus   ();
+   DEBUG_LOOP  yLOG_value   ("focus"     , rc);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
 int
-exec_focus              (void)
+EXEC_focus              (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -134,8 +213,105 @@ exec_focus              (void)
    return c;
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                         every minute                         ----===*/
+/*====================------------------------------------====================*/
+static void      o___MINUTE__________________o (void) {;};
+
 char
-exec_dispatch           (int a_min)
+EXEC_every_min          (int a_min)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   /*---(break)--------------------------*/
+   DEBUG_LOOP  yLOG_break();
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   DEBUG_LOOP  yLOG_value   ("a_min"     , a_min);
+   /*> x_min     = BASE_timestamp();                                            <*/
+   EXEC_check    ();
+   EXEC_dispatch (a_min);
+   /*> BASE_status   ();                                                        <*/
+   EXEC_wait_min ();
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+int
+EXEC_check              (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_return    =    0;
+   tFILE      *x_file      = NULL;
+   tLINE      *x_line      = NULL;
+   int         c           =    0;
+   char        t           [LEN_RECD];
+   int         x_dur       =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check count)--------------------*/
+   DEBUG_INPT   yLOG_value   ("actives"   , yDLST_active_count ());
+   if (yDLST_active_count () <= 0) {
+      DEBUG_INPT  yLOG_note    ("no lines running/active, nothing to do");
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(check all files)----------------*/
+   rc = yDLST_active_by_cursor (YDLST_HEAD, NULL, &x_line);
+   while (rc >= 0 && x_line != NULL) {
+      /*---(get file)--------------------*/
+      yDLST_line_list (NULL, &x_file);
+      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+      if (x_file == NULL) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
+      /*---(check)-----------------------*/
+      snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
+      DEBUG_INPT   yLOG_info    ("t"         , t);
+      rc = yEXEC_verify (t, x_line->rpid, &x_return);
+      DEBUG_INPT   yLOG_value   ("check"     , rc);
+      if (rc == YEXEC_RUNNING) {
+         DEBUG_INPT   yLOG_note    ("still running, next");
+         rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
+         continue;
+      }
+      /*---(log results)-----------------*/
+      x_dur  = (my.now - x_line->start) / 60;
+      rptg_track (x_line, rc, x_dur);
+      /*---(early/late)------------------*/
+      /*> if      (x_dur < x_line->est_min)  ++x_line->earlies;                       <* 
+       *> else if (x_dur > x_line->est_max)  ++x_line->lates;                         <*/
+      /*---(set last data)---------------*/
+      /*> x_line->last_rpid  = x_line->rpid;                                          <* 
+       *> x_line->last_time  = x_line->start;                                         <* 
+       *> x_line->last_rc    = x_return;                                              <* 
+       *> x_line->last_dur   = x_dur;                                                 <*/
+      /*---(reset run data)--------------*/
+      x_line->rpid       =  0;
+      x_line->start      =  0;
+      /*---(reset lists)-----------------*/
+      yDLST_active_off ();
+      ++c;
+      DEBUG_INPT  yLOG_note    ("collected, next");
+      /*---(next)------------------------*/
+      rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return c;
+}
+
+char
+EXEC_dispatch           (int a_min)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -206,75 +382,6 @@ exec_dispatch           (int a_min)
       DEBUG_INPT  yLOG_note    ("launched, move to next");
       /*---(next)------------------------*/
       rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
-      /*---(done)------------------------*/
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return c;
-}
-
-int
-exec_check              (void)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   int         x_return    =    0;
-   tFILE      *x_file      = NULL;
-   tLINE      *x_line      = NULL;
-   int         c           =    0;
-   char        t           [LEN_RECD];
-   int         x_dur       =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(check count)--------------------*/
-   DEBUG_INPT   yLOG_value   ("actives"   , yDLST_active_count ());
-   if (yDLST_active_count () <= 0) {
-      DEBUG_INPT  yLOG_note    ("no lines running/active, nothing to do");
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-      return 0;
-   }
-   /*---(check all files)----------------*/
-   rc = yDLST_active_by_cursor (YDLST_HEAD, NULL, &x_line);
-   while (rc >= 0 && x_line != NULL) {
-      /*---(get file)--------------------*/
-      yDLST_line_list (NULL, &x_file);
-      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-      if (x_file == NULL) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
-      /*---(check)-----------------------*/
-      snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
-      DEBUG_INPT   yLOG_info    ("t"         , t);
-      rc = yEXEC_verify (t, x_line->rpid, &x_return);
-      DEBUG_INPT   yLOG_value   ("check"     , rc);
-      if (rc == YEXEC_RUNNING) {
-         DEBUG_INPT   yLOG_note    ("still running, next");
-         rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
-         continue;
-      }
-      /*---(log results)-----------------*/
-      x_dur  = (my.now - x_line->start) / 60;
-      rptg_track (x_line, rc, x_dur);
-      /*---(early/late)------------------*/
-      /*> if      (x_dur < x_line->est_min)  ++x_line->earlies;                       <* 
-       *> else if (x_dur > x_line->est_max)  ++x_line->lates;                         <*/
-      /*---(set last data)---------------*/
-      /*> x_line->last_rpid  = x_line->rpid;                                          <* 
-       *> x_line->last_time  = x_line->start;                                         <* 
-       *> x_line->last_rc    = x_return;                                              <* 
-       *> x_line->last_dur   = x_dur;                                                 <*/
-      /*---(reset run data)--------------*/
-      x_line->rpid       =  0;
-      x_line->start      =  0;
-      /*---(reset lists)-----------------*/
-      yDLST_active_off ();
-      ++c;
-      DEBUG_INPT  yLOG_note    ("collected, next");
-      /*---(next)------------------------*/
-      rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/

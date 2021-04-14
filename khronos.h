@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5d"
-#define     P_VERTXT    "updated heartbeat processing with yEXEC and unit tested"
+#define     P_VERNUM    "1.5e"
+#define     P_VERTXT    "updated wait testing and hupping and ran successfully"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -964,12 +964,21 @@ char        line__unit_rpid         (char *a_file, char *a_line, int a_rpid);
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+/*---(signals)--------------*/
+void        EXEC_comm               (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc);
+/*---(timekeep)-------------*/
 long        EXEC_time               (long a_now);
-char        exec_wait_min           (void);
-int         exec_focus              (void);
-char        exec_dispatch           (int a_min);
-int         exec_check              (void);
+char        EXEC_wait_min           (void);
+/*---(hour)-----------------*/
+char        EXEC_every_hour         (int a_hour);
+int         EXEC_focus              (void);
+/*---(minute)---------------*/
+char        EXEC_every_min          (int a_min);
+int         EXEC_check              (void);
+char        EXEC_dispatch           (int a_min);
+/*---(unittest)-------------*/
 char*       exec__unit              (char *a_question, int a_num);
+/*---(done)-----------------*/
 
 char        base_daemon_mode        (void);
 char        base_daemon             (void);

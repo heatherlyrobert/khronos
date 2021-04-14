@@ -1,0 +1,99 @@
+
+
+
+
+#23456789-12  123  123456789-123456789-123456789-12345  123456789-123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  123456789-  123456789-123456789-123456789-123456789-123456789-123456789-123456789-  -  123456789-123456789- 
+#==(verb)===  ver  ===========(description)===========  =====(function)=====  ========================(arguments)===================================  ==(test)==  ==========================(results)===================================  t  ========(var)======= 
+SCRP          v21  verify the running of jobs                                   BASE_fast, BASE_dispatch                                                ((08.---))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+
+#   COND       v21  prepare for parsing                                          - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.001))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  initialize the logger                prog__unit_quiet                                                                              i_equal     0                                                                      
+#     code     v21  create a cronfile pointer            - - - - - - - - - -   tCFILE *cfile_1st = NULL;                                                                                                                                      
+#     exec     v21  set the date                         ySCHED_setdate        11,  1, 15                                                              i_equal     0                                                                      
+#
+#   COND       v21  run fast on a empty list                                     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.002))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  run fast                             BASE_fast             1000000                                                                 i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    0m,    0n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#
+#   COND       v21  run dispatch on an empty list                                - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.003))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  run dispatch                         BASE_dispatch         1                                                                       i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    0m,    0n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#
+#   COND       v21  run check on an empty list                                   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.004))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     code     v21  pause while jobs complete            - - - - - - - - - -   sleep(2);                                                                                                                                                      
+#     exec     v21  run check                            check                                                                                         i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    0m,    0n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#
+#   COND       v21  add the first file                                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.005))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  add a new file                       BASE_create           "root.run_test",      "root",     &cfile_1st                            i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     0m,     0n             
+#
+#   COND       v21  run fast on a lineless file                                  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  run fast                             BASE_fast             1000000                                                                 i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#
+#   COND       v21  run dispatch on a lineless file                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.007))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  run dispatch                         BASE_dispatch         1                                                                       i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#
+#   COND       v21  run check on a lineless file                                 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.008))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     code     v21  pause while jobs complete            - - - - - - - - - -   sleep(2);                                                                                                                                                      
+#     exec     v21  run check                            check                                                                                         i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#
+#   COND       v21  add a couple quick frequent jobs                             - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.009))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     load     v21  add a basic line to stdin            - - - - - - - - - -   * * * * * /bin/true > /dev/null                                                                                                                                
+#     load     v21  add a basic line to stdin            - - - - - - - - - -   * * * * * /bin/true > /dev/null                                                                                                                                
+#     load     v21  add a basic line to stdin            - - - - - - - - - -   * * * * * /bin/true > /dev/null                                                                                                                                
+#     exec     v21  add a new line                       BASE_inventory        cfile_1st      ,      yUNIT_stdin                                       i_equal     0                                                                      
+#     exec     v21  list the lines                       LIST_list                                                                                     i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     3m,     3n             
+#     exec     v21  evaluate cron shape                  BASE_unit             "cron shape",    0                                                      s_equal     cron shape (  4) : F___                                                
+#
+#   COND       v21  run fast on it                                               - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.010))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  run fast                             BASE_fast             1000000                                                                 i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     3m,     3n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    3 line,    3 fast,    0 proc                     
+#
+#   COND       v21  run dispatch on it                                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.011))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  run dispatch                         BASE_dispatch         1                                                                       i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     3m,     3n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    3 line,    3 fast,    3 proc                     
+#
+#   COND       v21  run check on it                                              - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.012))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     code     v21  pause while jobs complete            - - - - - - - - - -   sleep(2);                                                                                                                                                      
+#     exec     v21  run check                            check                                                                                         i_equal     0                                                                      
+#     exec     v21  look at the fast list                BASE_unitfast                                                                                 i_equal     0                                                                      
+#     exec     v21  look at the proc list                BASE_unitproc                                                                                 i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    1m,    1n;  line     3m,     3n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    3 line,    3 fast,    0 proc                     
+#
+#   COND       v21  purge the remaining cronfiles                                - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((08.013))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#     exec     v21  retire a file                        BASE_purge                                                                                    i_equal     0                                                                      
+#     exec     v21  list the lines                       LIST_list                                                                                     i_equal     0                                                                      
+#     get      v21  review the counters                  LIST_unit             "counters"     , NULL                                                   s_equal     LIST counters    : file    0m,    0n;  line     0m,     0n             
+#     get      v21  review the counts                    BASE_unit             "counters",      0                                                      s_equal     counters         :    0 line,    0 fast,    0 proc                     
+#     exec     v21  evaluate cron shape                  LIST_unit             "shape"        , NULL                                                   s_equal     LIST shape (  0) : (empty)                                             
+

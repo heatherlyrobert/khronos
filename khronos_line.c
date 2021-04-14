@@ -733,10 +733,10 @@ line__unit              (char *a_question, int a_num)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rc          =    0;
-   char        t           [LEN_USER]  = "[]";
-   char        s           [LEN_USER]  = "[]";
-   char        r           [LEN_USER]  = "[]";
-   char        u           [LEN_USER]  = "[]";
+   char        t           [LEN_USER]  = "åæ";
+   char        s           [LEN_USER]  = "åæ";
+   char        r           [LEN_USER]  = "åæ";
+   char        u           [LEN_USER]  = "åæ";
    int         c           =    0;
    void       *x_void      = NULL;
    tFILE      *x_file      = NULL;
@@ -747,22 +747,22 @@ line__unit              (char *a_question, int a_num)
    strlcpy  (unit_answer, "LINE             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "tracker" )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE tracker     : %2d[%.37s]", strlen (my.t_tracker), my.t_tracker);
+      snprintf (unit_answer, LEN_HUND, "LINE tracker     : %2då%.37sæ", strlen (my.t_tracker), my.t_tracker);
    }
    else if (strcmp (a_question, "duration")        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE duration    : %2d[%.37s]", strlen (my.t_duration), my.t_duration);
+      snprintf (unit_answer, LEN_HUND, "LINE duration    : %2då%.37sæ", strlen (my.t_duration), my.t_duration);
    }
    else if (strcmp (a_question, "recdno"  )        == 0) {
       snprintf (unit_answer, LEN_HUND, "LINE recdno      : %d", my.t_recdno);
    }
    else if (strcmp (a_question, "schedule")        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE schedule    : %2d[%.37s]", strlen (my.t_schedule), my.t_schedule);
+      snprintf (unit_answer, LEN_HUND, "LINE schedule    : %2då%.37sæ", strlen (my.t_schedule), my.t_schedule);
    }
    else if (strcmp (a_question, "flags"   )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE flags       : %2d[%.37s]", strlen (my.t_flags), my.t_flags);
+      snprintf (unit_answer, LEN_HUND, "LINE flags       : %2då%.37sæ", strlen (my.t_flags), my.t_flags);
    }
    else if (strcmp (a_question, "command" )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE command     : %2d[%.37s]", strlen (my.t_command), my.t_command);
+      snprintf (unit_answer, LEN_HUND, "LINE command     : %2då%.37sæ", strlen (my.t_command), my.t_command);
    }
    else if (strcmp (a_question, "yparse"  )        == 0) {
       x_ready = yPARSE_ready (&x_fields);
@@ -772,7 +772,7 @@ line__unit              (char *a_question, int a_num)
       snprintf (unit_answer, LEN_HUND, "LINE ready       : %c", my.t_ready);
    }
    else if (strcmp (a_question, "flags"   )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE flags       : %2d[%.37s]", strlen (my.t_flags), my.t_flags);
+      snprintf (unit_answer, LEN_HUND, "LINE flags       : %2då%.37sæ", strlen (my.t_flags), my.t_flags);
    }
    else if (strcmp (a_question, "count"   )        == 0) {
       snprintf (unit_answer, LEN_HUND, "LINE count       : %d", yDLST_line_count ('*'));
@@ -781,31 +781,31 @@ line__unit              (char *a_question, int a_num)
       rc = yDLST_line_by_index  (YDLST_GLOBAL, a_num, NULL, &x_line);
       rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
       if (x_line != NULL) {
-         sprintf (t, "%2d[%-.12s]", strlen (x_line->tracker), x_line->tracker);
-         sprintf (s, "%2d[%-.12s]", strlen (x_line->command), x_line->command);
+         sprintf (t, "%2då%-.12sæ", strlen (x_line->tracker), x_line->tracker);
+         sprintf (s, "%2då%-.12sæ", strlen (x_line->command), x_line->command);
          sprintf (u, "%3d %7d %7d", x_line->est, x_line->est_min, x_line->est_max);
          sprintf (r, "%c %c %c  %c %c %c %c", x_line->value, x_line->track, x_line->handoff, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
          snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) : %2d/%2d  %-16.16s  %-16.16s  %s   %s", a_num, x_file->seq, x_line->recdno, t, s, u, r);
       } else {
-         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) :  -/ -   -[]               -[]                -       -       -   · · ·  · · · ·", a_num);
+         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) :  -/ -   -åæ               -åæ                -       -       -   · · ·  · · · ·", a_num);
       }
    }
    else if (strcmp (a_question, "runs"    )        == 0) {
       rc = yDLST_line_by_index  (YDLST_GLOBAL, a_num     , NULL, &x_line);
       if (x_line != NULL) {
-         sprintf (t, "[%s]", x_line->tracker);
+         sprintf (t, "å%sæ", x_line->tracker);
          /*> snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : %-17.17s  %2da %2do %2de %2dc %2dk %2df  %3dr", a_num, t, x_line->attempts, x_line->overlaps, x_line->errors, x_line->complete, x_line->kills, x_line->failures, x_line->last_rc);   <*/
       } else {
-         snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : []                   a   o   e   c   k   f     r", a_num);
+         snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : åæ                   a   o   e   c   k   f     r", a_num);
       }
    }
    else if (strcmp (a_question, "durs"    )        == 0) {
       rc = yDLST_line_by_index  (YDLST_GLOBAL, a_num     , NULL, &x_line);
       if (x_line != NULL) {
-         sprintf (t, "[%s]", x_line->tracker);
+         sprintf (t, "å%sæ", x_line->tracker);
          /*> snprintf (unit_answer, LEN_HUND, "LINE durs   (%2d) : %-17.17s  %3dd %3dm %3dx %3dl %2de %2dl", a_num, t, x_line->est, x_line->est_min, x_line->est_max, x_line->last_dur, x_line->earlies, x_line->lates);   <*/
       } else {
-         snprintf (unit_answer, LEN_HUND, "LINE durs   (%2d) : []                   a   o   e   c   k   f     r", a_num);
+         snprintf (unit_answer, LEN_HUND, "LINE durs   (%2d) : åæ                   a   o   e   c   k   f     r", a_num);
       }
    }
    /*---(complete)-----------------------*/

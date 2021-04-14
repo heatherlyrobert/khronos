@@ -948,29 +948,29 @@ file__unit              (char *a_question, int a_num)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rc          =    0;
-   char        t           [LEN_RECD]  = "[]";
-   char        s           [LEN_RECD]  = "[]";
+   char        t           [LEN_RECD]  = "åæ";
+   char        s           [LEN_RECD]  = "åæ";
    int         c           =    0;
    tFILE      *x_file      = NULL;
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "FILE             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "file"    )        == 0) {
-      sprintf (t, "[%s]", my.f_name);
+      sprintf (t, "å%sæ", my.f_name);
       snprintf (unit_answer, LEN_HUND, "FILE name        : %2d%-37.37s  %c", strlen (my.f_name), t, my.f_ready);
    }
    else if (strcmp (a_question, "user"    )        == 0) {
-      sprintf (t, "[%s]", my.f_user);
+      sprintf (t, "å%sæ", my.f_user);
       snprintf (unit_answer, LEN_HUND, "FILE user        : %2d%-22.22s  %4d", strlen (my.f_user), t, my.f_uid);
    }
    else if (strcmp (a_question, "desc"    )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "FILE desc        : %2d[%.35s]", strlen (my.f_desc), my.f_desc);
+      snprintf (unit_answer, LEN_HUND, "FILE desc        : %2då%.35sæ", strlen (my.f_desc), my.f_desc);
    }
    else if (strcmp (a_question, "new"     )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "FILE new         : %2d[%.35s]", strlen (my.f_new), my.f_new);
+      snprintf (unit_answer, LEN_HUND, "FILE new         : %2då%.35sæ", strlen (my.f_new), my.f_new);
    }
    else if (strcmp (a_question, "full"          )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "FILE full        : %2d[%.60s]", strlen (my.f_full), my.f_full);
+      snprintf (unit_answer, LEN_HUND, "FILE full        : %2då%.60sæ", strlen (my.f_full), my.f_full);
    }
    else if (strcmp (a_question, "count"   )        == 0) {
       snprintf (unit_answer, LEN_HUND, "FILE count       : %d", yDLST_list_count ());
@@ -979,11 +979,11 @@ file__unit              (char *a_question, int a_num)
       rc = yDLST_list_by_index (a_num, NULL, &x_file);
       c  = yDLST_line_count (YDLST_LOCAL);
       if (x_file != NULL) {
-         sprintf (t, "%2d[%.30s]", strlen (x_file->title), x_file->title);
-         sprintf (s, "%2d[%.10s]", strlen (x_file->user) , x_file->user);
+         sprintf (t, "%2då%.30sæ", strlen (x_file->title), x_file->title);
+         sprintf (s, "%2då%.10sæ", strlen (x_file->user) , x_file->user);
          snprintf (unit_answer, LEN_HUND, "FILE entry  (%2d) : %2d  %-34.34s  %-14.14s  %4d  %2d %2d  %s", a_num, x_file->seq, t, s, x_file->uid, c, x_file->lines, x_file->note);
       } else {
-         snprintf (unit_answer, LEN_HUND, "FILE entry  (%2d) :  -   -[]                                 -[]               -   -  -  -", a_num);
+         snprintf (unit_answer, LEN_HUND, "FILE entry  (%2d) :  -   -åæ                                 -åæ               -   -  -  -", a_num);
       }
    }
    /*---(complete)-----------------------*/

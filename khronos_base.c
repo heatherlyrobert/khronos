@@ -13,48 +13,6 @@ char        strtest      [100];
 
 
 char
-base_every_min          (int a_min)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   /*---(break)--------------------------*/
-   DEBUG_LOOP  yLOG_break();
-   /*---(header)-------------------------*/
-   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   DEBUG_LOOP  yLOG_value   ("a_min"     , a_min);
-   /*> x_min     = BASE_timestamp();                                            <*/
-   exec_check    ();
-   exec_dispatch (a_min);
-   /*> BASE_status   ();                                                        <*/
-   exec_wait_min ();
-   /*---(complete)-----------------------*/
-   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-base_every_hour         (int a_hour)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   /*---(break)--------------------------*/
-   DEBUG_LOOP  yLOG_break();
-   DEBUG_LOOP  yLOG_sync ();
-   /*---(header)-------------------------*/
-   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   DEBUG_LOOP  yLOG_note    ("hourly break -- check crontabs and reset fast list");
-   DEBUG_LOOP  yLOG_value   ("a_hour"    , a_hour);
-   /*---(reset focus)--------------------*/
-   rc = exec_focus   ();
-   DEBUG_LOOP  yLOG_value   ("focus"     , rc);
-   /*---(complete)-----------------------*/
-   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
 base_daemon_mode        (void)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -78,16 +36,16 @@ base_daemon_mode        (void)
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
    rptg_status ();
    /*> catchup();                                                                     <*/
-   exec_wait_min ();
+   EXEC_wait_min ();
    /*---(main loop)----------------------*/
    while (1) {
       x_hour = x_save = EXEC_time (0);
       DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-      rc     = base_every_hour (x_hour);
+      rc     = EXEC_every_hour (x_hour);
       DEBUG_PROG  yLOG_value   ("hourly"    , rc);
       while (x_hour == x_save) {
          DEBUG_PROG  yLOG_value   ("minute"    , my.minute);
-         rc     = base_every_min (my.minute);
+         rc     = EXEC_every_min (my.minute);
          DEBUG_PROG  yLOG_value   ("minutely"  , rc);
          x_hour = EXEC_time (0);
          DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
@@ -105,38 +63,6 @@ base_daemon_mode        (void)
 /*===----                         housekeeping                         ----===*/
 /*====================------------------------------------====================*/
 static void      o___HOUSEKEEPING____________o (void) {;}
-
-void             /* [------] receive signals ---------------------------------*/
-base_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
-{
-   /*---(catch)--------------------------*/
-   switch (a_signal) {
-   case  SIGHUP:
-      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGHUP MEANS REFRESH CRONTABS BEFORE NEXT RUN");
-      my.resync = 'y';
-      break;
-   case  SIGTERM:
-      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGTERM means terminate daemon");
-      /*> rptg_end_watch ("SIGTERM");                                                 <*/
-      yEXEC_term    ("EXITING", 99);
-      break;
-   case  SIGSEGV:
-      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGSEGV means daemon blew up");
-      /*> rptg_end_watch ("SEGSEGV");                                                 <*/
-      yEXEC_term    ("EXITING", 99);
-      break;
-   case  SIGABRT:
-      DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGABRT means daemon blew up");
-      /*> rptg_end_watch ("SIGABRT");                                                 <*/
-      yEXEC_term    ("EXITING", 99);
-      break;
-   default      :
-      DEBUG_PROG  yLOG_info     ("SIGNAL", "unknown signal recieved");
-      break;
-   }
-   /*---(complete)-----------------------*/
-   return;
-}
 
 char         /*--> daemonize the program -------------------------------------*/
 base_daemon        (void)
@@ -176,7 +102,7 @@ base_daemon        (void)
       return rce;
    }
    /*---(signals)-------------------------------*/
-   yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, base_comm, "stdsig");
+   yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, EXEC_comm, "stdsig");
    DEBUG_ENVI   yLOG_value   ("signals"   , rc);
    --rce;  if (rc < 0) {
       printf ("khronos sigals could not be set properly\n");
@@ -187,29 +113,6 @@ base_daemon        (void)
    /*---(complete)------------------------------*/
    DEBUG_ENVI   yLOG_exit    (__FUNCTION__);
    return 0;
-}
-
-
-
-/*====================------------------------------------====================*/
-/*===----                      unit test accessor                      ----===*/
-/*====================------------------------------------====================*/
-static void      o___UNITTEST________________o (void) {;}
-
-char*            /*--> unit test accessor ------------------------------*/
-base__unit              (char *a_question, int a_num)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        t           [LEN_RECD];
-   /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "BASE             : question not understood", LEN_HUND);
-   /*---(crontab name)-------------------*/
-   if      (strcmp (a_question, "central"       )  == 0) {
-      sprintf (t, "[%s]", my.n_central);
-      snprintf (unit_answer, LEN_HUND, "BASE central     : %2d%-38.38s  %c", strlen (my.n_central), t, my.alt_dir);
-   }
-   /*---(complete)-----------------------*/
-   return unit_answer;
 }
 
 
