@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5e"
-#define     P_VERTXT    "updated wait testing and hupping and ran successfully"
+#define     P_VERNUM    "1.5f"
+#define     P_VERTXT    "rebuilt unit testing for khronos_tabs, successful (DITTO problems)"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
