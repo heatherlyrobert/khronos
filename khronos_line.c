@@ -222,17 +222,17 @@ LINE__free              (tLINE **a_old)
    int         rc          =    0;
    tLINE      *x_old       = NULL;
    /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_senter  (__FUNCTION__);
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(check return)-------------------*/
-   DEBUG_INPT  yLOG_spoint  (a_old);
+   DEBUG_INPT  yLOG_point   ("a_old"     , a_old);
    --rce;  if (a_old == NULL) {
-      DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_INPT  yLOG_spoint  (*a_old);
+   DEBUG_INPT  yLOG_point   ("*a_old"    , *a_old);
    --rce;  if (*a_old == NULL) {
-      DEBUG_INPT   yLOG_snote   ("never set");
-      DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
+      DEBUG_INPT   yLOG_note    ("never set");
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(simplify)-----------------------*/
@@ -243,7 +243,7 @@ LINE__free              (tLINE **a_old)
    free (x_old);
    *a_old = NULL;
    /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_sexit   (__FUNCTION__);
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 

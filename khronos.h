@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5f"
-#define     P_VERTXT    "rebuilt unit testing for khronos_tabs, successful (DITTO problems)"
+#define     P_VERNUM    "1.5g"
+#define     P_VERTXT    "added unit testing for daemon, prickly, and normal assimilation"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -929,13 +929,14 @@ char        FILE__new               (tFILE **a_new);
 char        FILE__free              (tFILE **a_old);
 /*---(support)--------------*/
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
-char        FILE_acceptable         (cchar *a_name);
-char        FILE_central            (cchar *a_name);
-char        FILE_assimilate         (char a_loc, cchar *a_full);
+/*> char        FILE_acceptable         (cchar *a_name);                              <*/
+/*> char        FILE_central            (cchar *a_name);                              <*/
+char        FILE_assimilate         (char a_loc, cchar *a_name);
 /*---(retire)---------------*/
 char        FILE_init               (void);
 char        FILE_prune              (void);
 char        FILE_retire             (char *a_name);
+char        FILE_flush              (void);
 /*---(unittest)-------------*/
 char*       file__unit              (char *a_question, int a_num);
 

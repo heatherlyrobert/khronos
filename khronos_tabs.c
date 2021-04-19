@@ -250,26 +250,27 @@ tabs__unit              (char *a_question, int a_num)
    }
    else if (strcmp (a_question, "entry"         )  == 0) {
       /*---(find entry)---------------------*/
-      x_dir  = opendir (my.n_central);
-      if (x_dir == NULL) {
-         snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : can not open dir", a_num);
-         return unit_answer;
-      }
-      x_file = readdir (x_dir);
-      while (x_file != NULL) {
-         rc = FILE_central (x_file->d_name);
-         if (rc >= 0)  {
-            if (c >= a_num)  break;
-            ++c;
-         }
-         x_file = readdir (x_dir);
-      }
-      if (x_file != NULL) {
-         snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : [%s]"        , a_num, x_file->d_name);
-      } else {
-         snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : []"          , a_num);
-      }
-      rc = closedir (x_dir);
+      /*> x_dir  = opendir (my.n_central);                                                                  <* 
+       *> if (x_dir == NULL) {                                                                              <* 
+       *>    snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : can not open dir", a_num);               <* 
+       *>    return unit_answer;                                                                            <* 
+       *> }                                                                                                 <* 
+       *> x_file = readdir (x_dir);                                                                         <* 
+       *> while (x_file != NULL) {                                                                          <* 
+       *>    rc = FILE_central (x_file->d_name);                                                            <* 
+       *>    if (rc >= 0)  {                                                                                <* 
+       *>       if (c >= a_num)  break;                                                                     <* 
+       *>       ++c;                                                                                        <* 
+       *>    }                                                                                              <* 
+       *>    x_file = readdir (x_dir);                                                                      <* 
+       *> }                                                                                                 <* 
+       *> if (x_file != NULL) {                                                                             <* 
+       *>    snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : [%s]"        , a_num, x_file->d_name);   <* 
+       *> } else {                                                                                          <* 
+       *>    snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : []"          , a_num);                   <* 
+       *> }                                                                                                 <* 
+       *> rc = closedir (x_dir);                                                                            <*/
+      snprintf (unit_answer, LEN_HUND, "TABS entry  (%2d) : []"          , a_num);
    }
    /*---(complete)-----------------------*/
    return unit_answer;
