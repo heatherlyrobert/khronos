@@ -158,6 +158,50 @@ EXEC_every_hour         (int a_hour)
    return 0;
 }
 
+char
+EXEC__focus_file        (tFILE *a_file)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tLINE      *x_line      = NULL;
+   int         c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(header)----------------------*/
+   DEBUG_INPT   yLOG_point   ("x_file"    , a_file);
+   DEBUG_INPT   yLOG_info    ("->title"   , a_file->title);
+   if (strcmp (a_file->title, "RETIRED") == 0) {
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(check all lines)-------------*/
+   DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (YDLST_LOCAL));
+   rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
+   while (rc >= 0 && x_line != NULL) {
+      /*---(header)-------------------*/
+      DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+      DEBUG_INPT   yLOG_info    ("->title"   , x_line->tracker);
+      DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
+      /*---(test)---------------------*/
+      rc = ySCHED_test_by_time (&x_line->sched, my.hour, YSCHED_ANY);
+      DEBUG_INPT  yLOG_value   ("ySCHED"    , rc);
+      if (rc < 0) {
+         DEBUG_LOOP   yLOG_note  ("not scheduled within current hour, SKIPPING");
+      } else {
+         DEBUG_LOOP   yLOG_note  ("set focused and continue");
+         yDLST_focus_on ();
+         ++c;
+      }
+      /*---(next)---------------------*/
+      rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DNEXT, NULL, &x_line);
+      /*---(done)---------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return c;
+}
+
 int
 EXEC_focus              (void)
 {
@@ -169,6 +213,7 @@ EXEC_focus              (void)
    int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT  yLOG_value   ("my.hour"   , my.hour);
    /*---(clear all)----------------------*/
    rc = yDLST_focus_clearall ();
    DEBUG_INPT   yLOG_value   ("rc"        , rc);
@@ -178,34 +223,11 @@ EXEC_focus              (void)
    }
    /*---(check all files)----------------*/
    DEBUG_INPT   yLOG_value   ("files"     , yDLST_list_count ());
-   rc = yDLST_list_by_cursor (YDLST_HEAD, NULL, &x_file);
+   rc = yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_file);
    while (rc >= 0 && x_file != NULL) {
-      /*---(header)----------------------*/
-      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-      DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
-      /*---(check all lines)-------------*/
-      DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (YDLST_LOCAL));
-      rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_HEAD, NULL, &x_line);
-      while (rc >= 0 && x_line != NULL) {
-         /*---(header)-------------------*/
-         DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-         DEBUG_INPT   yLOG_info    ("->title"   , x_line->tracker);
-         DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
-         /*---(test)---------------------*/
-         if (ySCHED_test_by_time (&x_line->sched, my.hour, YSCHED_ANY) < 0) {
-            DEBUG_LOOP   yLOG_note  ("not scheduled within current hour, SKIPPING");
-            continue;
-         }
-         /*---(turn it on)---------------*/
-         yDLST_focus_on ();
-         ++c;
-         DEBUG_LOOP   yLOG_note  ("set focused and continue");
-         /*---(next)---------------------*/
-         rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_NEXT, NULL, &x_line);
-         /*---(done)---------------------*/
-      }
+      c += EXEC__focus_file (x_file);
       /*---(next)------------------------*/
-      rc = yDLST_list_by_cursor (YDLST_NEXT, NULL, &x_file);
+      rc = yDLST_list_by_cursor (YDLST_DNEXT, NULL, &x_file);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/

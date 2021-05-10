@@ -31,8 +31,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5g"
-#define     P_VERTXT    "added unit testing for daemon, prickly, and normal assimilation"
+#define     P_VERNUM    "1.5h"
+#define     P_VERTXT    "brutal updates to verify, check, and install units after updating"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -607,12 +607,10 @@
 #define     DIR_UNIT_USER           "/tmp/khronos_test/user/"
 
 
+
 #define     FILE_HEARTBEAT          "khronos.heartbeat"
 #define     FILE_TRACK              "khronos.tracking"
 #define     FILE_STATUS             "khronos.status"
-
-#define     LOC_CENTRAL     'C'
-#define     LOC_LOCAL       'L'
 
 
 
@@ -931,7 +929,7 @@ char        FILE__free              (tFILE **a_old);
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
 /*> char        FILE_acceptable         (cchar *a_name);                              <*/
 /*> char        FILE_central            (cchar *a_name);                              <*/
-char        FILE_assimilate         (char a_loc, cchar *a_name);
+char        FILE_assimilate         (char a_loc, cchar *a_name, char *a_user, char *a_desc);
 /*---(retire)---------------*/
 char        FILE_init               (void);
 char        FILE_prune              (void);

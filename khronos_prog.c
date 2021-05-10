@@ -330,7 +330,7 @@ PROG_driver             (void)
       rc = yEXEC_act_verify  (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
       break;
    case ACT_INSTALL    : case ACT_CINSTALL   : case ACT_VINSTALL   :
-      rc = yEXEC_act_install (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate, my.f_new);
+      rc = yEXEC_act_install (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
       break;
    case ACT_CHECK      : case ACT_CCHECK     : case ACT_VCHECK     :
       rc = yEXEC_act_check   (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
@@ -503,8 +503,8 @@ char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_loud    (void)
 {
    char        rc          =    0;
-   int         x_argc      =    5;
-   char       *x_argv [5]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched"  };
+   int         x_argc      =    6;
+   char       *x_argv [6]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched", "@@yexec"  };
    rc = PROG_debugging (x_argc, x_argv);
    rc = PROG_startup   (x_argc, x_argv);
    return rc;
