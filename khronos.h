@@ -4,18 +4,21 @@
 /*===[[ ONE_LINERS ]]=========================================================*/
 /*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 
+#define     P_NAME      "khronos"
 #define     P_FOCUS     "SA (system administration)"
 #define     P_NICHE     "ba (batch automation)"
 #define     P_SUBJECT   "time-based batch automation and job scheduling"
 #define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling"
 
-#define     P_NAMESAKE  "khronos-ageraton (unaging)"
+#define     P_NAMESAKE  "khronos-anileis (merciless)"
+#define     P_PRONOUNCE "crow-nos ah-knee-lays"
 #define     P_HERITAGE  "incorporeal protogenoi god of creation and unyielding time"
 #define     P_IMAGERY   "winged serpent (drakon) with three heads; bull, lion, and man"
 #define     P_REASON    "khronos is the embodiment of the merciless march of time"
 
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
 
+#define     P_HOMEDIR   ""
 #define     P_BASENAME  ""
 #define     P_FULLPATH  ""
 #define     P_SUFFIX    "khronos"
@@ -31,8 +34,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5i"
-#define     P_VERTXT    "full unit test update to TABS with daemon specific load tests now"
+#define     P_VERNUM    "1.5j"
+#define     P_VERTXT    "full unit test update to FILE, LINE, and PROG ;)"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"

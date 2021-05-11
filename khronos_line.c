@@ -54,7 +54,7 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "[____._____.___._______._____]", LEN_RECD);
+   strlcpy (s_print, "å____._____.___._______._____æ", LEN_RECD);
    ++n;  if (a_cur->tracker [0] != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->recdno      >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->sched       != NULL)        s_print [n] = 'X';

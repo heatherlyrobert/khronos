@@ -34,7 +34,7 @@ char*
 FILE__memory            (tFILE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "[____.__._]", LEN_RECD);
+   strlcpy (s_print, "å____.__._æ", LEN_RECD);
    ++n;  if (a_cur->seq         >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->title   [0] != '\0')        s_print [n] = 'X';
    ++n;  if (a_cur->user    [0] != '\0')        s_print [n] = 'X';
