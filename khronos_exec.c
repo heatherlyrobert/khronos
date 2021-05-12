@@ -178,16 +178,21 @@ EXEC__focus_file        (tFILE *a_file)
    /*---(check all lines)-------------*/
    DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (YDLST_LOCAL));
    rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
-   while (rc >= 0 && x_line != NULL) {
+   --rce;  while (rc >= 0 && x_line != NULL) {
       /*---(header)-------------------*/
       DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
       DEBUG_INPT   yLOG_info    ("->title"   , x_line->tracker);
       DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
       /*---(test)---------------------*/
-      rc = ySCHED_test_by_time (&x_line->sched, my.hour, YSCHED_ANY);
+      DEBUG_INPT   yLOG_info    ("MY_RAW_3"  , ySCHED_raw (x_line->sched));
+      rc = ySCHED_test_by_time (x_line->sched, my.hour, YSCHED_ANY);
       DEBUG_INPT  yLOG_value   ("ySCHED"    , rc);
-      if (rc < 0) {
+      if (rc == 0) {
          DEBUG_LOOP   yLOG_note  ("not scheduled within current hour, SKIPPING");
+      } else if (rc <  0) {
+         DEBUG_LOOP   yLOG_note  ("can not test/update schedule, FATAL");
+         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
       } else {
          DEBUG_LOOP   yLOG_note  ("set focused and continue");
          yDLST_focus_on ();
@@ -357,7 +362,7 @@ EXEC_dispatch           (int a_min)
    rc = yDLST_focus_by_cursor (YDLST_HEAD, NULL, &x_line);
    while (rc >= 0 && x_line != NULL) {
       /*---(test)------------------------*/
-      if (ySCHED_test_by_time (&x_line->sched, my.hour, a_min) < 0) {
+      if (ySCHED_test_by_time (x_line->sched, my.hour, a_min) < 0) {
          DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
@@ -422,6 +427,8 @@ char*            /*--> unit test accessor ------------------------------*/
 exec__unit              (char *a_question, int a_num)
 {
    char        x_heartbeat [LEN_HUND];
+   int         c           =    0;
+   tLINE      *o           = NULL;
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "EXEC             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
@@ -433,6 +440,17 @@ exec__unit              (char *a_question, int a_num)
    }
    else if (strcmp (a_question, "focused" )        == 0) {
       snprintf (unit_answer, LEN_HUND, "EXEC focused     : %d", yDLST_focus_count ());
+   }
+   else if (strcmp (a_question, "focus"   )        == 0) {
+      yDLST_focus_by_cursor (YDLST_DHEAD, NULL, &o);
+      while (1) {
+         if (o == NULL)  break;
+         if (c == a_num) break;
+         yDLST_focus_by_cursor (YDLST_DNEXT, NULL, &o);
+         ++c;
+      }
+      if (o == NULL)   snprintf (unit_answer, LEN_HUND, "EXEC focus  (%2d) : --/%2d  --åæ", a_num, yDLST_focus_count ());
+      else             snprintf (unit_answer, LEN_HUND, "EXEC focus  (%2d) : %2d/%2d  %2då%sæ", a_num, a_num, yDLST_focus_count (), strlen (ySCHED_raw (o->sched)), ySCHED_raw (o->sched));
    }
    else if (strcmp (a_question, "active"  )        == 0) {
       snprintf (unit_answer, LEN_HUND, "EXEC active      : %d", yDLST_active_count ());

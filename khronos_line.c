@@ -410,6 +410,7 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   DEBUG_INPT   yLOG_info    ("MY RAW"    , ySCHED_raw (a_new->sched));
    /*---(feedback)--------------------*/
    rc = ySCHED_details (my.s_min, my.s_hrs, my.s_dys, my.s_mos, my.s_dow, my.s_wks, my.s_yrs, my.s_beg, my.s_end, &my.s_valid);
    yURG_msg ('-', "min       %s", my.s_min);
@@ -504,6 +505,7 @@ LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_durat
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   DEBUG_INPT   yLOG_info    ("MY RAW_2"  , ySCHED_raw (x_new->sched));
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
