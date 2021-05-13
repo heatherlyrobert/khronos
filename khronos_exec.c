@@ -311,16 +311,37 @@ EXEC_check              (void)
          continue;
       }
       /*---(log results)-----------------*/
+      switch (rc)  {
+      case YEXEC_NOSUCH  : case YEXEC_NOTREAL : case YEXEC_NOCHMOD :
+      case YEXEC_BADLOG  : case YEXEC_NOTEXEC : case YEXEC_NOPERM  :
+         if (x_line->c_badd < 99)  ++x_line->c_badd;
+         break;
+      case YEXEC_SEGV    : case YEXEC_USER    : case YEXEC_LIMIT   :
+      case YEXEC_DIED    : case YEXEC_ERROR   :
+         if (x_line->c_boom < 99)  ++x_line->c_boom;
+         break;
+      case YEXEC_KILLED  :
+         if (x_line->c_kill < 99)  ++x_line->c_kill;
+         break;
+      case YEXEC_NORMAL  : case YEXEC_WARNING :
+         if (x_line->c_pass < 99)  ++x_line->c_pass;
+         break;
+      case YEXEC_FAILURE : default            :
+         if (x_line->c_fail < 99)  ++x_line->c_fail;
+         break;
+      }
       x_dur  = (my.now - x_line->start) / 60;
+      if (x_dur <= 0)  x_dur = 1;
       rptg_track (x_line, rc, x_dur);
       /*---(early/late)------------------*/
       /*> if      (x_dur < x_line->est_min)  ++x_line->earlies;                       <* 
        *> else if (x_dur > x_line->est_max)  ++x_line->lates;                         <*/
       /*---(set last data)---------------*/
-      /*> x_line->last_rpid  = x_line->rpid;                                          <* 
-       *> x_line->last_time  = x_line->start;                                         <* 
-       *> x_line->last_rc    = x_return;                                              <* 
-       *> x_line->last_dur   = x_dur;                                                 <*/
+      x_line->l_rpid     = x_line->rpid;
+      x_line->l_beg      = x_line->start;
+      x_line->l_end      = my.now;
+      x_line->l_rc       = x_return;
+      x_line->l_dur      = x_dur;
       /*---(reset run data)--------------*/
       x_line->rpid       =  0;
       x_line->start      =  0;
@@ -362,8 +383,11 @@ EXEC_dispatch           (int a_min)
    rc = yDLST_focus_by_cursor (YDLST_HEAD, NULL, &x_line);
    while (rc >= 0 && x_line != NULL) {
       /*---(test)------------------------*/
-      if (ySCHED_test_by_time (x_line->sched, my.hour, a_min) < 0) {
-         DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
+      rc = ySCHED_test_by_time (x_line->sched, my.hour, a_min);
+      DEBUG_INPT   yLOG_value   ("test"      , rc);
+      if (rc <= 0) {
+         if (rc == 0)  DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
+         else          DEBUG_LOOP   yLOG_note  ("BOOM, can not test");
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -385,11 +409,12 @@ EXEC_dispatch           (int a_min)
       }
       /*---(activate)--------------------*/
       yDLST_active_on ();
+      if (x_line->c_runs < 99)  ++x_line->c_runs;
       ++c;
       /*---(run)-------------------------*/
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
-      DEBUG_INPT   yLOG_info    ("->track", x_line->track);
+      DEBUG_INPT   yLOG_char    ("->track", x_line->track);
       sprintf (x_cmd, "%s", x_line->command);
       /*> if (x_line->track != 'y')    sprintf (x_cmd, "%s", x_line->command);          <* 
        *> else                         sprintf (x_cmd, "scythe %s", x_line->command);   <*/
@@ -400,6 +425,7 @@ EXEC_dispatch           (int a_min)
          DEBUG_INPT  yLOG_note    ("line/process could not launch");
          rptg_track (x_line, 0, 0);
          x_line->rpid       = -2;
+         if (x_line->c_badd < 99)  ++x_line->c_badd;
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -438,10 +464,10 @@ exec__unit              (char *a_question, int a_num)
    else if (strcmp (a_question, "pid"     )        == 0) {
       snprintf (unit_answer, LEN_HUND, "EXEC pid         : %d", my.m_pid);
    }
-   else if (strcmp (a_question, "focused" )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "EXEC focused     : %d", yDLST_focus_count ());
+   else if (strcmp (a_question, "f_count" )        == 0) {
+      snprintf (unit_answer, LEN_HUND, "EXEC f_count     : %d", yDLST_focus_count ());
    }
-   else if (strcmp (a_question, "focus"   )        == 0) {
+   else if (strcmp (a_question, "f_entry" )        == 0) {
       yDLST_focus_by_cursor (YDLST_DHEAD, NULL, &o);
       while (1) {
          if (o == NULL)  break;
@@ -449,11 +475,11 @@ exec__unit              (char *a_question, int a_num)
          yDLST_focus_by_cursor (YDLST_DNEXT, NULL, &o);
          ++c;
       }
-      if (o == NULL)   snprintf (unit_answer, LEN_HUND, "EXEC focus  (%2d) : --/%2d  --åæ", a_num, yDLST_focus_count ());
-      else             snprintf (unit_answer, LEN_HUND, "EXEC focus  (%2d) : %2d/%2d  %2då%sæ", a_num, a_num, yDLST_focus_count (), strlen (ySCHED_raw (o->sched)), ySCHED_raw (o->sched));
+      if (o == NULL)   snprintf (unit_answer, LEN_HUND, "EXEC f_entry(%2d) : --/%2d  --åæ", a_num, yDLST_focus_count ());
+      else             snprintf (unit_answer, LEN_HUND, "EXEC f_entry(%2d) : %2d/%2d  %2då%sæ", a_num, a_num, yDLST_focus_count (), strlen (ySCHED_raw (o->sched)), ySCHED_raw (o->sched));
    }
-   else if (strcmp (a_question, "active"  )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "EXEC active      : %d", yDLST_active_count ());
+   else if (strcmp (a_question, "a_count" )        == 0) {
+      snprintf (unit_answer, LEN_HUND, "EXEC a_count     : %d", yDLST_active_count ());
    }
    else if (strcmp (a_question, "heartbeat"     )  == 0) {
       snprintf (unit_answer, LEN_HUND, "EXEC heartbeat   : %2då%sæ", strlen (my.heartbeat), my.heartbeat);

@@ -26,8 +26,6 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->retire      =  '-';
    a_cur->rpid        =    0;
    a_cur->start       =    0;
-   a_cur->runs        =    0;
-   a_cur->fails       =    0;
    /*---(estimates)------------*/
    a_cur->est         =    0;
    a_cur->est_min     =    0;
@@ -46,6 +44,20 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->cpu         =  '-';
    a_cur->disk        =  '-';
    a_cur->net         =  '-';
+   /*---(previous)-------------*/
+   a_cur->l_rpid      =    0;
+   a_cur->l_beg       =    0;
+   a_cur->l_end       =    0;
+   a_cur->l_dur       =    0;
+   a_cur->l_rc        =    0;
+   /*---(counts)---------------*/
+   a_cur->c_runs      =    0;
+   a_cur->c_skip      =    0;
+   a_cur->c_badd      =    0;
+   a_cur->c_boom      =    0;
+   a_cur->c_kill      =    0;
+   a_cur->c_fail      =    0;
+   a_cur->c_pass      =    0;
    /*---(complete)-------------*/
    return 1;
 }
@@ -54,7 +66,7 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "å____._____.___._______._____æ", LEN_RECD);
+   strlcpy (s_print, "å____.___.___._______._____._____.______æ", LEN_RECD);
    ++n;  if (a_cur->tracker [0] != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->recdno      >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->sched       != NULL)        s_print [n] = 'X';
@@ -63,8 +75,6 @@ LINE__memory            (tLINE *a_cur)
    ++n;  if (a_cur->retire      != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->rpid        >  0)           s_print [n] = 'X';
    ++n;  if (a_cur->start       >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->runs        >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->fails       >  0)           s_print [n] = 'X';
    ++n;
    ++n;  if (a_cur->est         >  0)           s_print [n] = 'X';
    ++n;  if (a_cur->est_min     >  0)           s_print [n] = 'X';
@@ -83,6 +93,20 @@ LINE__memory            (tLINE *a_cur)
    ++n;  if (a_cur->cpu         != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->disk        != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->net         != '-')         s_print [n] = 'X';
+   ++n;
+   ++n;  if (a_cur->l_rpid      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_beg       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_end       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_dur       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_rc        != 0)           s_print [n] = 'X';
+   ++n;
+   ++n;  if (a_cur->c_runs      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_skip      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_badd      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_boom      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_kill      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_fail      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_pass      != 0)           s_print [n] = 'X';
    return s_print;
 }
 
@@ -730,6 +754,23 @@ line_kill              (char *a_file, char *a_line)
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
 
+static char  s_str       [LEN_LABEL] = "";
+
+char*
+line__unit_str          (int n, int v, char *s)
+{
+   if (v == 0) {
+      if (n > 1)  sprintf (s_str, "%*.*s·%s", n-1, n-1, "          ", s);
+      else        sprintf (s_str, "·%s", s);
+   }
+   else {
+      if (n == 1 && v >  9)  v = 9;
+      if (n == 2 && v > 99)  v = 99;
+      sprintf (s_str, "%*d%s", n, v, s);
+   }
+   return s_str;
+}
+
 char*            /*--> unit test accessor ------------------------------*/
 line__unit              (char *a_question, int a_num)
 {
@@ -739,6 +780,7 @@ line__unit              (char *a_question, int a_num)
    char        s           [LEN_USER]  = "åæ";
    char        r           [LEN_USER]  = "åæ";
    char        u           [LEN_USER]  = "åæ";
+   char        x           [LEN_RECD]  = "";
    int         c           =    0;
    void       *x_void      = NULL;
    tFILE      *x_file      = NULL;
@@ -796,9 +838,21 @@ line__unit              (char *a_question, int a_num)
       rc = yDLST_line_by_index  (YDLST_GLOBAL, a_num     , NULL, &x_line);
       if (x_line != NULL) {
          sprintf (t, "å%sæ", x_line->tracker);
-         /*> snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : %-17.17s  %2da %2do %2de %2dc %2dk %2df  %3dr", a_num, t, x_line->attempts, x_line->overlaps, x_line->errors, x_line->complete, x_line->kills, x_line->failures, x_line->last_rc);   <*/
+         sprintf (x, "%c %c ", yDLST_focus_check (x_line->tracker) ? 'y' : '-', yDLST_active_check (x_line->tracker) ? 'y' : '-');
+         strcat  (x, line__unit_str (10, x_line->start  , " "));
+         strcat  (x, line__unit_str ( 5, x_line->rpid   , ", "));
+         strcat  (x, line__unit_str ( 2, x_line->c_runs , "r "));
+         strcat  (x, line__unit_str ( 1, x_line->c_skip , "s "));
+         strcat  (x, line__unit_str ( 1, x_line->c_badd , "b "));
+         strcat  (x, line__unit_str ( 1, x_line->c_boom , "m "));
+         strcat  (x, line__unit_str ( 1, x_line->c_kill , "k "));
+         strcat  (x, line__unit_str ( 2, x_line->c_fail , "f "));
+         strcat  (x, line__unit_str ( 2, x_line->c_pass , "p, "));
+         strcat  (x, line__unit_str ( 5, x_line->l_rpid , " "));
+         strcat  (x, line__unit_str ( 4, x_line->l_dur  , ""));
+         snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : %-17.17s %s %4d", a_num, t, x, x_line->l_rc);
       } else {
-         snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : åæ                   a   o   e   c   k   f     r", a_num);
+         snprintf (unit_answer, LEN_HUND, "LINE runs   (%2d) : åæ                - -          ·     ·,  ·r ·s ·b ·m ·k  ·f  ·p,     ·    ·    ·", a_num);
       }
    }
    else if (strcmp (a_question, "durs"    )        == 0) {
@@ -806,6 +860,7 @@ line__unit              (char *a_question, int a_num)
       if (x_line != NULL) {
          sprintf (t, "å%sæ", x_line->tracker);
          /*> snprintf (unit_answer, LEN_HUND, "LINE durs   (%2d) : %-17.17s  %3dd %3dm %3dx %3dl %2de %2dl", a_num, t, x_line->est, x_line->est_min, x_line->est_max, x_line->last_dur, x_line->earlies, x_line->lates);   <*/
+         snprintf (unit_answer, LEN_HUND, "LINE durs   (%2d) : åæ                   a   o   e   c   k   f     r", a_num);
       } else {
          snprintf (unit_answer, LEN_HUND, "LINE durs   (%2d) : åæ                   a   o   e   c   k   f     r", a_num);
       }

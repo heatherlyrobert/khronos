@@ -34,8 +34,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5k"
-#define     P_VERTXT    "fixed ySCHED bug and made EXEC_focus unit test.  passed"
+#define     P_VERNUM    "1.5l"
+#define     P_VERTXT    "basic check again working and some extra stats for troubleshooting"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -818,8 +818,6 @@ struct cLINE {
    char        retire;                      /* line no longer in use          */
    int         rpid;                        /* pid if executing               */
    int         start;                       /* time started                   */
-   int         runs;                        /* count of times run             */
-   int         fails;                       /* count of failures              */
    /*---(estimates)------------*/
    int         est;                         /* expected duration from ysched  */
    int         est_min;                     /* calculated min duration        */
@@ -838,6 +836,20 @@ struct cLINE {
    char        cpu;
    char        disk;
    char        net;
+   /*---(previous)-------------*/
+   int         l_rpid;
+   int         l_beg;
+   int         l_end;
+   int         l_dur;
+   char        l_rc;
+   /*---(counts)---------------*/
+   char        c_runs;
+   char        c_skip;
+   char        c_badd;
+   char        c_boom;
+   char        c_kill;
+   char        c_fail;
+   char        c_pass;
    /*---(done)-----------------*/
 };
 
