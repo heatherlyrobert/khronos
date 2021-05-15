@@ -566,7 +566,7 @@ FILE_flush              (void)
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
 
-char          unit_answer [ LEN_HUND ];
+char          unit_answer [ LEN_RECD ];
 
 char*            /*--> unit test accessor ------------------------------*/
 file__unit              (char *a_question, int a_num)

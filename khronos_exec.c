@@ -301,12 +301,14 @@ EXEC_check              (void)
       }
       DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
       /*---(check)-----------------------*/
+      x_dur  = (my.now - x_line->start) * 1000;
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
       rc = yEXEC_verify (t, x_line->rpid, &x_return);
       DEBUG_INPT   yLOG_value   ("check"     , rc);
       if (rc == YEXEC_RUNNING) {
          DEBUG_INPT   yLOG_note    ("still running, next");
+         yEXEC_timing (x_line->rpid, x_line->strict, x_line->est_max, x_dur, 2 * 60 * 1000, 0);
          rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -330,12 +332,12 @@ EXEC_check              (void)
          if (x_line->c_fail < 99)  ++x_line->c_fail;
          break;
       }
-      x_dur  = (my.now - x_line->start) / 60;
+      /*---(early/late)------------------*/
+      if      (x_dur < x_line->est_min && x_line->c_earl < 99)  ++x_line->c_earl;
+      if      (x_dur > x_line->est_max && x_line->c_late < 99)  ++x_line->c_late;
+      x_dur  = my.now - x_line->start;
       if (x_dur <= 0)  x_dur = 1;
       rptg_track (x_line, rc, x_dur);
-      /*---(early/late)------------------*/
-      /*> if      (x_dur < x_line->est_min)  ++x_line->earlies;                       <* 
-       *> else if (x_dur > x_line->est_max)  ++x_line->lates;                         <*/
       /*---(set last data)---------------*/
       x_line->l_rpid     = x_line->rpid;
       x_line->l_beg      = x_line->start;
@@ -371,7 +373,8 @@ EXEC_dispatch           (int a_min)
    char        t           [LEN_RECD];
    char        x_cmd       [LEN_RECD];
    /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT   yLOG_value   ("a_min"     , a_min);
    /*---(check count)--------------------*/
    DEBUG_INPT   yLOG_value   ("focused"   , yDLST_focus_count ());
    if (yDLST_focus_count () <= 0) {
@@ -383,6 +386,7 @@ EXEC_dispatch           (int a_min)
    rc = yDLST_focus_by_cursor (YDLST_HEAD, NULL, &x_line);
    while (rc >= 0 && x_line != NULL) {
       /*---(test)------------------------*/
+      DEBUG_INPT   yLOG_info    ("->tracker" , x_line->tracker);
       rc = ySCHED_test_by_time (x_line->sched, my.hour, a_min);
       DEBUG_INPT   yLOG_value   ("test"      , rc);
       if (rc <= 0) {
@@ -399,17 +403,18 @@ EXEC_dispatch           (int a_min)
          return rce;
       }
       DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
+      if (x_line->c_runs < 99)  ++x_line->c_runs;
       /*---(check for running)-----------*/
       DEBUG_INPT   yLOG_value   ("rpid"      , x_line->rpid);
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");
+         if (x_line->c_skip < 99)  ++x_line->c_skip;
          rptg_track (x_line, YEXEC_ALREADY, 0);
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
       /*---(activate)--------------------*/
       yDLST_active_on ();
-      if (x_line->c_runs < 99)  ++x_line->c_runs;
       ++c;
       /*---(run)-------------------------*/
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);

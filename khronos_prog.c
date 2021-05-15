@@ -19,7 +19,7 @@
 #include   "khronos.h"
 
 
-char          unit_answer [ LEN_HUND ];
+char          unit_answer [ LEN_RECD ];
 
 
 

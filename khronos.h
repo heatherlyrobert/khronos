@@ -34,8 +34,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5l"
-#define     P_VERTXT    "basic check again working and some extra stats for troubleshooting"
+#define     P_VERNUM    "1.5m"
+#define     P_VERTXT    "built and tested forced term/kill functionality (cool)"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -691,7 +691,7 @@ extern      int         failed;
 extern      char        g_seq;
 
 
-extern      char        unit_answer [LEN_HUND];
+extern      char        unit_answer [LEN_RECD];
 extern      char      verstring    [500];
 
 
@@ -850,6 +850,8 @@ struct cLINE {
    char        c_kill;
    char        c_fail;
    char        c_pass;
+   char        c_earl;
+   char        c_late;
    /*---(done)-----------------*/
 };
 
