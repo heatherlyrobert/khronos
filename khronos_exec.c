@@ -22,17 +22,20 @@ EXEC_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
       break;
    case  SIGTERM:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGTERM means terminate daemon");
-      /*> rptg_end_watch ("SIGTERM");                                                 <*/
+      RPTG_track_sig ("SIGTERM");
+      RPTG_track_end ();
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGSEGV:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGSEGV means daemon blew up");
-      /*> rptg_end_watch ("SEGSEGV");                                                 <*/
+      RPTG_track_sig ("SEGSEGV");
+      RPTG_track_end ();
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGABRT:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGABRT means daemon blew up");
-      /*> rptg_end_watch ("SIGABRT");                                                 <*/
+      RPTG_track_sig ("SEGABRT");
+      RPTG_track_end ();
       yEXEC_term    ("EXITING", 99);
       break;
    default      :
@@ -258,10 +261,8 @@ EXEC_every_min          (int a_min)
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    DEBUG_LOOP  yLOG_value   ("a_min"     , a_min);
-   /*> x_min     = BASE_timestamp();                                            <*/
    EXEC_check    ();
    EXEC_dispatch (a_min);
-   /*> BASE_status   ();                                                        <*/
    EXEC_wait_min ();
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
@@ -280,6 +281,8 @@ EXEC_check              (void)
    int         c           =    0;
    char        t           [LEN_RECD];
    int         x_dur       =    0;
+   char        x_reason    =  '-';
+   char        x_note      =  '-';
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(check count)--------------------*/
@@ -292,6 +295,9 @@ EXEC_check              (void)
    /*---(check all files)----------------*/
    rc = yDLST_active_by_cursor (YDLST_HEAD, NULL, &x_line);
    while (rc >= 0 && x_line != NULL) {
+      /*---(prepare)---------------------*/
+      x_reason = '-';
+      x_note   = '-';
       /*---(get file)--------------------*/
       yDLST_line_list (NULL, &x_file);
       DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
@@ -308,7 +314,7 @@ EXEC_check              (void)
       DEBUG_INPT   yLOG_value   ("check"     , rc);
       if (rc == YEXEC_RUNNING) {
          DEBUG_INPT   yLOG_note    ("still running, next");
-         yEXEC_timing (x_line->rpid, x_line->strict, x_line->est_max, x_dur, 2 * 60 * 1000, 0);
+         x_line->force = yEXEC_timing (x_line->rpid, x_line->strict, x_line->est_max, x_dur, 2 * 60 * 1000, 0);
          rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -317,36 +323,57 @@ EXEC_check              (void)
       case YEXEC_NOSUCH  : case YEXEC_NOTREAL : case YEXEC_NOCHMOD :
       case YEXEC_BADLOG  : case YEXEC_NOTEXEC : case YEXEC_NOPERM  :
          if (x_line->c_badd < 99)  ++x_line->c_badd;
+         x_reason = T_BADD;
          break;
       case YEXEC_SEGV    : case YEXEC_USER    : case YEXEC_LIMIT   :
       case YEXEC_DIED    : case YEXEC_ERROR   :
          if (x_line->c_boom < 99)  ++x_line->c_boom;
+         x_reason = T_BOOM;
          break;
       case YEXEC_KILLED  :
-         if (x_line->c_kill < 99)  ++x_line->c_kill;
+         if (x_line->force == 'g' && x_return == SIGTERM) {
+            if (x_line->c_shut < 99)  ++x_line->c_shut;
+            x_reason = T_SHUT;
+         } else if (x_line->force == 'k' && x_return == SIGKILL) {
+            if (x_line->c_shut < 99)  ++x_line->c_shut;
+            x_reason = T_SHUT;
+         } else {
+            if (x_line->c_kill < 99)  ++x_line->c_kill;
+            x_reason = T_KILL;
+         }
          break;
       case YEXEC_NORMAL  : case YEXEC_WARNING :
          if (x_line->c_pass < 99)  ++x_line->c_pass;
+         x_reason = T_PASS;
          break;
       case YEXEC_FAILURE : default            :
          if (x_line->c_fail < 99)  ++x_line->c_fail;
+         x_reason = T_FAIL;
          break;
       }
       /*---(early/late)------------------*/
-      if      (x_dur < x_line->est_min && x_line->c_earl < 99)  ++x_line->c_earl;
-      if      (x_dur > x_line->est_max && x_line->c_late < 99)  ++x_line->c_late;
+      if      (x_dur < x_line->est_min && x_line->c_earl < 99) {
+         ++x_line->c_earl;
+         x_note   = T_EARL;
+      }
+      else if (x_dur > x_line->est_max && x_line->c_late < 99) {
+         ++x_line->c_late;
+         x_note   = T_LATE;
+      }
       x_dur  = my.now - x_line->start;
       if (x_dur <= 0)  x_dur = 1;
-      rptg_track (x_line, rc, x_dur);
       /*---(set last data)---------------*/
       x_line->l_rpid     = x_line->rpid;
       x_line->l_beg      = x_line->start;
       x_line->l_end      = my.now;
       x_line->l_rc       = x_return;
       x_line->l_dur      = x_dur;
+      /*---(reporting)-------------------*/
+      RPTG_track_exec (x_file, x_line, x_reason, x_note);
       /*---(reset run data)--------------*/
       x_line->rpid       =  0;
       x_line->start      =  0;
+      x_line->force      = '-';
       /*---(reset lists)-----------------*/
       yDLST_active_off ();
       ++c;
@@ -375,6 +402,7 @@ EXEC_dispatch           (int a_min)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    DEBUG_INPT   yLOG_value   ("a_min"     , a_min);
+   if (a_min < 0)  a_min = my.minute;
    /*---(check count)--------------------*/
    DEBUG_INPT   yLOG_value   ("focused"   , yDLST_focus_count ());
    if (yDLST_focus_count () <= 0) {
@@ -409,7 +437,7 @@ EXEC_dispatch           (int a_min)
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");
          if (x_line->c_skip < 99)  ++x_line->c_skip;
-         rptg_track (x_line, YEXEC_ALREADY, 0);
+         RPTG_track_exec (x_file, x_line, T_SKIP, '-');
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -428,7 +456,7 @@ EXEC_dispatch           (int a_min)
       DEBUG_INPT   yLOG_value   ("x_rpid"    , x_rpid);
       if (x_rpid <  0) {
          DEBUG_INPT  yLOG_note    ("line/process could not launch");
-         rptg_track (x_line, 0, 0);
+         RPTG_track_exec (x_file, x_line, T_BADD, '-');
          x_line->rpid       = -2;
          if (x_line->c_badd < 99)  ++x_line->c_badd;
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
@@ -437,8 +465,10 @@ EXEC_dispatch           (int a_min)
       /*---(update line)-----------------*/
       x_line->rpid       = x_rpid;
       x_line->start      = my.now;
-      DEBUG_INPT  yLOG_note    ("launched, move to next");
+      /*---(report)----------------------*/
+      RPTG_track_exec (x_file, x_line, T_RUN , '-');
       /*---(next)------------------------*/
+      DEBUG_INPT  yLOG_note    ("launched, move to next");
       rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
       /*---(done)------------------------*/
    }

@@ -262,7 +262,7 @@ FILE__defaults          (void)
 }
 
 char
-FILE_assimilate        (char a_loc, cchar *a_name, char *a_user, char *a_desc)
+FILE_assimilate        (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -273,6 +273,9 @@ FILE_assimilate        (char a_loc, cchar *a_name, char *a_user, char *a_desc)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    DEBUG_INPT  yLOG_char    ("a_loc"     , a_loc);
+   /*---(default)------------------------*/
+   if (r_user != NULL)  strlcpy (r_user, ""       , LEN_USER);
+   if (r_desc != NULL)  strlcpy (r_desc, ""       , LEN_DESC);
    /*---(parse file)---------------------*/
    --rce;  if (a_loc == YEXEC_CENTRAL)   rc = yEXEC_central    (my.run_as, a_name, &(my.f_user), &(my.f_uid), &(my.f_desc), x_dir);
    else if    (a_loc == YEXEC_LOCAL  )   rc = yEXEC_acceptable (my.run_as, a_name, &(my.f_user), &(my.f_uid), &(my.f_desc), x_dir);
@@ -287,8 +290,8 @@ FILE_assimilate        (char a_loc, cchar *a_name, char *a_user, char *a_desc)
       return rce;
    }
    /*---(save back)----------------------*/
-   if (a_user != NULL)  strlcpy (a_user, my.f_user, LEN_USER);
-   if (a_desc != NULL)  strlcpy (a_desc, my.f_desc, LEN_DESC);
+   if (r_user != NULL)  strlcpy (r_user, my.f_user, LEN_USER);
+   if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);
    /*---(create file)--------------------*/
    yURG_msg ('>', "assimilate file lines...");
    /*> rc = FILE_create (my.f_name, my.f_user, my.f_uid);                             <*/

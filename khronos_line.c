@@ -18,14 +18,15 @@ LINE__wipe              (tLINE *a_cur)
    /*---(defense)--------------*/
    if (a_cur == NULL)  return -1;
    /*---(master)-------------------------*/
-   strlcpy (a_cur->tracker, "·", LEN_TITLE);
+   strlcpy (a_cur->tracker , "·", LEN_TITLE);
    a_cur->recdno      =   -1;
    a_cur->sched       =  NULL;
-   strlcpy (a_cur->command, ""   , LEN_RECD);
+   strlcpy (a_cur->command , "" , LEN_RECD);
    /*---(working)--------------*/
    a_cur->retire      =  '-';
    a_cur->rpid        =    0;
    a_cur->start       =    0;
+   a_cur->force       =  '-';
    /*---(estimates)------------*/
    a_cur->est         =    0;
    a_cur->est_min     =    0;
@@ -56,6 +57,7 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->c_badd      =    0;
    a_cur->c_boom      =    0;
    a_cur->c_kill      =    0;
+   a_cur->c_shut      =    0;
    a_cur->c_fail      =    0;
    a_cur->c_pass      =    0;
    a_cur->c_earl      =    0;
@@ -68,49 +70,51 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "å____.___.___._______._____._____.________æ", LEN_RECD);
-   ++n;  if (a_cur->tracker [0] != '·')         s_print [n] = 'X';
-   ++n;  if (a_cur->recdno      >= 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->sched       != NULL)        s_print [n] = 'X';
-   ++n;  if (a_cur->command [0] != '\0')        s_print [n] = 'X';
+   strlcpy (s_print, "å____.____.___._______._____._____.________æ", LEN_RECD);
+   ++n;  if (a_cur->tracker [0]  != '·')         s_print [n] = 'X';
+   ++n;  if (a_cur->recdno       >= 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->sched        != NULL)        s_print [n] = 'X';
+   ++n;  if (a_cur->command [0]  != '\0')        s_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->retire      != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->rpid        >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->start       >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->retire       != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->rpid         >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->start        >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->force        != '-')         s_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->est         >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->est_min     >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->est_max     >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->est          >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->est_min      >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->est_max      >  0)           s_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->value       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->track       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->handoff     != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->strict      != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->lower       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->upper       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->remedy      != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->value        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->track        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->handoff      != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->strict       != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->lower        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->upper        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->remedy       != '-')         s_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->flex        != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->throttle    != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->cpu         != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->disk        != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->net         != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->flex         != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->throttle     != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->cpu          != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->disk         != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->net          != '-')         s_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->l_rpid      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_beg       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_end       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_dur       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_rc        != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_rpid       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_beg        != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_end        != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_dur        != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_rc         != 0)           s_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->c_runs      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_skip      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_badd      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_boom      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_kill      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_fail      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_pass      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_earl      != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_late      != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_runs       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_skip       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_badd       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_boom       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_kill       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_shut       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_fail       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_pass       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_earl       != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->c_late       != 0)           s_print [n] = 'X';
    return s_print;
 }
 
@@ -699,7 +703,7 @@ line_prune              (void)
 }
 
 char
-line_kill              (char *a_file, char *a_line)
+line_kill              (char *a_file, char *a_line, char a_sig)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -740,7 +744,7 @@ line_kill              (char *a_file, char *a_line)
       return rce;
    }
    /*---(kill)---------------------------*/
-   rc = kill (x_line->rpid, SIGKILL);
+   rc = kill (x_line->rpid, a_sig);
    DEBUG_INPT   yLOG_value   ("kill"      , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -850,6 +854,7 @@ line__unit              (char *a_question, int a_num)
          strcat  (x, line__unit_str ( 1, x_line->c_badd , "b "));
          strcat  (x, line__unit_str ( 1, x_line->c_boom , "m "));
          strcat  (x, line__unit_str ( 1, x_line->c_kill , "k "));
+         strcat  (x, line__unit_str ( 1, x_line->c_shut , "x "));
          strcat  (x, line__unit_str ( 1, x_line->c_fail , "f "));
          strcat  (x, line__unit_str ( 1, x_line->c_pass , "p "));
          strcat  (x, line__unit_str ( 1, x_line->c_earl , "e "));

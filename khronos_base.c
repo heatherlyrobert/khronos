@@ -32,9 +32,9 @@ base_daemon_mode        (void)
    }
    /*---(startup)------------------------*/
    x_hour  = EXEC_time (0);
-   /*> rc      = rptg_beg_watch ();                                                   <*/
+   rc      = RPTG_track_beg ();
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-   rptg_status ();
+   RPTG_minute   ();
    /*> catchup();                                                                     <*/
    EXEC_wait_min ();
    /*---(main loop)----------------------*/
@@ -49,7 +49,7 @@ base_daemon_mode        (void)
          DEBUG_PROG  yLOG_value   ("minutely"  , rc);
          x_hour = EXEC_time (0);
          DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-         rptg_status ();
+         RPTG_minute ();
       }
    }
    /*---(complete------------------------*/

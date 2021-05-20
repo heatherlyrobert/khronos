@@ -34,9 +34,10 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5m"
-#define     P_VERTXT    "built and tested forced term/kill functionality (cool)"
+#define     P_VERNUM    "1.5n"
+#define     P_VERTXT    "added unit testing for status and tracking, very nice"
 
+#define     P_TOPOFMIND "single maintainer for a huge code base"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
 #define     P_REMINDER  "there are many better options, but i *own* every byte of this one"
@@ -188,31 +189,6 @@
  *> it is also full of learning opportunities ;)                                      <*/
 
 
-
-
-/*===[[ HEADER ]]=============================================================#
-
- *   focus         : (SA) system administration
- *   niche         : (bp) batch processing
- *   purpose       : reliable, trackable, and focused time-based job scheduling
- *
- *   patron        : khronos-ageraton (unaging)
- *   heritage      : incorporeal protogenoi god of creation and unyielding time
- *   imagery       : winged serpent (drakon) with three heads -- bull, lion, man
- *
- *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
- *   lang_name     : ansi-c      (wicked, limitless, universal, and everlasting)
- *   dependencies  : ySCHED, yEXEC, yPARSE, yDLST
- *
- *   author        : the_heatherlys
- *   created       : 2010-05
- *   size          : moderate    (less than 5,000 slocL)
- *
- *   top of mind   : single maintainer for a huge code base
- *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
- *   end goal      : loosely coupled, strict interface, maintainable, traceable
- * 
- */
 /*===[[ SUMMARY ]]=============================================================*
 
  *   khronos is a fast, simplified, modernized, and technical version of the
@@ -818,6 +794,7 @@ struct cLINE {
    char        retire;                      /* line no longer in use          */
    int         rpid;                        /* pid if executing               */
    int         start;                       /* time started                   */
+   char        force;                       /* force term/kill                */
    /*---(estimates)------------*/
    int         est;                         /* expected duration from ysched  */
    int         est_min;                     /* calculated min duration        */
@@ -848,12 +825,26 @@ struct cLINE {
    char        c_badd;
    char        c_boom;
    char        c_kill;
+   char        c_shut;
    char        c_fail;
    char        c_pass;
    char        c_earl;
    char        c_late;
    /*---(done)-----------------*/
 };
+
+#define  T_BEG         '['
+#define  T_RUN         'r'
+#define  T_SKIP        's'
+#define  T_BADD        'b'
+#define  T_BOOM        'o'
+#define  T_KILL        'k'
+#define  T_SHUT        'x'
+#define  T_FAIL        'f'
+#define  T_PASS        'p'
+#define  T_EARL        'e'
+#define  T_LATE        'l'
+#define  T_END         ']'
 
 
 
@@ -944,9 +935,7 @@ char        FILE__new               (tFILE **a_new);
 char        FILE__free              (tFILE **a_old);
 /*---(support)--------------*/
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
-/*> char        FILE_acceptable         (cchar *a_name);                              <*/
-/*> char        FILE_central            (cchar *a_name);                              <*/
-char        FILE_assimilate         (char a_loc, cchar *a_name, char *a_user, char *a_desc);
+char        FILE_assimilate         (cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
 /*---(retire)---------------*/
 char        FILE_init               (void);
 char        FILE_prune              (void);
@@ -975,7 +964,7 @@ char        LINE__create            (int n, char *a_schedule, char *a_tracker, c
 char        LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler);
 
 int         line_prune              (void);
-char        line_kill               (char *a_file, char *a_line);
+char        line_kill               (char *a_file, char *a_line, char a_sig);
 char        line__unit_rpid         (char *a_file, char *a_line, int a_rpid);
 
 
@@ -999,10 +988,11 @@ char*       exec__unit              (char *a_question, int a_num);
 char        base_daemon_mode        (void);
 char        base_daemon             (void);
 
-char        rptg_track              (tLINE* a_line, char a_reason, int a_dur);
-char        rptg_beg_watch          (void);
-char        rptg_end_watch          (char *a_reason);
-char        rptg_status             (void);
+char        RPTG_track_exec         (tFILE *a_file, tLINE *a_line, char a_reason, char a_note);
+char        RPTG_track_beg          (void);
+char        RPTG_track_end          (void);
+char        RPTG_track_sig          (char *a_sig);
+char        RPTG_minute             (void);
 char*       rptg__unit              (char *a_question, int a_num);
 
 
