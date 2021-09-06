@@ -10,7 +10,7 @@
 #define     P_SUBJECT   "time-based batch automation and job scheduling"
 #define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling"
 
-#define     P_NAMESAKE  "khronos-anileis (merciless)"
+#define     P_NAMESAKE  "khronos-anileis (merciless time)"
 #define     P_PRONOUNCE "crow-nos ah-knee-lays"
 #define     P_HERITAGE  "incorporeal protogenoi god of creation and unyielding time"
 #define     P_IMAGERY   "winged serpent (drakon) with three heads; bull, lion, and man"
@@ -33,11 +33,11 @@
 #define     P_CREATED   "2010-05"
 
 #define     P_VERMAJOR  "1.--, in production and working"
-#define     P_VERMINOR  "1.5-, centralize to yEXEC and test for production"
-#define     P_VERNUM    "1.5n"
-#define     P_VERTXT    "added unit testing for status and tracking, very nice"
+#define     P_VERMINOR  "1.6-, integrate new centralized yEXEC and yJOBS"
+#define     P_VERNUM    "1.6a"
+#define     P_VERTXT    "update/rationalize includes and makefile"
 
-#define     P_TOPOFMIND "single maintainer for a huge code base"
+#define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
 #define     P_REMINDER  "there are many better options, but i *own* every byte of this one"
@@ -538,38 +538,61 @@
 
 
 
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-12345678901-12345678901-*/
 
 
-/*---(headers)--------------------------------------------------*/
-#include  <yLOG.h>
-#include  <yDLST.h>
-#include  <yPARSE.h>
-#include  <ySCHED.h>
-#include    <yREGEX.h>       /* CUSTOM : heatherly regular expressions        */
-#include  <yEXEC.h>
-#include  <ySTR.h>
-#include  <yURG.h>
+/*===[[ PRIVATE HEADERS ]]====================================================*/
+/*---(always)---------------*/
+#include    <yLOG.h>              /* heatherly logger                         */
+#include    <yURG.h>              /* heatherly debugging framework            */
+/*---(common)---------------*/
+#include    <ySTR.h>              /* heatherly safe string library            */
+#include    <yPARSE.h>            /* heatherly file parsing                   */
+/*---(optional)-------------*/
+#include    <yDLST.h>             /* heatherly specialty 4:2 list w/deps      */
+#include    <yEXEC.h>             /* heatherly process control                */
+#include    <yJOBS.h>             /* heatherly job execution and control      */
+#include    <yREGEX.h>            /* heatherly regular expressions            */
+#include    <ySCHED.h>            /* heatherly kernighan scheduling           */
+/*---(done)-----------------*/
 
-#include  <unistd.h>
-#include  <sys/unistd.h>
-#include  <sys/types.h>
-#include  <sys/stat.h>
-#include  <sys/ioctl.h>
-#include  <sys/wait.h>
-#include  <sys/resource.h>
-#include  <stdio.h>
-#include  <stdlib.h>
-#include  <stdarg.h>
-#include  <string.h>
-#include  <errno.h>
-#define   _XOPEN_SOURCE
-#include  <time.h>
-#include  <dirent.h>
-#include  <fcntl.h>
-#include  <pwd.h>            /* getpwuid() to look up uid's and get names      */
-#include  <grp.h>
-#include  <err.h>
-#include  <ctype.h>
+
+
+/*===[[ PUBLIC HEADERS ]]=====================================================*/
+/*---(big standards)------------*/
+#include    <stdio.h>             /* printf, scanf                            */
+#include    <stdlib.h>            /* exit, system, ...                        */
+#include    <unistd.h>
+#include    <sys/unistd.h>        /* fork, execl, getpid, getuid              */
+#include    <string.h>            /* strcat, strcpy, strlen, ...              */
+
+/*---(process)------------------*/
+#include    <sys/wait.h>          /* sigaction, waitpid, wait4                */
+#include    <sys/resource.h>      /* getrusage                                */
+#include    <errno.h>             /* errno                                    */
+
+/*---(timekeeping)--------------*/
+#include    <time.h>              /* time, localtime, strftime, ...           */
+#include    <sys/time.h>          /* gettimeofday                             */
+
+/*---(filesystems)--------------*/
+#include    <fcntl.h>             /* open                                     */
+#include    <sys/stat.h>          /* fstat, umask                             */
+#include    <dirent.h>
+#include    <sys/ioctl.h>
+
+/*---(users)--------------------*/
+#include    <pwd.h>               /* getpwuid, getpwnam                       */
+#include    <grp.h>               /* initgroups                               */
+
+/*---(others)-------------------*/
+#include    <sys/types.h>
+#include    <stdarg.h>
+#define     _XOPEN_SOURCE
+#include    <err.h>
+#include    <ctype.h>
+
+
 
 /*---(communcation files)---------------------------------------*/
 #define     DIR_CONF                "/etc/"
