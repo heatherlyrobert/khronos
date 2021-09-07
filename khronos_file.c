@@ -261,29 +261,131 @@ FILE__defaults          (void)
    return 0;
 }
 
+/*> char                                                                                                                                  <* 
+ *> FILE_assimilate_OLD    (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)                                                       <* 
+ *> {                                                                                                                                     <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                                                                           <* 
+ *>    char        rce         =  -10;                                                                                                    <* 
+ *>    char        rc          =    0;                                                                                                    <* 
+ *>    tFILE      *x_file      = NULL;                                                                                                    <* 
+ *>    int         c           =    0;                                                                                                    <* 
+ *>    char        x_dir       [LEN_PATH]  = "";                                                                                          <* 
+ *>    /+---(header)-------------------------+/                                                                                           <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                                                                           <* 
+ *>    DEBUG_INPT  yLOG_char    ("a_loc"     , a_loc);                                                                                    <* 
+ *>    /+---(default)------------------------+/                                                                                           <* 
+ *>    if (r_user != NULL)  strlcpy (r_user, ""       , LEN_USER);                                                                        <* 
+ *>    if (r_desc != NULL)  strlcpy (r_desc, ""       , LEN_DESC);                                                                        <* 
+ *>    /+---(parse file)---------------------+/                                                                                           <* 
+ *>    --rce;  if (a_loc == YEXEC_CENTRAL)   rc = yEXEC_central    (my.run_as, a_name, &(my.f_user), &(my.f_uid), &(my.f_desc), x_dir);   <* 
+ *>    else if    (a_loc == YEXEC_LOCAL  )   rc = yEXEC_acceptable (my.run_as, a_name, &(my.f_user), &(my.f_uid), &(my.f_desc), x_dir);   <* 
+ *>    else {                                                                                                                             <* 
+ *>       DEBUG_INPT  yLOG_note    ("location is illegal");                                                                               <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    DEBUG_INPT   yLOG_value   ("parse"     , rc);                                                                                      <* 
+ *>    --rce;  if (rc < 0) {                                                                                                              <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    /+---(save back)----------------------+/                                                                                           <* 
+ *>    if (r_user != NULL)  strlcpy (r_user, my.f_user, LEN_USER);                                                                        <* 
+ *>    if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);                                                                        <* 
+ *>    /+---(create file)--------------------+/                                                                                           <* 
+ *>    yURG_msg ('>', "assimilate file lines...");                                                                                        <* 
+ *>    /+> rc = FILE_create (my.f_name, my.f_user, my.f_uid);                             <+/                                             <* 
+ *>    rc = FILE_create (a_name, my.f_user, my.f_uid);                                                                                    <* 
+ *>    DEBUG_INPT   yLOG_value   ("file"      , rc);                                                                                      <* 
+ *>    --rce;  if (rc < 0) {                                                                                                              <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    yURG_msg ('-', "created a list to house the lines");                                                                               <* 
+ *>    /+---(get current file)---------------+/                                                                                           <* 
+ *>    yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);                                                                                  <* 
+ *>    DEBUG_INPT  yLOG_point   ("x_file"    , x_file);                                                                                   <* 
+ *>    --rce;  if (x_file == NULL) {                                                                                                      <* 
+ *>       yURG_msg ('-', "file failed");                                                                                                  <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    /+---(prepare)------------------------+/                                                                                           <* 
+ *>    rc = ySCHED_newfile ();                                                                                                            <* 
+ *>    DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);                                                                                      <* 
+ *>    --rce;  if (rc < 0) {                                                                                                              <* 
+ *>       yURG_msg ('-', "schedule failed");                                                                                              <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    yURG_msg ('-', "initialized the valid date for scheduling");                                                                       <* 
+ *>    yURG_msg ('-', "calling auto-reader");                                                                                             <* 
+ *>    yURG_msg (' ', "");                                                                                                                <* 
+ *>    /+---(pull all lines)-----------------+/                                                                                           <* 
+ *>    sprintf (my.f_full, "%s%s", x_dir, a_name);                                                                                        <* 
+ *>    DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);                                                                               <* 
+ *>    rc = yPARSE_autoread (my.f_full, NULL, LINE_handler);                                                                              <* 
+ *>    DEBUG_PROG  yLOG_value   ("read"      , rc);                                                                                       <* 
+ *>    --rce;  if (rc <  0) {                                                                                                             <* 
+ *>       strlcpy (x_file->note, "NO FILE" , LEN_TERSE);                                                                                  <* 
+ *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    c  = yDLST_line_count (YDLST_LOCAL);                                                                                               <* 
+ *>    --rce;  if (c != x_file->lines) {                                                                                                  <* 
+ *>       yURG_msg ('>', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);                                           <* 
+ *>       yURG_msg (' ', "");                                                                                                             <* 
+ *>       strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);                                                                                  <* 
+ *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    } else if (c == 0) {                                                                                                               <* 
+ *>       yURG_msg ('>', "all lines read, EMPTY, reviewed %d, accepted %d", x_file->lines, c);                                            <* 
+ *>       yURG_msg (' ', "");                                                                                                             <* 
+ *>       strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);                                                                                  <* 
+ *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+ *>       return rce;                                                                                                                     <* 
+ *>    }                                                                                                                                  <* 
+ *>    yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", x_file->lines, c);                                             <* 
+ *>    yURG_msg (' ', "");                                                                                                                <* 
+ *>    strlcpy (x_file->note, "success"  , LEN_TERSE);                                                                                    <* 
+ *>    /+---(complete)-----------------------+/                                                                                           <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                                                           <* 
+ *>    return 0;                                                                                                                          <* 
+ *> }                                                                                                                                     <*/
+
 char
-FILE_assimilate        (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
+FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
+   int         x_lists     =    0;
+   int         x_lines     =    0;
+   int         x_seqs      =    0;
+   char        x_dir       [LEN_PATH]  = "";
    tFILE      *x_file      = NULL;
    int         c           =    0;
-   char        x_dir       [LEN_PATH]  = "";
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT  yLOG_char    ("a_runas"   , a_runas);
    DEBUG_INPT  yLOG_char    ("a_loc"     , a_loc);
+   DEBUG_INPT  yLOG_info    ("a_name"     , a_name);
    /*---(default)------------------------*/
    if (r_user != NULL)  strlcpy (r_user, ""       , LEN_USER);
    if (r_desc != NULL)  strlcpy (r_desc, ""       , LEN_DESC);
+   /*---(default)------------------------*/
+   /*> yDLST_purge ();                                                                <*/
+   /*> strcpy  (my.f_name, "");                                                       <* 
+    *> strcpy  (my.f_full, "");                                                       <*/
+   /*> my.f_lines = 0;                                                                <* 
+    *> my.f_group = '-';                                                              <* 
+    *> my.f_gall  = my.f_gpass = my.f_gfail = 0;                                      <* 
+    *> my.f_aall  = my.f_apass = my.f_afail = 0;                                      <* 
+    *> my.f_pall  = my.f_ppass = my.f_pfail = 0;                                      <*/
+   /*> strcpy  (my.f_note, "");                                                       <*/
    /*---(parse file)---------------------*/
-   --rce;  if (a_loc == YEXEC_CENTRAL)   rc = yEXEC_central    (my.run_as, a_name, &(my.f_user), &(my.f_uid), &(my.f_desc), x_dir);
-   else if    (a_loc == YEXEC_LOCAL  )   rc = yEXEC_acceptable (my.run_as, a_name, &(my.f_user), &(my.f_uid), &(my.f_desc), x_dir);
-   else {
-      DEBUG_INPT  yLOG_note    ("location is illegal");
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
+   else if (a_loc == YJOBS_LOCAL  )   rc = yJOBS_acceptable (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
    DEBUG_INPT   yLOG_value   ("parse"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
@@ -293,35 +395,36 @@ FILE_assimilate        (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
    if (r_user != NULL)  strlcpy (r_user, my.f_user, LEN_USER);
    if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);
    /*---(create file)--------------------*/
-   yURG_msg ('>', "assimilate file lines...");
-   /*> rc = FILE_create (my.f_name, my.f_user, my.f_uid);                             <*/
+   yURG_msg ('>', "create file entity and add to yDLST...");
    rc = FILE_create (a_name, my.f_user, my.f_uid);
    DEBUG_INPT   yLOG_value   ("file"      , rc);
    --rce;  if (rc < 0) {
+      yURG_err ('f', "could not create file (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    yURG_msg ('-', "created a list to house the lines");
    /*---(get current file)---------------*/
-   yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   yURG_msg ('>', "find yDLST entry...");
+   rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
    DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
    --rce;  if (x_file == NULL) {
-      yURG_msg ('-', "file failed");
+      yURG_err ('f', "returned NULL, could not find to yDLST file (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(prepare)------------------------*/
+   yURG_msg ('>', "reset and prepare ySCHED for new file...");
    rc = ySCHED_newfile ();
    DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);
    --rce;  if (rc < 0) {
-      yURG_msg ('-', "schedule failed");
+      yURG_err ('f', "could not properly reset ySCHED (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   yURG_msg ('-', "initialized the valid date for scheduling");
-   yURG_msg ('-', "calling auto-reader");
+   /*---(read all lines)-----------------*/
+   yURG_msg ('>', "calling AUTO-READER");
    yURG_msg (' ', "");
-   /*---(pull all lines)-----------------*/
    sprintf (my.f_full, "%s%s", x_dir, a_name);
    DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
    rc = yPARSE_autoread (my.f_full, NULL, LINE_handler);
@@ -331,6 +434,7 @@ FILE_assimilate        (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(verify the results)-------------*/
    c  = yDLST_line_count (YDLST_LOCAL);
    --rce;  if (c != x_file->lines) {
       yURG_msg ('>', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);
@@ -345,6 +449,7 @@ FILE_assimilate        (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(show success)-------------------*/
    yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", x_file->lines, c);
    yURG_msg (' ', "");
    strlcpy (x_file->note, "success"  , LEN_TERSE);
@@ -352,6 +457,7 @@ FILE_assimilate        (cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
+
 
 
 

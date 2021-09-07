@@ -28,7 +28,8 @@ main                    (int a_argc, char *a_argv [])
       return rce;
    }
    /*---(main)---------------------------*/
-   rc = PROG_driver ();
+   /*> rc = PROG_driver ();                                                           <*/
+   rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);
    /*---(wrapup)-------------------------*/
    PROG_end  ();
    /*---(complete)-----------------------*/

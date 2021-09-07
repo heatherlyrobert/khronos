@@ -13,7 +13,7 @@ char        strtest      [100];
 
 
 char
-base_daemon_mode        (void)
+BASE_execute            (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;

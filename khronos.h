@@ -35,7 +35,7 @@
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.6-, integrate new centralized yEXEC and yJOBS"
 #define     P_VERNUM    "1.6a"
-#define     P_VERTXT    "update/rationalize includes and makefile"
+#define     P_VERTXT    "updated enough for simple assimilate in file unit test to work !!!"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -743,7 +743,7 @@ struct cACCESSOR
    char        pulse_end    [ 50]; /* ending of last cron run as string       */
    /*---(main identifiers)-----*/
    char        m_prog      [LEN_DESC];      /* program name called            */
-   char        m_user      [LEN_USER];      /* caller user name               */
+   char        m_who       [LEN_USER];      /* caller user name               */
    int         m_uid;                       /* caller user id                 */
    char        m_root;                      /* is caller root (y/-)           */
    int         m_pid;                       /* process id of khronos          */
@@ -754,11 +754,12 @@ struct cACCESSOR
    char        f_ready;                     /* crontab name checks out        */
    char        f_name      [LEN_HUND];      /* crontab file name              */
    char        f_user      [LEN_USER];      /* crontab user name              */
-   char        f_desc      [LEN_DESC];      /* crontab description            */
    int         f_uid;                       /* crontab execution uid          */
+   char        f_desc      [LEN_DESC];      /* crontab description            */
+   char        f_dir       [LEN_PATH];      /* current file path              */
+   char        f_full      [LEN_RECD];      /* crontab fully qualified name   */
    char        f_ext       [LEN_SHORT];     /* crontab extention              */
    char        f_new       [LEN_HUND];      /* crontab installed name         */
-   char        f_full      [LEN_RECD];      /* crontab fully qualified name   */
    /*---(file deprecated)------*/
    char        name        [LEN_HUND];      /* name of the current crontab    */
    char        action      [LEN_SHORT];     /* crontab action requested       */
@@ -958,7 +959,7 @@ char        FILE__new               (tFILE **a_new);
 char        FILE__free              (tFILE **a_old);
 /*---(support)--------------*/
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
-char        FILE_assimilate         (cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
+char        FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
 /*---(retire)---------------*/
 char        FILE_init               (void);
 char        FILE_prune              (void);
@@ -1008,7 +1009,7 @@ char        EXEC_dispatch           (int a_min);
 char*       exec__unit              (char *a_question, int a_num);
 /*---(done)-----------------*/
 
-char        base_daemon_mode        (void);
+char        BASE_execute            (void);
 char        base_daemon             (void);
 
 char        RPTG_track_exec         (tFILE *a_file, tLINE *a_line, char a_reason, char a_note);

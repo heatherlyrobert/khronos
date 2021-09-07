@@ -160,7 +160,7 @@ PROG__init              (void)
    rc = yPARSE_init  ('-', NULL, '-');
    rc = yPARSE_delimiters  ("§");
    /*---(call whoami)--------------------*/
-   rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), &my.m_root, &my.m_user, 'n');
+   rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), &my.m_root, &my.m_who, 'n');
    DEBUG_TOPS   yLOG_value   ("whoami"    , rc);
    --rce;  if (rc < 0) {
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
@@ -169,7 +169,7 @@ PROG__init              (void)
    DEBUG_TOPS   yLOG_value   ("m_pid"     , my.m_pid);
    DEBUG_TOPS   yLOG_value   ("m_ppid"    , my.m_ppid);
    DEBUG_TOPS   yLOG_value   ("m_uid"     , my.m_uid);
-   DEBUG_TOPS   yLOG_info    ("m_user"    , my.m_user);
+   DEBUG_TOPS   yLOG_info    ("m_who"     , my.m_who);
    /*---(get current path)---------------*/
    p = getcwd (my.m_path, LEN_PATH);
    DEBUG_TOPS   yLOG_spoint  (p);
@@ -232,7 +232,7 @@ PROG__args              (int a_argc, char *a_argv[])
       /*---(two arg check)---------------*/
       ++x_args;
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
-      rc = yEXEC_args_handle (&(my.run_as), &(my.run_mode), my.run_file, &i, a, b);
+      rc = yJOBS_args_handle (&(my.run_as), &(my.run_mode), my.run_file, &i, a, b);
       if (rc < 0)  break;
    }
    /*---(complete)-----------------------*/
@@ -268,7 +268,7 @@ PROG__final             (void)
 {
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(set output routing)-------------*/
-   yEXEC_final (my.m_uid);
+   yJOBS_final (my.m_uid);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -324,44 +324,8 @@ PROG_driver             (void)
    int         rc          =    0;
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(route action)-------------------*/
-   --rce;  switch (my.run_mode) {
-   case ACT_VERIFY     : case ACT_CVERIFY    : case ACT_VVERIFY    :
-      rc = yEXEC_act_verify  (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
-      break;
-   case ACT_INSTALL    : case ACT_CINSTALL   : case ACT_VINSTALL   :
-      rc = yEXEC_act_install (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
-      break;
-   case ACT_CHECK      : case ACT_CCHECK     : case ACT_VCHECK     :
-      rc = yEXEC_act_check   (my.run_as, my.run_mode, P_ONELINE, my.run_file, FILE_assimilate);
-      break;
-   case ACT_REMOVE     : case ACT_CREMOVE    : case ACT_VREMOVE    :
-      rc = yEXEC_act_remove  (my.run_as, my.run_mode, P_ONELINE, my.run_file);
-      break;
-   case ACT_LIST       : case ACT_COUNT      :
-      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      break;
-   case ACT_AUDIT      : case ACT_CAUDIT     : case ACT_VAUDIT     :
-      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      break;
-   case ACT_DAEMON     : case ACT_CDAEMON    : case ACT_VDAEMON    :
-      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      IF_NORUN  break;
-      /* launch daemon, unless security breach or no crontabs */
-      /*  damaged crontabs don't effect this one as they did not assimilate */
-      break;
-   case ACT_PRICKLY    : case ACT_CPRICKLY   : case ACT_VPRICKLY   :
-      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      IF_NORUN  break;
-      /* then, if passed perfectly, launch in daemon mode */
-      /* ANYTHING damaged or funky caused a no launch     */
-      break;
-   case ACT_NORMAL     : case ACT_CNORMAL    : case ACT_VNORMAL    :
-      rc = yEXEC_act_review  (my.run_as, my.run_mode, P_ONELINE, my.m_user, my.m_uid, "*", FILE_assimilate);
-      IF_NORUN  break;
-      /* then, run in foreground                          */
-      break;
-   }
+   /*---(execute)------------------------*/
+   rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return rc;
@@ -420,8 +384,8 @@ prog__unit              (char *a_question)
    strlcpy  (unit_answer, "PROG             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "mode"          )  == 0) {
-      yEXEC_iam  (my.run_as  , s);
-      yEXEC_mode (my.run_mode, t);
+      yJOBS_iam  (my.run_as  , s);
+      yJOBS_mode (my.run_mode, t);
       snprintf (unit_answer, LEN_HUND, "PROG mode        : (%c) %-18.18s, (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
    }
    else if (strcmp (a_question, "action"        )  == 0) {

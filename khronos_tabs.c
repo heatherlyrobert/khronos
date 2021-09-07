@@ -243,7 +243,7 @@ tabs__unit              (char *a_question, int a_num)
       snprintf (unit_answer, LEN_HUND, "TABS path        : %2d[%.35s]", strlen (my.f_path), my.f_path);
    }
    else if (strcmp (a_question, "who"           )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "TABS who         : %2d[%.35s]", strlen (my.m_user), my.m_user);
+      snprintf (unit_answer, LEN_HUND, "TABS who         : %2d[%.35s]", strlen (my.m_who), my.m_who);
    }
    else if (strcmp (a_question, "uid"           )  == 0) {
       snprintf (unit_answer, LEN_HUND, "TABS uid         : %d"        , my.m_uid);
