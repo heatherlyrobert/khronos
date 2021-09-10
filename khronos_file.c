@@ -384,8 +384,8 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
     *> my.f_pall  = my.f_ppass = my.f_pfail = 0;                                      <*/
    /*> strcpy  (my.f_note, "");                                                       <*/
    /*---(parse file)---------------------*/
-   if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
-   else if (a_loc == YJOBS_LOCAL  )   rc = yJOBS_acceptable (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
+   if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir);
+   else if (a_loc == YJOBS_LOCAL  )   rc = yJOBS_acceptable (a_runas, a_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir);
    DEBUG_INPT   yLOG_value   ("parse"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
