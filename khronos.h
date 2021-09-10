@@ -34,8 +34,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.6-, integrate new centralized yEXEC and yJOBS"
-#define     P_VERNUM    "1.6a"
-#define     P_VERTXT    "updated enough for simple assimilate in file unit test to work !!!"
+#define     P_VERNUM    "1.6c"
+#define     P_VERTXT    "file and line code/unit test updated for yJOBS"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
