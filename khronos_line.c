@@ -50,6 +50,7 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->l_beg       =    0;
    a_cur->l_end       =    0;
    a_cur->l_dur       =    0;
+   a_cur->l_yexec     =  '-';
    a_cur->l_rc        =    0;
    /*---(counts)---------------*/
    a_cur->c_runs      =    0;
@@ -70,7 +71,7 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "å____.____.___._______._____._____.__________æ", LEN_RECD);
+   strlcpy (s_print, "å____.____.___._______._____.______.__________æ", LEN_RECD);
    ++n;  if (a_cur->tracker [0]  != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->recdno       >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->sched        != NULL)        s_print [n] = 'X';
@@ -103,6 +104,7 @@ LINE__memory            (tLINE *a_cur)
    ++n;  if (a_cur->l_beg        != 0)           s_print [n] = 'X';
    ++n;  if (a_cur->l_end        != 0)           s_print [n] = 'X';
    ++n;  if (a_cur->l_dur        != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_yexec      != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->l_rc         != 0)           s_print [n] = 'X';
    ++n;
    ++n;  if (a_cur->c_runs       != 0)           s_print [n] = 'X';
@@ -863,7 +865,7 @@ line__unit              (char *a_question, int a_num)
          strcat  (x, line__unit_str ( 4, x_line->l_dur  , ""));
          snprintf (unit_answer, LEN_RECD, "LINE runs   (%2d) : %-17.17s %s %4d", a_num, t, x, x_line->l_rc);
       } else {
-         snprintf (unit_answer, LEN_RECD, "LINE runs   (%2d) : åæ                - -          ·     · ·r ·s ·b ·m ·k ·f ·p ·e ·l     ·    ·    ·", a_num);
+         snprintf (unit_answer, LEN_RECD, "LINE runs   (%2d) : åæ                - -          ·     · ·r ·s ·b ·m ·k ·x ·f ·p ·e ·l     ·    ·    ·", a_num);
       }
    }
    else if (strcmp (a_question, "durs"    )        == 0) {

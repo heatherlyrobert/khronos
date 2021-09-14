@@ -243,6 +243,27 @@ char RPTG_track_sig     (char *a_sig) { return rptg__track_ends (a_sig); }
 /*====================------------------------------------====================*/
 static void      o___STATUS__________________o (void) {;};
 
+char     s_str          [LEN_LABEL] = "";
+
+char*
+RPTG__number            (int n, int v, char *s)
+{
+   switch (n) {
+   case 1 :
+      if (v >   9)  v =   9;
+      break;
+   case 2 :
+      if (v >  99)  v =  99;
+      break;
+   case 3 :
+      if (v > 999)  v = 999;
+      break;
+   }
+   if (v == 0)   sprintf (s_str, "%*.*s·%s", n - 1, n - 1, "           ", s);
+   else          sprintf (s_str, "%*d%s", n, v, s);
+   return s_str;
+}
+
 char
 RPTG_minute             (void)
 {
@@ -285,12 +306,29 @@ RPTG_minute             (void)
       if (c %  5 == 0)  fprintf (f, "\n");
       fprintf (f, "%-30.30s %4d %-30.30s ",
             x_file->title, x_line->recdno, x_line->tracker);
-      fprintf (f, "%c %c %10d %6d ",
-            x_focus, x_active, x_line->start, x_line->rpid);
-      fprintf (f, "%2d %2d %2d %2d %2d %2d %2d %2d %2d %2d ",
-            x_line->c_runs, x_line->c_skip, x_line->c_badd, x_line->c_boom, x_line->c_kill, x_line->c_shut, x_line->c_fail, x_line->c_pass, x_line->c_earl, x_line->c_late);
-      fprintf (f, "%6d %5d %4d  ",
-            x_line->l_rpid, x_line->l_dur, x_line->l_rc);
+      fprintf (f, "%c %c ",
+            x_focus, x_active);
+      strlcpy (t, RPTG__number (10, x_line->start , " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 6, x_line->rpid  , " "), LEN_RECD);
+      fprintf (f, "%s", t);
+
+      strlcpy (t, RPTG__number ( 2, x_line->c_runs, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_skip, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_badd, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_boom, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_kill, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_shut, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_fail, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_pass, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_earl, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 2, x_line->c_late, " "), LEN_RECD);
+      fprintf (f, "%s", t);
+
+      strlcpy (t, RPTG__number ( 6, x_line->l_rpid, " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 5, x_line->l_dur , " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 4, x_line->l_rc  , " "), LEN_RECD);
+      fprintf (f, "%s ", t);
+      
       fprintf (f, "%c %c %c %c %c %c %c  ",
             x_line->value, x_line->track, x_line->handoff, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
       fprintf (f, "%c %c %c %c %c  ",

@@ -34,8 +34,8 @@
 
 #define     P_VERMAJOR  "1.--, in production and working"
 #define     P_VERMINOR  "1.6-, integrate new centralized yEXEC and yJOBS"
-#define     P_VERNUM    "1.6c"
-#define     P_VERTXT    "file and line code/unit test updated for yJOBS"
+#define     P_VERNUM    "1.6d"
+#define     P_VERTXT    "yJOBS version is now running in production, but more testing needed"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -526,6 +526,11 @@
 /*===[[ TODOS ]]===============================================================*
 
  *   TODO : handle system time changes -- look at dcron's logic
+ *   metis § · · · · · § khaos output format provided
+ *   metis § · · · · · § automatically use --daemon mode if none provided
+ *   metis § · · · · · § --fix able to install spool directory if not existing
+ *   metis § · · · · · § next run time provided on reporting
+ *   metis § · · · · · § maybe use limits like -- min, lower, avg, upper, max
  *
  */
 /*===[[ END HDOC ]]===========================================================*/
@@ -594,19 +599,16 @@
 
 
 
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(communcation files)---------------------------------------*/
 #define     DIR_CONF                "/etc/"
 #define     DIR_RUN                 "/var/run/"
 #define     DIR_LOG                 "/var/log/"
 #define     DIR_YLOG                "/var/log/yLOG/"
 #define     DIR_YHIST               "/var/log/yLOG.historical/"
-#define     DIR_ROOT                "/home/machine/khronos/"
-#define     DIR_LOCAL               "c_quani/khronos/"
 #define     DIR_CENTRAL             "/var/spool/khronos/"
 
-/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
-#define     DIR_UNIT                "/tmp/khronos_test/"
-#define     DIR_UNIT_USER           "/tmp/khronos_test/user/"
+#define     DIR_UNIT                "/tmp/yJOBS/"
 
 
 
@@ -842,6 +844,7 @@ struct cLINE {
    int         l_beg;
    int         l_end;
    int         l_dur;
+   char        l_yexec;
    char        l_rc;
    /*---(counts)---------------*/
    char        c_runs;

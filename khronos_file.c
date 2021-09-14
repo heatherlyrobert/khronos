@@ -362,7 +362,6 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    int         x_lists     =    0;
    int         x_lines     =    0;
    int         x_seqs      =    0;
-   char        x_dir       [LEN_PATH]  = "";
    tFILE      *x_file      = NULL;
    int         c           =    0;
    /*---(header)-------------------------*/
@@ -396,6 +395,8 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);
    /*---(create file)--------------------*/
    yURG_msg ('>', "create file entity and add to yDLST...");
+   yURG_msg ('-', "file is å%sæ in %c", a_name, a_loc);
+   yURG_msg ('-', "owner is å%sæ as %d", my.f_user, my.f_uid);
    rc = FILE_create (a_name, my.f_user, my.f_uid);
    DEBUG_INPT   yLOG_value   ("file"      , rc);
    --rce;  if (rc < 0) {
@@ -405,7 +406,7 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    }
    yURG_msg ('-', "created a list to house the lines");
    /*---(get current file)---------------*/
-   yURG_msg ('>', "find yDLST entry...");
+   yURG_msg ('-', "find the new/created yDLST entry");
    rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
    DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
    --rce;  if (x_file == NULL) {
@@ -414,7 +415,7 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
       return rce;
    }
    /*---(prepare)------------------------*/
-   yURG_msg ('>', "reset and prepare ySCHED for new file...");
+   yURG_msg ('-', "reset and prepare ySCHED for new file...");
    rc = ySCHED_newfile ();
    DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);
    --rce;  if (rc < 0) {
@@ -423,13 +424,14 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
       return rce;
    }
    /*---(read all lines)-----------------*/
-   yURG_msg ('>', "calling AUTO-READER");
+   yURG_msg ('-', "calling auto-reader in yPARSE");
    yURG_msg (' ', "");
-   sprintf (my.f_full, "%s%s", x_dir, a_name);
+   sprintf (my.f_full, "%s%s", my.f_dir, a_name);
    DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
    rc = yPARSE_autoread (my.f_full, NULL, LINE_handler);
    DEBUG_PROG  yLOG_value   ("read"      , rc);
    --rce;  if (rc <  0) {
+      yURG_err ('F', "found errors (%d)", rc);
       strlcpy (x_file->note, "NO FILE" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -437,20 +439,20 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    /*---(verify the results)-------------*/
    c  = yDLST_line_count (YDLST_LOCAL);
    --rce;  if (c != x_file->lines) {
-      yURG_msg ('>', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);
+      yURG_err ('F', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);
       yURG_msg (' ', "");
       strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    } else if (c == 0) {
-      yURG_msg ('>', "all lines read, EMPTY, reviewed %d, accepted %d", x_file->lines, c);
+      yURG_err ('F', "all lines read, EMPTY, reviewed %d, accepted %d", x_file->lines, c);
       yURG_msg (' ', "");
       strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(show success)-------------------*/
-   yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", x_file->lines, c);
+   yURG_msg ('-', "SUCCESS all lines read, reviewed %d, accepted %d", x_file->lines, c);
    yURG_msg (' ', "");
    strlcpy (x_file->note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
