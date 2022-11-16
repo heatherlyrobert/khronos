@@ -4,38 +4,37 @@
 /*===[[ ONE_LINERS ]]=========================================================*/
 /*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 
-#define     P_NAME      "khronos"
-#define     P_FOCUS     "SA (system administration)"
+#define     P_FOCUS     "AU (system automation)"
 #define     P_NICHE     "ba (batch automation)"
-#define     P_SUBJECT   "time-based batch automation and job scheduling"
+#define     P_SUBJECT   "time-based batch automation"
 #define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling"
 
 #define     P_NAMESAKE  "khronos-anileis (merciless time)"
-#define     P_PRONOUNCE "crow-nos ah-knee-lays"
+#define     P_QUICK     "god of creation and unyielding time"
 #define     P_HERITAGE  "incorporeal protogenoi god of creation and unyielding time"
 #define     P_IMAGERY   "winged serpent (drakon) with three heads; bull, lion, and man"
 #define     P_REASON    "khronos is the embodiment of the merciless march of time"
 
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
 
-#define     P_HOMEDIR   ""
-#define     P_BASENAME  ""
-#define     P_FULLPATH  ""
+#define     P_HOMEDIR   "/home/system/khronos.heatherly_cron_daemon"
+#define     P_BASENAME  "khronos"
+#define     P_FULLPATH  "/usr/sbin/khronos"
 #define     P_SUFFIX    "khronos"
 #define     P_CONTENT   "revised crontabs allowing enhanced controls"
 
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
 #define     P_CODESIZE  "small       (appoximately 1,000 slocl)"
-#define     P_DEPENDS   ""
+#define     P_DEPENDS   "ySTR,yPARSE,yDLST,yJOBS,yEXEC,ySCHED"
 
 #define     P_AUTHOR    "heatherlyrobert"
 #define     P_CREATED   "2010-05"
 
-#define     P_VERMAJOR  "1.--, in production and working"
-#define     P_VERMINOR  "1.6-, integrate new centralized yEXEC and yJOBS"
-#define     P_VERNUM    "1.6d"
-#define     P_VERTXT    "yJOBS version is now running in production, but more testing needed"
+#define     P_VERMAJOR  "2.--, simplify and harden code"
+#define     P_VERMINOR  "2.0-, streamline given eos and herakles"
+#define     P_VERNUM    "2.0b"
+#define     P_VERTXT    "fully build in yJOBS, except for daemon run"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -44,6 +43,73 @@
 
 /*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 /*===[[ END ONE_LINERS ]]=====================================================*/
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_DEFINE    "niche definition¦" \
+   "batch automation is shifting of workloads across time and space to balance,¦" \
+   "optimize, and maximize the use of available schedule, processing capacity,¦" \
+   "storage media, and human interaction time.  sub-disciplines include...¦" \
+   " -- time-based, common and easy (usually down to minutes, ranges)¦" \
+   " -- resource-based, rear window (cpu, disk, fragmentation, ...)¦" \
+   " -- event-based, easy but simplistic (reboot, hibernate, ...)¦" \
+   " -- user-triggered (activity, meetings, lunch, leave for day, ...)¦" \
+   " -- predictive (based on past usage, normal schedules, routines)¦" \
+   " -- plus, multi-machine coordination and load-balancing¦"
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_POTENTIAL "potential value¦" \
+   "modern systems environments make deplorable use of resources.  typically¦" \
+   "sized for interactive and peak loads, therefore wildly underutilized ninety-¦" \
+   "five percent of the time, even likely fully idle over half the time.¦"
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_SCOPE     "specific scope¦" \
+   "time-based job scheduling is the most common and scalable aspect of batch¦" \
+   "automation, focusing on manually balancing workload by launching tasks¦" \
+   "based on expected (not real) availability.¦"
+
+/*  123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_EXAMPLE   "prototype/model¦" \
+   "kernighan's crond (1979) is a well-worn, heavily-used, posix-defined daemon¦" \
+   "that does time-based job scheduling exceptionally well -- focused on real¦" \
+   "needs, power users, elegant scheduling grammar, and low-power systems.¦"
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_TROUBLE   "why it doesn't work¦" \
+   "there are many usable tools written for batch automation, but people just¦" \
+   "don't get it anymore.  computers are cheap, designers don't try, and real¦" \
+   "need is rare so computers sit doing nothing, just like their owners.¦"
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_NEWMIND   "change in thinking¦" \
+   "almost nothing changes in a single day.  you edit one percent of your files,¦" \
+   "update one or two programs, and maybe acquire some new content. almost all¦" \
+   "updates can be done overnight.  real-time is reserved for critical things.¦"
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_SUMMARY   "summary¦" \
+   "khronos is a personal, simplified, traceable, and technical version of the¦" \
+   "classic posix-defined crond time-based job scheduler that strips away modern¦" \
+   "cruftiness and targets transparency and maintainability.¦"
+
+/*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+#define     P_GREEK     "greek heritage¦" \
+   "khronos-ageraton (unaging) is the primeval, protogenoi god of time who¦" \
+   "emerged self-formed at the beginning of everything.  khronos is an¦" \
+   "incorporial god in serpentine form (drakon) with wings on its shoulders¦" \
+   "and three heads -- that of a man, a bull, and a lion.¦" \
+   "···¦" \
+   "khronos' consort is ananke (inevitability and compulsion) who was also¦" \
+   "serpentine.  together they created the ordered universe and continue to¦" \
+   "circle it in their coils thereby driving the movement of the heavens and¦" \
+   "the wind/passage of time.¦" \
+   "···¦" \
+   "khronos and ananke gave birth to aither (light), unbounded khaos (chasm),¦" \
+   "and erebos (darkness).  khronos and ananke also created the world-egg and¦" \
+   "split it into earth (gaea), sea (hydros), and sky (ouranos).¦" \
+
+
+
 
 /*   NEXT STEPS
  *
@@ -608,7 +674,7 @@
 #define     DIR_YHIST               "/var/log/yLOG.historical/"
 #define     DIR_CENTRAL             "/var/spool/khronos/"
 
-#define     DIR_UNIT                "/tmp/yJOBS/"
+#define     DIR_UNIT                "/tmp/"
 
 
 
@@ -772,7 +838,7 @@ struct cACCESSOR
    char        t_schedule  [LEN_RECD];      /* task schedule requested        */
    char        t_tracker   [LEN_TITLE];     /* task name                      */
    char        t_duration  [LEN_TERSE];     /* task estimated dur in secs     */
-   char        t_flags     [LEN_TERSE];     /* task behavior flags            */
+   char        t_flags     [LEN_LABEL];     /* task behavior flags            */
    char        t_command   [LEN_FULL];      /* task command to execute        */
    /*---(working variables)----*/
    char        parsed      [LEN_HUND];      /* representation of the results of parsing  */
@@ -806,6 +872,7 @@ struct cFILE {
    int         uid;                         /* execution user uid             */
    char        note        [LEN_TERSE];     /* processing note for sysadmin   */
    int         lines;                       /* number of lines attempted      */
+   int         valid;                       /* currently valid/active         */
    char        retired;                     /* special file of retired lines  */
    /*---(done)-----------------*/
 };
@@ -889,21 +956,23 @@ char        wait_minute        (void);
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(program)--------------*/
 char*       PROG_version            (void);
+char        PROG_vershow            (void);
+/*---(preinit)--------------*/
+char        PROG__header            (void);
+char        PROG_urgents            (int a_argc, char *a_argv []);
 /*---(startup)--------------*/
 char        PROG__files_normal      (void);
 char        PROG__files_unit        (void);
-char        PROG__init              (void);
+char        PROG__init              (int a_argc, char *a_argv[]);
 char        PROG__args              (int a_argc, char *a_argv[]);
-char        PROG__usage             (void);
 char        PROG__begin             (void);
-char        PROG__final             (void);
-char        PROG_debugging          (int a_argc, char *a_argv[]);
 char        PROG_startup            (int a_argc, char *a_argv[]);
-/*---(driver)---------------*/
-char        PROG_driver             (void);
 /*---(shutdown)-------------*/
 char        PROG_term               (void);
-char        PROG_end                (void);
+char        PROG__end               (void);
+char        PROG_shutdown           (void);
+/*---(done)-----------------*/
+
 /*---(unit testing)---------*/
 char*       prog__unit              (char *a_question);
 char        PROG__unit_prepare      (void);
@@ -915,14 +984,21 @@ char        prog__unit_end          (void);
 
 
 
-char        BASE_purge         (void);
-char        context            (int, cchar*);
-char        parse              (char*, char *, int, int, char*);
-int         convert            (cchar*, cchar*, cint, cint);
-char        BASE_unitfile      (void);
-char        BASE_unitproc      (void);
-char        BASE_unitfast      (void);
-char        BASE_unitshape     (char*);
+/*---(program)--------------*/
+char        BASE_init               (void);
+char        BASE__purge             (char a_type);
+char        BASE_wrap               (void);
+char        BASE_purge              (void);
+char        BASE_prune              (void);
+char        BASE_retire             (void);
+
+char        context                 (int, cchar*);
+char        parse                   (char*, char *, int, int, char*);
+int         convert                 (cchar*, cchar*, cint, cint);
+char        BASE_unitfile           (void);
+char        BASE_unitproc           (void);
+char        BASE_unitfast           (void);
+char        BASE_unitshape          (char*);
 
 
 
@@ -934,22 +1010,21 @@ char        BASE_unitshape     (char*);
 
 /*===[[ KHRONOS_TABS.C ]]======================================*/
 /*---support-----------*/
-char        tabs__verify            (cchar *a_full);
-char        tabs__remove            (cchar *a_full);
+/*> char        tabs__verify            (cchar *a_full);                              <*/
+/*> char        tabs__remove            (cchar *a_full);                              <*/
 /*---specialty---------*/
 char        tabs_hup                (void);
 char        crontab_help       (void);
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---stubs-------------*/
-char        tabs_cat_stub           (void);
-char        tabs_dir_stub           (void);
-char        tabs_stdin_stub         (void);
-char        tabs_edit_stub          (void);
-char*       tabs__unit              (char *a_question, int a_num);
+/*> char        tabs_cat_stub           (void);                                       <*/
+/*> char        tabs_dir_stub           (void);                                       <*/
+/*> char        tabs_stdin_stub         (void);                                       <*/
+/*> char        tabs_edit_stub          (void);                                       <*/
+/*> char*       tabs__unit              (char *a_question, int a_num);                <*/
 
 
 
-char        data_assimilate         (void);
 char        data_retire             (void);
 
 
@@ -962,12 +1037,14 @@ char        FILE__new               (tFILE **a_new);
 char        FILE__free              (tFILE **a_old);
 /*---(support)--------------*/
 char        FILE_create             (char *a_name, char *a_user, int a_uid);
+char        FILE_delete             (char *a_name);
+char        FILE_pull               (cchar *a_full);
+char        FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_name, cchar *a_fuser, int a_fuid);
 char        FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
 /*---(retire)---------------*/
-char        FILE_init               (void);
-char        FILE_prune              (void);
-char        FILE_retire             (char *a_name);
-char        FILE_flush              (void);
+/*> char        FILE_prune              (void);                                       <*/
+/*> char        FILE_retire             (char *a_name);                               <*/
+/*> char        FILE_flush              (void);                                       <*/
 /*---(unittest)-------------*/
 char*       file__unit              (char *a_question, int a_num);
 
@@ -977,27 +1054,40 @@ char        file_retire_scan        (void);
 char        file_retire             (void);
 
 
+/*===[[ KHRONOS_LINE.C ]]=====================================================*/
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+/*---(memory)---------------*/
 char        LINE__wipe              (tLINE *a_cur);
 char*       LINE__memory            (tLINE *a_cur);
 char        LINE__new               (tLINE **a_new);
 char        LINE_dup                (tLINE *a_orig, tLINE **a_new);
 char        LINE__free              (tLINE **a_old);
-
+/*---(handler)--------------*/
 char        LINE__prepare           (void);
 char        LINE__original          (int n, uchar *a_verb);
 char        LINE__revised           (int n, uchar *a_verb, int c);
 char        LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
 char        LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_duration, char *a_flags, char *a_command);
 char        LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler);
-
-int         line_prune              (void);
-char        line_kill               (char *a_file, char *a_line, char a_sig);
-char        line__unit_rpid         (char *a_file, char *a_line, int a_rpid);
+/*---(mass)-----------------*/
+int         LINE__purge             (char a_scope, char a_type);
+int         LINE_purge_global       (void);
+int         LINE_prune_global       (void);
+int         LINE_retire_global      (void);
+/*> int         LINE_purge_local        (void);                                       <*/
+/*> int         LINE_prune_local        (void);                                       <*/
+/*> int         LINE_retire_local       (void);                                       <*/
+/*---(unittest)-------------*/
+char        LINE_setrpid            (char *a_file, char *a_line, int a_rpid);
+/*---(done)-----------------*/
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(signals)--------------*/
 void        EXEC_comm               (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc);
+char        EXEC_linekill           (char *a_file, char *a_line, char a_sig);
+/*---(marking)--------------*/
+char        EXEC_mark_done          (char a_yexec, int a_return);
 /*---(timekeep)-------------*/
 long        EXEC_time               (long a_now);
 char        EXEC_wait_min           (void);
@@ -1016,12 +1106,21 @@ char        BASE_execute            (void);
 char        base_daemon             (void);
 
 char        RPTG_track_exec         (tFILE *a_file, tLINE *a_line, char a_reason, char a_note);
+char        rptg__track_ends        (char a_sig, char *a_name, char *a_desc);
 char        RPTG_track_beg          (void);
 char        RPTG_track_end          (void);
-char        RPTG_track_sig          (char *a_sig);
+char        RPTG_track_sig          (char a_sig, char *a_name, char *a_desc);
+char        RPTG_minute__open       (FILE **f);
+char        RPTG_minute__close      (FILE **f);
+char        RPTG_minute__header     (FILE *f);
+char        RPTG_minute__footer     (FILE *f, int c);
 char        RPTG_minute             (void);
+char        RPTG_by_min__prepare    (void);
+char        RPTG_by_min__header     (FILE *f, char *a_name, char a_beg, char a_end);
+char        RPTG_by_min__line       (int n, tLINE *x_line, char a_yr, char a_mo, char a_dy, char a_hr, char a_last, char *a_out);
 char*       rptg__unit              (char *a_question, int a_num);
 
+char        khronos_yjobs           (cchar a_req, cchar *a_data);
 
 #endif
 /*=============================[[ end-of-code ]]==============================*/

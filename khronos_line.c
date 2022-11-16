@@ -298,16 +298,28 @@ LINE__prepare            (void)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
-   strlcpy (my.t_schedule, ""         , LEN_RECD);
-   strlcpy (my.t_tracker , "n/a"      , LEN_TITLE);
-   strlcpy (my.t_duration, "0"        , LEN_TERSE);
-   strlcpy (my.t_flags   , "--·---·"  , LEN_TERSE);
-   strlcpy (my.t_command , ""         , LEN_FULL);
+   strlcpy (my.t_schedule, ""             , LEN_RECD);
+   strlcpy (my.t_tracker , "n/a"          , LEN_TITLE);
+   strlcpy (my.t_duration, "0"            , LEN_TERSE);
+   strlcpy (my.t_flags   , "--·---·-·---" , LEN_LABEL);
+   strlcpy (my.t_command , ""             , LEN_FULL);
    my.t_recdno = -1;
    my.t_ready  = '-';
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return c;
+}
+
+char
+LINE__flagfix           (void)
+{
+   int         l           =   0;
+   char        t           [LEN_LABEL] = "";
+   char        x_def       [LEN_LABEL] = "--·---·-·---";
+   strlcpy (t, my.t_flags, LEN_LABEL);
+   l = strlen (t);
+   sprintf (my.t_flags, "%s%s", t, x_def + l);
+   return 0;
 }
 
 char
@@ -347,6 +359,7 @@ LINE__original          (int n, uchar *a_verb)
    strlcpy (my.t_command , x_recd + x_pos + 1, LEN_FULL);
    DEBUG_INPT   yLOG_info    ("t_command" , my.t_command);
    /*---(set to ready)-------------------*/
+   LINE__flagfix ();
    my.t_recdno = n;
    my.t_ready  = 'y';
    yURG_msg ('-', "schedule  %s", my.t_schedule);
@@ -362,6 +375,7 @@ LINE__revised           (int n, uchar *a_verb, int c)
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   char        l           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    yURG_msg ('-', "found a revised-style record");
@@ -387,7 +401,20 @@ LINE__revised           (int n, uchar *a_verb, int c)
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
+   /*---(check special)------------------*/
+   DEBUG_INPT   yLOG_info    ("tracker"   , my.t_tracker);
+   if (my.t_tracker [0] == '.') {
+      strlcpy (my.t_duration, ""             , LEN_TERSE);
+      strlcpy (my.t_flags   , ""             , LEN_LABEL);
+      strlcpy (my.t_command , ""             , LEN_FULL);
+   }
+   /*---(default in minutes)-------------*/
+   l = strlen (my.t_duration);
+   if (my.t_duration > 1) {
+      if (strchr (YSTR_NUMBER, my.t_duration [l - 1]) != NULL)  strlcat (my.t_duration, "m", LEN_TERSE);
+   }
    /*---(set to ready)-------------------*/
+   LINE__flagfix ();
    my.t_recdno = n;
    my.t_ready  = 'y';
    yURG_msg ('-', "schedule  %s", my.t_schedule);
@@ -410,12 +437,14 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    int         x_floor     =    0;
    char        t           [LEN_LABEL] = "";
    int         x_line      =    0;
+   char        x_sect      [LEN_LABEL] = "";
    char        x_focus     [LEN_LABEL] = "";
    char        x_issue     [LEN_LABEL] = "";
    int         x_pos       =    0;
    int         x_len       =    0;
    char        x_terse     [LEN_HUND]  = "";
    char        x_fancy     [LEN_RECD]  = "";
+   tFILE      *x_file      = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
@@ -429,6 +458,13 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(get the file)-------------------*/
+   yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(line number)--------------------*/
    DEBUG_INPT   yLOG_value   ("line"      , n);
    a_new->recdno      =  n;
@@ -436,17 +472,17 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    DEBUG_INPT   yLOG_info    ("sched"     , a_schedule);
    rc = ySCHED_create (&(a_new->sched), a_schedule);
    DEBUG_INPT   yLOG_value   ("sched_rc"  , rc);
-   ySCHED_feedback (&x_line, x_focus, x_issue, &x_pos, &x_len, x_fancy);
+   ySCHED_feedback (&x_line, x_sect, x_focus, x_issue, &x_pos, &x_len, x_fancy);
    yURG_msg ('-', "fancy     %s", x_fancy);
    --rce;  if (rc < 0) {
-      yURG_err ('f', "%d, %s, %s, %d, %d", x_line, x_focus, x_issue, x_pos, x_len);
+      yURG_err ('f', "%d, %s, %s, %s, %d, %d", x_line, x_sect, x_focus, x_issue, x_pos, x_len);
       yURG_msg (' ', "");
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    DEBUG_INPT   yLOG_info    ("MY RAW"    , ySCHED_raw (a_new->sched));
    /*---(feedback)--------------------*/
-   rc = ySCHED_details (my.s_min, my.s_hrs, my.s_dys, my.s_mos, my.s_dow, my.s_wks, my.s_yrs, my.s_beg, my.s_end, &my.s_valid);
+   rc = ySCHED_details (my.s_min, my.s_hrs, my.s_dys, my.s_mos, my.s_dow, my.s_wks, my.s_yrs);
    yURG_msg ('-', "min       %s", my.s_min);
    yURG_msg ('-', "hrs       %s", my.s_hrs);
    yURG_msg ('-', "dys       %s", my.s_dys);
@@ -454,7 +490,6 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    yURG_msg ('-', "dow       %s", my.s_dow);
    yURG_msg ('-', "wks       %s", my.s_wks);
    yURG_msg ('-', "yrs       %s", my.s_yrs);
-   yURG_msg ('-', "valid     %s to %s, %c", my.s_beg, my.s_end, my.s_valid);
    /*---(tracker)---------------------*/
    --rce;  if (a_tracker != NULL) {
       DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
@@ -465,6 +500,26 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
          strlcpy (a_new->tracker, a_tracker, LEN_TITLE);
       }
    }
+   /*---(specialty)-------------------*/
+   --rce;  if (a_new->tracker [0] == '.') {
+      DEBUG_INPT  yLOG_info    ("control"   ,  a_new->tracker);
+      if        (strcmp (a_new->tracker, ".valid"   ) == 0) {
+         DEBUG_INPT  yLOG_note    ("validity record, .valid, turn on/active");
+         x_file->valid = 'y';
+      } else if (strcmp (a_new->tracker, ".retire"  ) == 0) {
+         DEBUG_INPT  yLOG_note    ("validity record, .retire, turn off");
+         x_file->valid = '·';
+      } else if (strcmp (a_new->tracker, ".blackout") == 0) {
+         DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
+         x_file->valid = '·';
+      } else {
+         DEBUG_INPT  yLOG_note    ("control record not recognized");
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
    /*---(duration)--------------------*/
    --rce;  if (a_duration != NULL) {
       rc = yEXEC_dur_in_sec (a_duration, &(a_new->est));
@@ -473,6 +528,7 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
          DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
+      yURG_msg ('-', "seconds   %d", a_new->est);
    }
    /*---(flags)-----------------------*/
    --rce;  if (a_flags != NULL) {
@@ -489,7 +545,7 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    }
    /*---(command)---------------------*/
    DEBUG_INPT   yLOG_info    ("command"   , a_command);
-   rc = yEXEC_runable (a_new->tracker, my.f_user, a_command, YEXEC_FULL);
+   rc = yEXEC_runable (a_new->tracker, x_file->user, a_command, YEXEC_FULL);
    DEBUG_INPT   yLOG_value   ("runnable"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
@@ -577,26 +633,6 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       return rce;
    }
    DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
-   /*---(check for valid dates)----------*/
-   --rce;  if (strncmp (a_verb, ".valid ", 7) == 0) {
-      --x_file->lines;
-      yURG_msg ('-', "found a validity record <<%s>>", a_verb);
-      DEBUG_INPT  yLOG_note    ("found a .valid record");
-      rc = ySCHED_valid (a_verb);
-      DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);
-      ySCHED_feedback (&x_line, x_focus, x_issue, &x_pos, &x_len, x_fancy);
-      yURG_msg ('-', "fancy     %s", x_fancy);
-      if (rc < 0) {
-         yURG_err ('f', "%d, %s, %s, %d, %d", x_line, x_focus, x_issue, x_pos, x_len);
-         yURG_msg (' ', "");
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      yURG_msg ('-', "SUCCESS");
-      yURG_msg (' ', "");
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-      return 0;
-   }
    /*---(check for normal lines)---------*/
    rc = LINE__prepare ();
    DEBUG_INPT   yLOG_value   ("prepare"   , rc);
@@ -659,103 +695,87 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
 /*====================------------------------------------====================*/
 static void  o___EMPLOYMENT______o () { return; }
 
-
-
-
-
 int
-line_prune              (void)
+LINE__purge             (char a_scope, char a_type)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
-   int         x_running   =    0;
+   tFILE      *x_retired   = NULL;
+   tFILE      *x_file      = NULL;
    tLINE      *x_line      = NULL;
+   int         n           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(find retired)-------------------*/
+   rc = yDLST_list_by_name ("RETIRED", NULL, &x_retired);
+   DEBUG_INPT   yLOG_point   ("x_retired" , x_retired);
+   --rce;  if (x_retired == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(check all lines)----------------*/
-   rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_line);
+   rc = yDLST_line_by_index  (a_scope, n, NULL, &x_line);
    DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-   while (x_line != NULL) {
-      /*---(mark retired)----------------*/
-      /*> x_line->retire = 'y';                                                       <*/
-      /*---(check running)---------------*/
-      if (x_line->rpid > 1) {
-         DEBUG_INPT   yLOG_note    ("found running process");
-         ++x_running;
-         rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DNEXT, NULL, &x_line);
-         DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-         continue;
-      }
-      /*---(destroy inactive)------------*/
-      rc = yDLST_line_destroy (x_line->tracker);
-      DEBUG_INPT   yLOG_value   ("destroy"   , rc);
+   while (x_line != NULL && rc >= 0) {
+      /*---(get file)--------------------*/
+      rc = yDLST_line_list (NULL, &x_file);
+      DEBUG_INPT   yLOG_value   ("list"      , rc);
       if (rc < 0) {
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      /*---(start fresh)-----------------*/
-      x_running = 0;
-      rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_line);
+      /*---(header)----------------------*/
+      DEBUG_INPT   yLOG_complex ("current"   , "%3dn, %-20.20s, %-10.10p, %2d#, %5dr, %c, %s", n, x_file->title, x_line, x_line->recdno, x_line->rpid, x_line->retire, x_line->tracker);
+      /*---(skip retired)----------------*/
+      if (a_type != 'a' && x_line->retire == 'y') {
+         DEBUG_INPT   yLOG_note    ("found retired process, skipping");
+         ++n;
+      }
+      /*---(save running)----------------*/
+      else if (a_type == 'p' && x_line->rpid > 1) {
+         DEBUG_INPT   yLOG_note    ("found running process, keep");
+         ++n;
+      }
+      /*---(retire)----------------------*/
+      else if (a_type == 'r' && x_line->rpid > 1) {
+         DEBUG_INPT   yLOG_note    ("found running process, retire");
+         rc = yDLST_line_remove (x_line->tracker);
+         DEBUG_INPT   yLOG_value   ("remove"    , rc);
+         rc = yDLST_list_by_name ("RETIRED", NULL, NULL);
+         DEBUG_INPT   yLOG_value   ("retired"   , rc);
+         rc = yDLST_line_create (x_line->tracker, x_line);
+         DEBUG_INPT   yLOG_value   ("create"    , rc);
+         x_line->retire = 'y';
+         rc = yDLST_list_by_name (x_file->title, NULL, NULL);
+         DEBUG_INPT   yLOG_value   ("x_file"    , rc);
+      }
+      /*---(destroy)---------------------*/
+      else {
+         DEBUG_INPT   yLOG_note    ("not running, destroy");
+         rc = yDLST_line_destroy (x_line->tracker);
+         DEBUG_INPT   yLOG_value   ("destroy"   , rc);
+         if (rc < 0) {
+            DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+            return rce;
+         }
+      }
+      /*---(next)------------------------*/
+      rc = yDLST_line_by_index  (a_scope, n, NULL, &x_line);
       /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return x_running;
+   return n;
 }
 
-char
-line_kill              (char *a_file, char *a_line, char a_sig)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   tFILE      *x_file      = NULL;
-   tLINE      *x_line      = NULL;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(defenses)-----------------------*/
-   DEBUG_INPT   yLOG_point   ("a_file"    , a_file);
-   --rce;  if (a_file == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_point   ("a_line"    , a_line);
-   --rce;  if (a_line == NULL) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(find list)----------------------*/
-   rc = yDLST_list_by_name (a_file, NULL, &x_file);
-   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-   if (x_file == NULL) {
-      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-      return 0;
-   }
-   /*---(find line)----------------------*/
-   rc = yDLST_line_by_name (YDLST_LOCAL, a_line, NULL, &x_line);
-   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-   if (x_line == NULL) {
-      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
-      return 0;
-   }
-   /*---(check rpid)---------------------*/
-   DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
-   --rce;  if (x_line->rpid <= 1) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(kill)---------------------------*/
-   rc = kill (x_line->rpid, a_sig);
-   DEBUG_INPT   yLOG_value   ("kill"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
+int LINE_purge_global  (void) { return LINE__purge (YDLST_GLOBAL, 'a'); }
+int LINE_prune_global  (void) { return LINE__purge (YDLST_GLOBAL, 'p'); }
+int LINE_retire_global (void) { return LINE__purge (YDLST_GLOBAL, 'r'); }
+
+/*> int LINE_purge_local   (void) { return LINE__purge (YDLST_LOCAL , 'a'); }         <*/
+/*> int LINE_prune_local   (void) { return LINE__purge (YDLST_LOCAL , 'p'); }         <*/
+/*> int LINE_retire_local  (void) { return LINE__purge (YDLST_LOCAL , 'r'); }         <*/
 
 
 
@@ -883,7 +903,7 @@ line__unit              (char *a_question, int a_num)
 }
 
 char
-line__unit_rpid        (char *a_file, char *a_line, int a_rpid)
+LINE_setrpid           (char *a_file, char *a_line, int a_rpid)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;

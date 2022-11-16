@@ -11,6 +11,84 @@ char        testing      = 'n';
 char        strtest      [100];
 
 
+char
+BASE_init               (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   tFILE      *x_file      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(clear everything)---------------*/
+   rc = BASE_wrap ();
+   DEBUG_INPT   yLOG_value   ("wrap"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(create retired)-----------------*/
+   my.f_ready = 'y';
+   rc = FILE_create ("RETIRED", "n/a", -1);
+   DEBUG_INPT   yLOG_value   ("create"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(get current file)---------------*/
+   yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(update retired flag)------------*/
+   x_file->retired = 'y';
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+BASE__purge             (char a_type)
+{
+   char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   int         n           =    0;
+   int         c           =    0;
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(take care of lines)-------------*/
+   switch (a_type) {
+   case 'A'  :   n = 0;  rc = LINE_purge_global  ();  break;
+   case 'a'  :   n = 1;  rc = LINE_purge_global  ();  break;
+   case 'p'  :   n = 1;  rc = LINE_prune_global  ();  break;
+   case 'r'  :   n = 1;  rc = LINE_retire_global ();  break;
+   }
+   /*---(take out empty lists)-----------*/
+   rc = yDLST_list_by_index (n, NULL, &x_file);
+   while (rc >= 0 && x_file != NULL) {
+      c  = yDLST_line_count (YDLST_LOCAL);
+      DEBUG_INPT   yLOG_complex ("current"   , "%3dn, %-20.20s, %2d#", n, x_file->title, c);
+      if (c == 0) {
+         DEBUG_INPT  yLOG_note    ("no contents, deleting");
+         rc = FILE_delete (x_file->title);
+      } else {
+         DEBUG_INPT  yLOG_note    ("with contents, skipping");
+         ++n;
+      }
+      rc = yDLST_list_by_index (n, NULL, &x_file);
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char BASE_wrap          (void)  { return BASE__purge ('A'); }
+char BASE_purge         (void)  { return BASE__purge ('a'); }
+char BASE_prune         (void)  { return BASE__purge ('p'); }
+char BASE_retire        (void)  { return BASE__purge ('r'); }
+
+
 
 char
 BASE_execute            (void)

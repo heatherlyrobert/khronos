@@ -25,6 +25,7 @@ FILE__wipe              (tFILE *a_cur)
    a_cur->uid     =   -1;
    strlcpy (a_cur->note   , "-", LEN_TERSE);
    a_cur->lines   =    0;
+   a_cur->valid   =  '·';
    a_cur->retired =  '-';
    /*---(complete)-------------*/
    return 1;
@@ -34,7 +35,7 @@ char*
 FILE__memory            (tFILE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "å____.__._æ", LEN_RECD);
+   strlcpy (s_print, "å____.__.__æ", LEN_RECD);
    ++n;  if (a_cur->seq         >= 0)           s_print [n] = 'X';
    ++n;  if (a_cur->title   [0] != '\0')        s_print [n] = 'X';
    ++n;  if (a_cur->user    [0] != '\0')        s_print [n] = 'X';
@@ -43,6 +44,7 @@ FILE__memory            (tFILE *a_cur)
    ++n;  if (a_cur->note    [0] != '-')         s_print [n] = 'X';
    ++n;  if (a_cur->lines       >  0)           s_print [n] = 'X';
    ++n;
+   ++n;  if (a_cur->valid       != '·')         s_print [n] = 'X';
    ++n;  if (a_cur->retired     != '-')         s_print [n] = 'X';
    return s_print;
 }
@@ -151,6 +153,7 @@ FILE_create             (char *a_name, char *a_user, int a_uid)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   tFILE      *x_dup       = NULL;
    tFILE      *x_file      = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
@@ -161,17 +164,24 @@ FILE_create             (char *a_name, char *a_user, int a_uid)
       return rce;
    }
    DEBUG_INPT   yLOG_point   ("a_name"    , a_name);
-   --rce;  if (a_name == NULL) {
+   --rce;  if (a_name == NULL || strlen (a_name) <  3) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    DEBUG_INPT   yLOG_info    ("a_name"    , a_name);
    DEBUG_INPT   yLOG_point   ("a_user"    , a_user);
-   --rce;  if (a_user == NULL) {
+   --rce;  if (a_user == NULL || strlen (a_user) <  3) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    DEBUG_INPT   yLOG_info    ("a_user"    , a_user);
+   /*---(check for duplicate)------------*/
+   rc = yDLST_list_by_name (a_name, NULL, &x_dup);
+   DEBUG_INPT   yLOG_point   ("x_dup"     , x_dup);
+   --rce;  if (x_dup  != NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(create data)--------------------*/
    rc = FILE__new (&x_file);
    DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
@@ -332,26 +342,27 @@ FILE__defaults          (void)
  *>       return rce;                                                                                                                     <* 
  *>    }                                                                                                                                  <* 
  *>    c  = yDLST_line_count (YDLST_LOCAL);                                                                                               <* 
- *>    --rce;  if (c != x_file->lines) {                                                                                                  <* 
- *>       yURG_msg ('>', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);                                           <* 
- *>       yURG_msg (' ', "");                                                                                                             <* 
- *>       strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);                                                                                  <* 
- *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
- *>       return rce;                                                                                                                     <* 
- *>    } else if (c == 0) {                                                                                                               <* 
- *>       yURG_msg ('>', "all lines read, EMPTY, reviewed %d, accepted %d", x_file->lines, c);                                            <* 
- *>       yURG_msg (' ', "");                                                                                                             <* 
- *>       strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);                                                                                  <* 
- *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
- *>       return rce;                                                                                                                     <* 
- *>    }                                                                                                                                  <* 
- *>    yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", x_file->lines, c);                                             <* 
- *>    yURG_msg (' ', "");                                                                                                                <* 
- *>    strlcpy (x_file->note, "success"  , LEN_TERSE);                                                                                    <* 
- *>    /+---(complete)-----------------------+/                                                                                           <* 
- *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                                                           <* 
- *>    return 0;                                                                                                                          <* 
- *> }                                                                                                                                     <*/
+*>    --rce;  if (c != x_file->lines) {                                                                                                  <* 
+   *>       yURG_msg ('>', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);                                           <* 
+      *>       yURG_msg (' ', "");                                                                                                             <* 
+      *>       strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);                                                                                  <* 
+      *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+      *>       return rce;                                                                                                                     <* 
+      *>    } else if (c == 0) {                                                                                                               <* 
+         *>       yURG_msg ('>', "all lines read, EMPTY, reviewed %d, accepted %d", x_file->lines, c);                                            <* 
+            *>       yURG_msg (' ', "");                                                                                                             <* 
+            *>       strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);                                                                                  <* 
+            *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                   <* 
+            *>       return rce;                                                                                                                     <* 
+            *>    }                                                                                                                                  <* 
+            *>    yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", x_file->lines, c);                                             <* 
+            *>    yURG_msg (' ', "");                                                                                                                <* 
+            *>    strlcpy (x_file->note, "success"  , LEN_TERSE);                                                                                    <* 
+            *>    /+---(complete)-----------------------+/                                                                                           <* 
+            *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                                                           <* 
+            *>    return 0;                                                                                                                          <* 
+            *> }                                                                                                                                     <*/
+
 
 char
 FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
@@ -383,8 +394,8 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
     *> my.f_pall  = my.f_ppass = my.f_pfail = 0;                                      <*/
    /*> strcpy  (my.f_note, "");                                                       <*/
    /*---(parse file)---------------------*/
-   if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir);
-   else if (a_loc == YJOBS_LOCAL  )   rc = yJOBS_acceptable (a_runas, a_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir);
+   /*> if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir);   <*/
+   /*> else if (a_loc == YJOBS_LOCAL  )   rc = yJOBS_acceptable (a_runas, a_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir);   <*/
    DEBUG_INPT   yLOG_value   ("parse"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
@@ -411,15 +422,6 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
    --rce;  if (x_file == NULL) {
       yURG_err ('f', "returned NULL, could not find to yDLST file (%d)", rc);
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(prepare)------------------------*/
-   yURG_msg ('-', "reset and prepare ySCHED for new file...");
-   rc = ySCHED_newfile ();
-   DEBUG_INPT   yLOG_value   ("ySCHED"    , rc);
-   --rce;  if (rc < 0) {
-      yURG_err ('f', "could not properly reset ySCHED (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -461,6 +463,146 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
 }
 
 
+char
+FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fuser, int a_fuid)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   int         c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT   yLOG_point   ("a_full"    , a_full);
+   --rce;  if (a_full == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_info    ("a_full"    , a_full);
+   strlcpy (my.f_full , a_full , LEN_PATH);
+   DEBUG_INPT   yLOG_point   ("a_fname"   , a_fname);
+   --rce;  if (a_fname == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_info    ("a_fname"   , a_fname);
+   strlcpy (my.f_name , a_fname, LEN_HUND);
+   DEBUG_INPT   yLOG_point   ("a_fuser"   , a_fuser);
+   --rce;  if (a_fuser == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_info    ("a_fuser"   , a_fuser);
+   strlcpy (my.f_user , a_fuser, LEN_USER);
+   DEBUG_INPT   yLOG_value   ("a_fuid"    , a_fuid);
+   --rce;  if (a_fuid < 0 || a_fuid > 10000) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   my.f_uid  = a_fuid;
+   /*---(create file)--------------------*/
+   yURG_msg ('>', "create file entity and add to yDLST...");
+   yURG_msg ('-', "file is å%sæ in %c", a_fname, a_loc);
+   yURG_msg ('-', "owner is å%sæ as %d", a_fuser, a_fuid);
+   rc = FILE_create (a_fname, a_fuser, a_fuid);
+   DEBUG_INPT   yLOG_value   ("file"      , rc);
+   --rce;  if (rc < 0) {
+      yURG_err ('f', "could not create file (%d)", rc);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_msg ('-', "created a list to house the lines");
+   /*---(get current file)---------------*/
+   yURG_msg ('-', "find the new/created yDLST entry");
+   rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
+      yURG_err ('f', "returned NULL, could not find to yDLST file (%d)", rc);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(read all lines)-----------------*/
+   yURG_msg ('-', "calling auto-reader in yPARSE");
+   yURG_msg (' ', "");
+   DEBUG_INPT  yLOG_info    ("f_full"     , a_full);
+   rc = yPARSE_autoread (a_full, NULL, LINE_handler);
+   DEBUG_PROG  yLOG_value   ("read"      , rc);
+   --rce;  if (rc <  0) {
+      yURG_err ('f', "found errors (%d)", rc);
+      /*> strlcpy (x_file->note, "NO FILE" , LEN_TERSE);                              <*/
+      FILE_delete (x_file->title);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(verify the results)-------------*/
+   c  = yDLST_line_count (YDLST_LOCAL);
+   --rce;  if (c != x_file->lines) {
+      yURG_err ('f', "all lines read, ERRORS, reviewed %d, accepted %d", x_file->lines, c);
+      yURG_msg (' ', "");
+      strlcpy (x_file->note, "ERRORS"  , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   } else if (c == 0) {
+      yURG_err ('f', "all lines read, EMPTY, reviewed %d, accepted %d", x_file->lines, c);
+      yURG_msg (' ', "");
+      strlcpy (x_file->note, "EMPTY"   , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(show success)-------------------*/
+   yURG_msg ('-', "SUCCESS all lines read, reviewed %d, accepted %d", x_file->lines, c);
+   yURG_msg (' ', "");
+   strlcpy (x_file->note, "success"  , LEN_TERSE);
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE_pull               (cchar *a_fname)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_loc       =  '-';
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT   yLOG_point   ("a_fname"   , a_fname);
+   --rce;  if (a_fname == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_info    ("a_fname"   , a_fname);
+   /*---(collect data)-------------------*/
+   rc = yJOBS_filedata (&(my.run_as), &(my.run_mode), &x_loc, my.f_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir, my.f_full);
+   DEBUG_INPT   yLOG_value   ("filedata"  , rc);
+   --rce;  if (rc < 0) {
+      yURG_err ('f', "could not request file data (%d)", rc);
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_char    ("run_as"    , my.run_as);
+   DEBUG_INPT   yLOG_char    ("run_mode"  , my.run_mode);
+   DEBUG_INPT   yLOG_char    ("x_loc"     , x_loc);
+   DEBUG_INPT   yLOG_info    ("f_name"    , my.f_name);
+   DEBUG_INPT   yLOG_info    ("f_user"    , my.f_user);
+   DEBUG_INPT   yLOG_value   ("f_uid"     , my.f_uid);
+   DEBUG_INPT   yLOG_info    ("f_desc"    , my.f_desc);
+   DEBUG_INPT   yLOG_info    ("f_full"    , my.f_full);
+   /*---(call detail)--------------------*/
+   rc = FILE_pull_detail (x_loc, my.f_full, my.f_name, my.f_user, my.f_uid);
+   DEBUG_INPT   yLOG_value   ("detail"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+
 
 
 /*====================------------------------------------====================*/
@@ -468,207 +610,186 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
 /*====================------------------------------------====================*/
 static void      o___RETIRE__________________o (void) {;}
 
-char
-FILE_init               (void)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   tFILE      *x_file      = NULL;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(create retired)-----------------*/
-   my.f_ready = 'y';
-   rc = FILE_create ("RETIRED", "n/a", -1);
-   DEBUG_INPT   yLOG_value   ("create"    , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(get current file)---------------*/
-   yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
-   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
-   --rce;  if (x_file == NULL) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(update retired flag)------------*/
-   x_file->retired = 'y';
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
+/*> char                                                                              <* 
+ *> FILE_prune              (void)                                                    <* 
+ *> {                                                                                 <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                       <* 
+ *>    char        rce         =  -10;                                                <* 
+ *>    int         rc          =    0;                                                <* 
+ *>    int         x_running   =    0;                                                <* 
+ *>    tLINE      *x_line      = NULL;                                                <* 
+ *>    /+---(header)-------------------------+/                                       <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                       <* 
+ *>    /+---(check all lines)----------------+/                                       <* 
+ *>    rc = yDLST_list_by_name ("RETIRED", NULL, NULL);                               <* 
+ *>    rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);           <* 
+ *>    DEBUG_INPT   yLOG_point   ("x_line"    , x_line);                              <* 
+ *>    while (x_line != NULL) {                                                       <* 
+ *>       /+---(mark retired)----------------+/                                       <* 
+ *>       if (x_line->retire == 'y' && x_line->rpid <= 0) {                           <* 
+ *>          /+---(destroy inactive)------------+/                                    <* 
+ *>          rc = yDLST_line_remove  (x_line->tracker);                               <* 
+ *>          DEBUG_INPT   yLOG_value   ("destroy"   , rc);                            <* 
+ *>          if (rc < 0) {                                                            <* 
+ *>             DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                         <* 
+ *>             return rce;                                                           <* 
+ *>          }                                                                        <* 
+ *>          LINE__free (&x_line);                                                    <* 
+ *>          rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);     <* 
+ *>          x_running = 0;                                                           <* 
+ *>          continue;                                                                <* 
+ *>       }                                                                           <* 
+ *>       ++x_running;                                                                <* 
+ *>       rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DNEXT, NULL, &x_line);        <* 
+ *>       /+---(done)------------------------+/                                       <* 
+ *>    }                                                                              <* 
+ *>    /+---(complete)-----------------------+/                                       <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                       <* 
+ *>    return x_running;                                                              <* 
+ *> }                                                                                 <*/
 
-char
-FILE_prune              (void)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   int         x_running   =    0;
-   tLINE      *x_line      = NULL;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(check all lines)----------------*/
-   rc = yDLST_list_by_name ("RETIRED", NULL, NULL);
-   rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
-   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-   while (x_line != NULL) {
-      /*---(mark retired)----------------*/
-      if (x_line->retire == 'y' && x_line->rpid <= 0) {
-         /*---(destroy inactive)------------*/
-         rc = yDLST_line_remove  (x_line->tracker);
-         DEBUG_INPT   yLOG_value   ("destroy"   , rc);
-         if (rc < 0) {
-            DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-            return rce;
-         }
-         LINE__free (&x_line);
-         rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
-         x_running = 0;
-         continue;
-      }
-      ++x_running;
-      rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DNEXT, NULL, &x_line);
-      /*---(done)------------------------*/
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return x_running;
-}
+/*> char                                                                                   <* 
+ *> FILE_retire             (char *a_name)                                                 <* 
+ *> {                                                                                      <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                            <* 
+ *>    char        rce         =  -10;                                                     <* 
+ *>    int         rc          =    0;                                                     <* 
+ *>    tFILE      *x_retired   = NULL;                                                     <* 
+ *>    tFILE      *x_file      = NULL;                                                     <* 
+ *>    tLINE      *x_line      = NULL;                                                     <* 
+ *>    char        x_tracker   [LEN_TITLE] = "";                                           <* 
+ *>    /+---(header)-------------------------+/                                            <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                            <* 
+ *>    yURG_msg ('>', "retire crontab lines...");                                          <* 
+ *>    /+---(defenses)-----------------------+/                                            <* 
+ *>    DEBUG_INPT   yLOG_point   ("a_name"    , a_name);                                   <* 
+ *>    --rce;  if (a_name == NULL) {                                                       <* 
+ *>       yURG_err ('f', "crontab name is null/empty");                                    <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                    <* 
+ *>       return rce;                                                                      <* 
+ *>    }                                                                                   <* 
+ *>    DEBUG_INPT   yLOG_info    ("a_name"    , a_name);                                   <* 
+ *>    yURG_msg ('-', "crontab name requested is å%sæ", a_name);                           <* 
+ *>    /+---(reject retired)-----------------+/                                            <* 
+ *>    if (strcmp (a_name, "RETIRED") == 0) {                                              <* 
+ *>       DEBUG_INPT   yLOG_note    ("can not retire the RETIRED list");                   <* 
+ *>       DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                         <* 
+ *>       return 0;                                                                        <* 
+ *>    }                                                                                   <* 
+ *>    /+---(find retired)-------------------+/                                            <* 
+ *>    rc = yDLST_list_by_name ("RETIRED", NULL, &x_retired);                              <* 
+ *>    DEBUG_INPT   yLOG_point   ("x_retired" , x_retired);                                <* 
+ *>    --rce;  if (x_retired == NULL) {                                                    <* 
+ *>       yURG_err ('f', "retired list could not be found");                               <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                    <* 
+ *>       return rce;                                                                      <* 
+ *>    }                                                                                   <* 
+ *>    yURG_msg ('-', "found retired file");                                               <* 
+ *>    /+---(find list)----------------------+/                                            <* 
+ *>    rc = yDLST_list_by_name (a_name, NULL, &x_file);                                    <* 
+ *>    DEBUG_INPT   yLOG_point   ("x_file"    , x_file);                                   <* 
+ *>    --rce;  if (x_file == NULL) {                                                       <* 
+ *>       yURG_msg ('-', "crontab is not assimilated, nothing to retire");                 <* 
+ *>       yURG_msg (' ', "");                                                              <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                    <* 
+ *>       return rce;                                                                      <* 
+ *>    }                                                                                   <* 
+ *>    x_file->retired = 'y';                                                              <* 
+ *>    yURG_msg ('-', "marking file as retired as precaution");                            <* 
+ *>    /+---(check still in use)-------------+/                                            <* 
+ *>    DEBUG_INPT   yLOG_value   ("lines"     , x_file->lines);                            <* 
+ *>    rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);                <* 
+ *>    DEBUG_INPT   yLOG_point   ("x_line"    , x_line);                                   <* 
+ *>    while (rc >= 0 && x_line != NULL) {                                                 <* 
+ *>       /+---(report out)------------------+/                                            <* 
+ *>       DEBUG_INPT   yLOG_value   ("recdno"    , x_line->recdno);                        <* 
+ *>       DEBUG_INPT   yLOG_info    ("tracker"   , x_line->tracker);                       <* 
+ *>       DEBUG_INPT   yLOG_info    ("command"   , x_line->command);                       <* 
+ *>       rc = yDLST_line_remove (x_line->tracker);                                        <* 
+ *>       DEBUG_INPT   yLOG_value   ("remove" , rc);                                       <* 
+ *>       if (rc < 0) {                                                                    <* 
+ *>          yURG_err ('w', "could not remove line å%sæ (%d)", x_line->tracker, rc);       <* 
+ *>          continue;                                                                     <* 
+ *>       }                                                                                <* 
+ *>       /+---(inactive)--------------------+/                                            <* 
+ *>       if (x_line->rpid <= 0) {                                                         <* 
+ *>          DEBUG_INPT   yLOG_note    ("found inactive process, no worries");             <* 
+ *>          LINE__free (&x_line);                                                         <* 
+ *>          yURG_msg ('-', "line successfully retired");                                  <* 
+ *>          rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);          <* 
+ *>          continue;                                                                     <* 
+ *>       }                                                                                <* 
+ *>       /+---(mark retired)----------------+/                                            <* 
+ *>       DEBUG_INPT   yLOG_note    ("found running process, move to retired");            <* 
+ *>       x_line->retire = 'y';                                                            <* 
+ *>       /+---(find retired list)--------------+/                                         <* 
+ *>       rc = yDLST_list_by_name ("RETIRED", NULL, &x_retired);                           <* 
+ *>       DEBUG_INPT   yLOG_point   ("x_retired" , x_retired);                             <* 
+ *>       --rce;  if (x_retired == NULL) {                                                 <* 
+ *>          yURG_err ('f', "retired list could not be found");                            <* 
+ *>          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                 <* 
+ *>          return rce;                                                                   <* 
+ *>       }                                                                                <* 
+ *>       /+---(add line to retired)------------+/                                         <* 
+ *>       rc = yDLST_line_create (x_line->tracker, x_line);                                <* 
+ *>       DEBUG_INPT   yLOG_value   ("create"    , rc);                                    <* 
+ *>       --rce;  if (rc < 0) {                                                            <* 
+ *>          yURG_err ('w', "line could not be created å%sæ (%d)", x_line->tracker, rc);   <* 
+ *>          continue;                                                                     <* 
+ *>       }                                                                                <* 
+ *>       /+---(back to original list)----------+/                                         <* 
+ *>       rc = yDLST_list_by_name (a_name, NULL, &x_file);                                 <* 
+ *>       DEBUG_INPT   yLOG_point   ("x_file"    , x_file);                                <* 
+ *>       --rce;  if (x_file == NULL) {                                                    <* 
+ *>          yURG_err ('f', "original list could not be found å%sæ (%d)", a_name, rc);     <* 
+ *>          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                 <* 
+ *>          return rce;                                                                   <* 
+ *>       }                                                                                <* 
+ *>       /+---(next line)----------------------+/                                         <* 
+ *>       yURG_msg ('-', "line å%sæ running, but successfully moved to retired list");     <* 
+ *>       rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);             <* 
+ *>       DEBUG_INPT   yLOG_point   ("x_line"    , x_line);                                <* 
+ *>       /+---(done)---------------------------+/                                         <* 
+ *>    }                                                                                   <* 
+ *>    /+---(destroy)------------------------+/                                            <* 
+ *>    rc = yDLST_list_destroy (a_name);                                                   <* 
+ *>    DEBUG_INPT   yLOG_value   ("destroy"   , rc);                                       <* 
+ *>    --rce;  if (rc < 0) {                                                               <* 
+ *>       yURG_err ('f', "original list could not be destroyed å%sæ (%d)", a_name, rc);    <* 
+ *>       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);                                    <* 
+ *>       return rce;                                                                      <* 
+ *>    }                                                                                   <* 
+ *>    yURG_msg ('-', "original list destroyed å%sæ ");                                    <* 
+ *>    yURG_msg (' ', "");                                                                 <* 
+ *>    /+---(complete)-----------------------+/                                            <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                            <* 
+ *>    return 0;                                                                           <* 
+ *> }                                                                                      <*/
 
-char
-FILE_retire             (char *a_name)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   tFILE      *x_file      = NULL;
-   tLINE      *x_line      = NULL;
-   char        x_tracker   [LEN_TITLE] = "";
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_msg ('>', "retire crontab lines...");
-   /*---(defenses)-----------------------*/
-   DEBUG_INPT   yLOG_point   ("a_name"    , a_name);
-   --rce;  if (a_name == NULL) {
-      yURG_err ('f', "crontab name is null/empty");
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("a_name"    , a_name);
-   yURG_msg ('-', "crontab name requested is å%sæ", a_name);
-   /*---(reject retired)-----------------*/
-   if (strcmp (a_name, "RETIRED") == 0) {
-      DEBUG_INPT   yLOG_note    ("can not retire the RETIRED list");
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-      return 0;
-   }
-   /*---(find list)----------------------*/
-   rc = yDLST_list_by_name (a_name, NULL, &x_file);
-   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-   --rce;  if (x_file == NULL) {
-      yURG_msg ('-', "crontab is not assimilated, nothing to retire");
-      yURG_msg (' ', "");
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   x_file->retired = 'y';
-   yURG_msg ('-', "marking file as retired as precaution");
-   /*---(check still in use)-------------*/
-   DEBUG_INPT   yLOG_value   ("lines"     , x_file->lines);
-   rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
-   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-   while (rc >= 0 && x_line != NULL) {
-      /*---(report out)------------------*/
-      DEBUG_INPT   yLOG_value   ("recdno"    , x_line->recdno);
-      DEBUG_INPT   yLOG_info    ("tracker"   , x_line->tracker);
-      DEBUG_INPT   yLOG_info    ("command"   , x_line->command);
-      rc = yDLST_line_remove (x_line->tracker);
-      DEBUG_INPT   yLOG_value   ("remove" , rc);
-      if (rc < 0) {
-         yURG_err ('w', "could not remove line å%sæ (%d)", x_line->tracker, rc);
-         continue;
-      }
-      /*---(inactive)--------------------*/
-      if (x_line->rpid <= 0) {
-         DEBUG_INPT   yLOG_note    ("found inactive process, no worries");
-         LINE__free (&x_line);
-         yURG_msg ('-', "line successfully retired");
-         rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
-         continue;
-      }
-      /*---(mark retired)----------------*/
-      DEBUG_INPT   yLOG_note    ("found running process, move to retired");
-      x_line->retire = 'y';
-      /*---(find retired list)--------------*/
-      rc = yDLST_list_by_name ("RETIRED", NULL, &x_file);
-      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-      --rce;  if (x_file == NULL) {
-         yURG_err ('f', "retired list could not be found");
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      /*---(add line to retired)------------*/
-      rc = yDLST_line_create (x_line->tracker, x_line);
-      DEBUG_INPT   yLOG_value   ("create"    , rc);
-      --rce;  if (rc < 0) {
-         yURG_err ('w', "line could not be created å%sæ (%d)", x_line->tracker, rc);
-         continue;
-      }
-      /*---(back to original list)----------*/
-      rc = yDLST_list_by_name (a_name, NULL, &x_file);
-      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-      --rce;  if (x_file == NULL) {
-         yURG_err ('f', "original list could not be found å%sæ (%d)", a_name, rc);
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      /*---(next line)----------------------*/
-      yURG_msg ('-', "line å%sæ running, but successfully moved to retired list");
-      rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_DHEAD, NULL, &x_line);
-      DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-      /*---(done)---------------------------*/
-   }
-   /*---(destroy)------------------------*/
-   rc = yDLST_list_destroy (a_name);
-   DEBUG_INPT   yLOG_value   ("destroy"   , rc);
-   --rce;  if (rc < 0) {
-      yURG_err ('f', "original list could not be destroyed å%sæ (%d)", a_name, rc);
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   yURG_msg ('-', "original list destroyed å%sæ ");
-   yURG_msg (' ', "");
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-FILE_flush              (void)
-{
-   char        rc          =    0;
-   tFILE      *x_file      = NULL;
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   rc = yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_file);
-   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-   while (rc >= 0 && x_file != NULL) {
-      /*---(retire)-------------------------*/
-      rc = FILE_retire (x_file->title);
-      /*---(next line)----------------------*/
-      yURG_msg ('-', "file å%sæ successfully moved to retired list", x_file->title);
-      rc = yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_file);
-      if (rc >= 0 && x_file != NULL && strcmp (x_file->title, "RETIRED") == 0) {
-         rc = yDLST_list_by_cursor (YDLST_DNEXT, NULL, &x_file);
-      }
-      DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
-      /*---(done)---------------------------*/
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
+/*> char                                                                                   <* 
+ *> FILE_flush              (void)                                                         <* 
+ *> {                                                                                      <* 
+ *>    char        rc          =    0;                                                     <* 
+ *>    tFILE      *x_file      = NULL;                                                     <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                            <* 
+ *>    rc = yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_file);                             <* 
+ *>    DEBUG_INPT   yLOG_point   ("x_file"    , x_file);                                   <* 
+ *>    while (rc >= 0 && x_file != NULL) {                                                 <* 
+ *>       /+---(retire)-------------------------+/                                         <* 
+ *>       rc = FILE_retire (x_file->title);                                                <* 
+ *>       /+---(next line)----------------------+/                                         <* 
+ *>       yURG_msg ('-', "file å%sæ successfully moved to retired list", x_file->title);   <* 
+ *>       rc = yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_file);                          <* 
+ *>       if (rc >= 0 && x_file != NULL && strcmp (x_file->title, "RETIRED") == 0) {       <* 
+ *>          rc = yDLST_list_by_cursor (YDLST_DNEXT, NULL, &x_file);                       <* 
+ *>       }                                                                                <* 
+ *>       DEBUG_INPT   yLOG_point   ("x_file"    , x_file);                                <* 
+ *>       /+---(done)---------------------------+/                                         <* 
+ *>    }                                                                                   <* 
+ *>    /+---(complete)-----------------------+/                                            <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                            <* 
+ *>    return 0;                                                                           <* 
+ *> }                                                                                      <*/
 
 
 

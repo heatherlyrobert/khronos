@@ -22,19 +22,19 @@ EXEC_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
       break;
    case  SIGTERM:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGTERM means terminate daemon");
-      RPTG_track_sig ("SIGTERM");
+      RPTG_track_sig (a_signal, a_name, a_desc);
       RPTG_track_end ();
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGSEGV:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGSEGV means daemon blew up");
-      RPTG_track_sig ("SEGSEGV");
+      RPTG_track_sig (a_signal, a_name, a_desc);
       RPTG_track_end ();
       yEXEC_term    ("EXITING", 99);
       break;
    case  SIGABRT:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGABRT means daemon blew up");
-      RPTG_track_sig ("SEGABRT");
+      RPTG_track_sig (a_signal, a_name, a_desc);
       RPTG_track_end ();
       yEXEC_term    ("EXITING", 99);
       break;
@@ -44,6 +44,59 @@ EXEC_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
    }
    /*---(complete)-----------------------*/
    return;
+}
+
+char
+EXEC_linekill          (char *a_file, char *a_line, char a_sig)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   tLINE      *x_line      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defenses)-----------------------*/
+   DEBUG_INPT   yLOG_point   ("a_file"    , a_file);
+   --rce;  if (a_file == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_point   ("a_line"    , a_line);
+   --rce;  if (a_line == NULL) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(find list)----------------------*/
+   rc = yDLST_list_by_name (a_file, NULL, &x_file);
+   DEBUG_INPT   yLOG_point   ("x_file"    , x_file);
+   if (x_file == NULL) {
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(find line)----------------------*/
+   rc = yDLST_line_by_name (YDLST_LOCAL, a_line, NULL, &x_line);
+   DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
+   if (x_line == NULL) {
+      DEBUG_INPT   yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(check rpid)---------------------*/
+   DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
+   --rce;  if (x_line->rpid <= 1) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(kill)---------------------------*/
+   rc = kill (x_line->rpid, a_sig);
+   DEBUG_INPT   yLOG_value   ("kill"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
 }
 
 
@@ -194,7 +247,7 @@ EXEC_time               (long a_now)
    }
    /*---(set the date)-------------------*/
    if (x_year != my.year || x_month != my.month || x_day != my.day) {
-      ySCHED_config_by_date (my.year, my.month, my.day);
+      ySCHED_date (my.year, my.month, my.day);
    }
    /*---(complete------------------------*/
    DEBUG_LOOP   yLOG_exit    (__FUNCTION__);
@@ -290,7 +343,7 @@ EXEC__focus_file        (tFILE *a_file)
       DEBUG_INPT   yLOG_value   ("->rpid"    , x_line->rpid);
       /*---(test)---------------------*/
       DEBUG_INPT   yLOG_info    ("MY_RAW_3"  , ySCHED_raw (x_line->sched));
-      rc = ySCHED_test_by_time (x_line->sched, my.hour, YSCHED_ANY);
+      rc = ySCHED_test (x_line->sched, my.hour, YSCHED_ANY, NULL);
       DEBUG_INPT  yLOG_value   ("ySCHED"    , rc);
       if (rc == 0) {
          DEBUG_LOOP   yLOG_note  ("not scheduled within current hour, SKIPPING");
@@ -409,6 +462,7 @@ EXEC_check              (void)
       }
       DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
       /*---(check)-----------------------*/
+      DEBUG_INPT   yLOG_info    ("tracker"   , x_line->tracker);
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
       rc = yEXEC_verify (t, x_line->rpid, &x_return);
@@ -493,6 +547,26 @@ EXEC_check              (void)
 }
 
 char
+EXEC__prep_files        (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
+   tFILE      *x_file      = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(walk files)---------------------*/
+   rc = yDLST_list_by_cursor (YDLST_HEAD, NULL, &x_file);
+   while (x_file != NULL && rc >= 0) {
+      DEBUG_INPT   yLOG_info    ("title"     , x_file->title);
+      x_file->valid = '·';
+      rc = yDLST_list_by_cursor (YDLST_NEXT, NULL, &x_file);
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
 EXEC_dispatch           (int a_min)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -508,6 +582,8 @@ EXEC_dispatch           (int a_min)
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    DEBUG_INPT   yLOG_value   ("a_min"     , a_min);
    if (a_min < 0)  a_min = my.minute;
+   /*---(prep files)---------------------*/
+   EXEC__prep_files ();
    /*---(check count)--------------------*/
    DEBUG_INPT   yLOG_value   ("focused"   , yDLST_focus_count ());
    if (yDLST_focus_count () <= 0) {
@@ -520,11 +596,14 @@ EXEC_dispatch           (int a_min)
    while (rc >= 0 && x_line != NULL) {
       /*---(test)------------------------*/
       DEBUG_INPT   yLOG_info    ("->tracker" , x_line->tracker);
-      rc = ySCHED_test_by_time (x_line->sched, my.hour, a_min);
+      rc = ySCHED_test (x_line->sched, my.hour, a_min, NULL);
       DEBUG_INPT   yLOG_value   ("test"      , rc);
       if (rc <= 0) {
-         if (rc == 0)  DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
-         else          DEBUG_LOOP   yLOG_note  ("BOOM, can not test");
+         if (rc == 0) {
+            DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
+         } else {
+            DEBUG_LOOP   yLOG_note  ("BOOM, can not test");
+         }
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -536,8 +615,31 @@ EXEC_dispatch           (int a_min)
          return rce;
       }
       DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
-      if (x_line->c_runs < 99)  ++x_line->c_runs;
+      /*---(check specialty)-------------*/
+      if (x_line->tracker [0] == '.') {
+         DEBUG_INPT  yLOG_info    ("control"   ,  x_line->tracker);
+         if        (strcmp (x_line->tracker, ".valid"   ) == 0) {
+            DEBUG_INPT  yLOG_note    ("validity record, .valid, turn on/active");
+            x_file->valid = 'y';
+         } else if (strcmp (x_line->tracker, ".retire"  ) == 0) {
+            DEBUG_INPT  yLOG_note    ("validity record, .retire, turn off");
+            x_file->valid = '·';
+         } else if (strcmp (x_line->tracker, ".blackout") == 0) {
+            DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
+            x_file->valid = '·';
+         } else {
+            DEBUG_INPT  yLOG_note    ("control record not recognized");
+         }
+         rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
+         continue;
+      }
+      if (x_file->valid != 'y') {
+         DEBUG_INPT  yLOG_note    ("file not currently valid/active");
+         rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
+         continue;
+      }
       /*---(check for running)-----------*/
+      if (x_line->c_runs < 99)  ++x_line->c_runs;
       DEBUG_INPT   yLOG_value   ("rpid"      , x_line->rpid);
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");

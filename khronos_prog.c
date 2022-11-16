@@ -1,66 +1,5 @@
 /*====================--------[[ start-of-code ]]---------====================*/
-
-/*===[[ SUMMARY ]]============================================================#
-
- *   application   : khronos
- *   module        : khronos_main
- *   size          : less than 100 slocL
- *
- */
-/*===[[ SUMMARY ]]============================================================#
-
- *   khronos_main is the entry point for khronos and is compilied separately
- *   so that unit testing have be separately linked
- *
- */
-/*============================================================================*/
-
-
 #include   "khronos.h"
-
-
-char          unit_answer [ LEN_RECD ];
-
-
-
-/*====================------------------------------------====================*/
-/*===----                      utility routines                        ----===*/
-/*====================------------------------------------====================*/
-static void      o___UTILITY_________________o (void) {;}
-
-
-/*> char                                                                                         <* 
- *> catchup       (void)                                                                         <* 
- *> {                                                                                            <* 
- *>    DEBUG_LOOP   yLOG_enter (__FUNCTION__);                                                   <* 
- *>    /+---(locals)--------------------------------+/                                           <* 
- *>    long      curr      = 0;                       /+ curr hour                +/             <* 
- *>    int       min       = 0;                       /+ curr minute              +/             <* 
- *>    /+---(init)----------------------------------+/                                           <* 
- *>    /+---(main loop)-----------------------------+/                                           <* 
- *>    DEBUG_LOOP   yLOG_note ("catchup specially flagged missed jobs");                         <* 
- *>    min       = ((my.last_end / 60) % 60) + 1;     /+ start right after last   +/             <* 
- *>    DEBUG_LOOP   yLOG_value ("first min", min);                                               <* 
- *>    /+> curr      = my.last_end - (my.last_end % (60 * 60));                           <+/    <* 
- *>    curr      = my.last_end;                                                                  <* 
- *>    while (curr < my.this_start) {                                                            <* 
- *>       /+> BASE_fast (curr);                           /+ id jobs for this hour    +/   <+/   <* 
- *>       /+---(cycle minutes)----------------------+/                                           <* 
- *>       while (min < 60 && curr <  my.this_start) {                                            <* 
- *>          DEBUG_LOOP   yLOG_value ("minute", min);                                            <* 
- *>          /+> BASE_dispatch (min);                                                     <+/    <* 
- *>          min      += 1;                                                                      <* 
- *>          curr     += 60;                                                                     <* 
- *>       }                                                                                      <* 
- *>       if (curr >=  my.this_start) break;                                                     <* 
- *>       min       = 0;                                                                         <* 
- *>    }                                                                                         <* 
- *>    DEBUG_LOOP   yLOG_value ("last min", min - 1);                                            <* 
- *>    /+---(reset)---------------------------------+/                                           <* 
- *>    /+---(complete)------------------------------+/                                           <* 
- *>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                   <* 
- *>    return 0;                                                                                 <* 
- *> }                                                                                            <*/
 
 
 
@@ -89,6 +28,14 @@ PROG_version            (void)
 }
 
 char
+PROG_vershow       (void)
+{
+   printf ("%s\n", PROG_version ());
+   exit (0);
+}
+
+
+char
 PROG__files_normal      (void)
 {
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
@@ -106,8 +53,8 @@ char
 PROG__files_unit        (void)
 {
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
-   snprintf (my.n_central     , LEN_PATH, "%s%s", DIR_UNIT, "khronos/");
-   snprintf (my.n_home        , LEN_PATH, "%s"  , DIR_UNIT);
+   snprintf (my.n_central     , LEN_PATH, "%s%s", DIR_UNIT, "spool/khronos/");
+   snprintf (my.n_home        , LEN_PATH, "%s%s", DIR_UNIT, "home/");
    snprintf (my.n_root        , LEN_PATH, "%s%s", DIR_UNIT, "root");
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_UNIT, FILE_HEARTBEAT);
    snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACK);
@@ -119,74 +66,143 @@ PROG__files_unit        (void)
 
 
 /*====================------------------------------------====================*/
+/*===----                       pre-initialization                     ----===*/
+/*====================------------------------------------====================*/
+static void      o___PREINIT_________________o (void) {;}
+
+char       /*----: very first setup ------------------s-----------------------*/
+PROG__header            (void)
+{
+   /*---(header)----------------------*/
+   DEBUG_PROG   yLOG_enter (__FUNCTION__);
+   /*---(versioning)------------------*/
+   DEBUG_PROG   yLOG_info     ("khronos" , PROG_version    ());
+   DEBUG_PROG   yLOG_info     ("purpose" , P_PURPOSE);
+   DEBUG_PROG   yLOG_info     ("namesake", P_NAMESAKE);
+   DEBUG_PROG   yLOG_info     ("heritage", P_HERITAGE);
+   DEBUG_PROG   yLOG_info     ("imagery" , P_IMAGERY);
+   DEBUG_PROG   yLOG_note     ("custom core");
+   DEBUG_PROG   yLOG_info     ("yURG"    , yURG_version      ());
+   DEBUG_PROG   yLOG_info     ("yLOG"    , yLOGS_version     ());
+   DEBUG_PROG   yLOG_info     ("ySTR"    , ySTR_version      ());
+   DEBUG_PROG   yLOG_note     ("custom other");
+   DEBUG_PROG   yLOG_info     ("yPARSE"  , yPARSE_version    ());
+   DEBUG_PROG   yLOG_info     ("yDLST"   , yDLST_version     ());
+   DEBUG_PROG   yLOG_info     ("yREGEX"  , yREGEX_version    ());
+   DEBUG_PROG   yLOG_note     ("job control");
+   DEBUG_PROG   yLOG_info     ("ySCHED"  , ySCHED_version    ());
+   DEBUG_PROG   yLOG_info     ("yEXEC"   , yEXEC_version     ());
+   DEBUG_PROG   yLOG_info     ("yJOBS"   , yJOBS_version     ());
+   /*---(complete)-----------------------*/
+   DEBUG_PROG   yLOG_exit  (__FUNCTION__);
+   return 0;
+}
+
+char
+PROG_urgents            (int a_argc, char *a_argv [])
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   /*---(set mute)-----------------------*/
+   yURG_all_mute ();
+   /*---(start logger)-------------------*/
+   rc = yURG_logger  (a_argc, a_argv);
+   DEBUG_PROG   yLOG_value    ("logger"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(process urgents)----------------*/
+   rc = yURG_urgs    (a_argc, a_argv);
+   DEBUG_PROG   yLOG_value    ("logger"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(process urgents)----------------*/
+   rc = PROG__header ();
+   DEBUG_PROG   yLOG_value    ("header"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   return rc;
+}
+
+
+
+/*====================------------------------------------====================*/
 /*===----                      startup functions                       ----===*/
 /*====================------------------------------------====================*/
 static void      o___STARTUP_________________o (void) {;}
 
-char         /*--: pre-argument program initialization ---[ leaf   [ ------ ]-*/
-PROG__init              (void)
+char       /*----: very first setup ------------------s-----------------------*/
+PROG__init              (int a_argc, char *a_argv[])
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
    char        x_home      [LEN_HUND]  = "";
    char       *p           = NULL;
-   /*---(log header)---------------------*/
-   DEBUG_TOPS   yLOG_info    ("oneline" , P_ONELINE);
-   DEBUG_TOPS   yLOG_info    ("purpose" , P_PURPOSE);
-   DEBUG_TOPS   yLOG_info    ("imagery" , P_IMAGERY);
-   DEBUG_TOPS   yLOG_info    ("khronos" , PROG_version    ());
-   DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOGS_version   ());
-   DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
-   DEBUG_TOPS   yLOG_info    ("yDLST"   , yDLST_version   ());
-   DEBUG_TOPS   yLOG_info    ("yPARSE"  , yPARSE_version  ());
-   DEBUG_TOPS   yLOG_info    ("ySCHED"  , ySCHED_version  ());
-   DEBUG_TOPS   yLOG_info    ("yEXEC"   , yEXEC_version   ());
-   DEBUG_TOPS   yLOG_info    ("ySTR"    , ySTR_version    ());
    /*---(header)-------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    /*---(yURG output control)------------*/
+   /*> yURG_msg_none ();                                                              <*/
+   /*> yURG_err_std  ();                                                              <*/
+   /*> yURG_err_live ();                                                              <*/
+   yURG_err_none ();
+   yURG_err_mute ();
    yURG_msg_none ();
-   yURG_err_std  ();
-   yURG_err_live ();
-   ySCHED_config_by_date (11,  5, 14);    /* MUST FIX FIX FIX */
-   /*---(begin)--------------------------*/
-   PROG__files_normal ();
-   g_seq = 0;
+   yURG_msg_mute ();
+   ySCHED_date (11,  5, 14);    /* MUST FIX FIX FIX */
+   /*---(defaults)-----------------------*/
    my.run_as   = IAM_KHRONOS;
    my.run_mode = ACT_NONE;
    strcpy (my.run_file, "");
+   /*---(begin)--------------------------*/
+   g_seq = 0;
+   rc = yJOBS_runas (a_argv [0], &(my.run_as), P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, P_NAMESAKE, P_HERITAGE, P_IMAGERY, P_REASON, P_ONELINE, P_HOMEDIR, P_BASENAME, P_FULLPATH, P_SUFFIX, P_CONTENT, P_SYSTEM, P_LANGUAGE, P_CODESIZE, P_DEPENDS, P_AUTHOR, P_CREATED, P_VERMAJOR, P_VERMINOR, P_VERNUM, P_VERTXT, P_DEFINE, P_POTENTIAL, P_SCOPE, P_EXAMPLE, P_TROUBLE, P_NEWMIND, P_SUMMARY, P_GREEK, NULL);
+   DEBUG_PROG  yLOG_value   ("runas"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_PROG  yLOG_char    ("run_as"    , my.run_as);
+   if (my.run_as == IAM_KHRONOS)  PROG__files_normal ();
+   else                           PROG__files_unit   ();
    rc = yDLST_init ();
    rc = yPARSE_init  ('-', NULL, '-');
    rc = yPARSE_delimiters  ("§");
    /*---(call whoami)--------------------*/
    rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), &my.m_root, &my.m_who, 'n');
-   DEBUG_TOPS   yLOG_value   ("whoami"    , rc);
+   DEBUG_PROG   yLOG_value   ("whoami"    , rc);
    --rce;  if (rc < 0) {
-      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_TOPS   yLOG_value   ("m_pid"     , my.m_pid);
-   DEBUG_TOPS   yLOG_value   ("m_ppid"    , my.m_ppid);
-   DEBUG_TOPS   yLOG_value   ("m_uid"     , my.m_uid);
-   DEBUG_TOPS   yLOG_info    ("m_who"     , my.m_who);
+   DEBUG_PROG   yLOG_value   ("m_pid"     , my.m_pid);
+   DEBUG_PROG   yLOG_value   ("m_ppid"    , my.m_ppid);
+   DEBUG_PROG   yLOG_value   ("m_uid"     , my.m_uid);
+   DEBUG_PROG   yLOG_info    ("m_who"     , my.m_who);
    /*---(get current path)---------------*/
    p = getcwd (my.m_path, LEN_PATH);
-   DEBUG_TOPS   yLOG_spoint  (p);
+   DEBUG_PROG   yLOG_spoint  (p);
    --rce;  if (p == NULL) {
-      DEBUG_TOPS   yLOG_sexitr  (__FUNCTION__, rce);
+      DEBUG_PROG   yLOG_sexitr  (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_TOPS   yLOG_info    ("m_path"    , my.m_path);
+   DEBUG_PROG   yLOG_info    ("m_path"    , my.m_path);
    /*---(retirement list)----------------*/
-   rc = FILE_init  ();
+   rc = BASE_init  ();
    DEBUG_PROG  yLOG_value   ("init"      , rc);
    --rce;  if (rc < 0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -203,16 +219,16 @@ PROG__args              (int a_argc, char *a_argv[])
    char        two_arg     =    0;
    int         x_args      =    0;          /* argument count                 */
    /*---(begin)--------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    yURG_msg ('>', "command line arguments handling...");
    yURG_msg ('-', "total of %d arguments, including name", a_argc);
    /*---(program name)--------------------------*/
    strlcpy (my.m_prog, a_argv [0], LEN_DESC);
-   DEBUG_TOPS   yLOG_info    ("prog name" , my.m_prog);
+   DEBUG_PROG   yLOG_info    ("prog name" , my.m_prog);
    /*---(check for no args)--------------*/
-   DEBUG_TOPS   yLOG_value   ("a_argc"    , a_argc);
+   DEBUG_PROG   yLOG_value   ("a_argc"    , a_argc);
    if (a_argc == 1) {
-      DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+      DEBUG_PROG   yLOG_exit    (__FUNCTION__);
       return 0;
    }
    /*---(walk args)-----------------------------*/
@@ -221,8 +237,8 @@ PROG__args              (int a_argc, char *a_argv[])
       a = a_argv [i];
       if (a == NULL) {
          yURG_err ('f', "arg %d is NULL", i);
-         DEBUG_TOPS   yLOG_note    ("FATAL, found a null argument, really bad news");
-         DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+         DEBUG_PROG   yLOG_note    ("FATAL, found a null argument, really bad news");
+         DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
       if (i < a_argc - 1)  b = a_argv [i + 1];
@@ -232,22 +248,12 @@ PROG__args              (int a_argc, char *a_argv[])
       /*---(two arg check)---------------*/
       ++x_args;
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
-      rc = yJOBS_args_handle (&(my.run_as), &(my.run_mode), my.run_file, &i, a, b);
+      rc = yJOBS_argument (&i, a, b, &(my.run_as), &(my.run_mode), my.run_file);
       if (rc < 0)  break;
    }
    /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return rc;
-}
-
-char       /* PURPOSE : display usage help information -----------------------*/
-PROG__usage             (void)
-{
-   printf ("see man pages for a better understanding of khronos...\n");
-   printf ("  man 1 khronos      command-line initiation, use, and options\n");
-   printf ("  man 5 khronos      structure of config, files, and streams\n");
-   printf ("  man 7 khronos      decision rationale, scope, and objectives\n");
-   exit   (0);
 }
 
 char             /* [------] post-argument program initialization ------------*/
@@ -256,234 +262,99 @@ PROG__begin             (void)
    /*---(locals)-----------+-----+-----+-*/
    int         rce         =  -10;
    /*---(header)-------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    DEBUG_INPT  yLOG_char    ("my.run_mode"     , my.run_mode);
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char             /* [------] post-argument program initialization ------------*/
-PROG__final             (void)
-{
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(set output routing)-------------*/
-   yJOBS_final (my.m_uid);
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-PROG_debugging          (int a_argc, char *a_argv[])
-{
-   /*---(locals)-----------+-----+-----+-*/
-   int         rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(startup)------------------------*/
-   if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
-   if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
-   DEBUG_TOPS  yLOG_value   ("debugging" , rc);
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return rc;
-}
-
-char
-PROG_startup            (int a_argc, char *a_argv[])
-{
-   /*---(locals)-----------+-----+-----+-*/
-   int         rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(startup)------------------------*/
-   if (rc >= 0)  rc = PROG__init   ();
-   if (rc >= 0)  rc = PROG__args   (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG__begin  ();
-   if (rc >= 0)  rc = PROG__final  ();
+   /*> yJOBS_final (my.m_uid);                                                        <*/
    if (my.run_as == IAM_UKHRONOS)  PROG__unit_prepare ();
-   DEBUG_TOPS  yLOG_value   ("startup"   , rc);
    /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return rc;
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
+   return 0;
 }
-
-
-
-/*====================------------------------------------====================*/
-/*===----                       run-time routing                       ----===*/
-/*====================------------------------------------====================*/
-static void      o___DRIVER__________________o (void) {;}
 
 char
-PROG_driver             (void)
+PROG_startup            (int a_argc, char *a_argv [])
 {
    /*---(locals)-----------+-----+-----+-*/
-   int         rce         =  -10;
-   int         rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(execute)------------------------*/
-   rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);
+   char        rce         =  -10;
+   char        rc          =    0;
+   /*---(header)----------------------*/
+   yURG_stage_check (YURG_BEG);
+   DEBUG_PROG  yLOG_enter   (__FUNCTION__);
+   /*---(initialize)---------------------*/
+   rc = PROG__init   (a_argc, a_argv);
+   DEBUG_PROG   yLOG_value    ("init"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(arguments)----------------------*/
+   rc = PROG__args   (a_argc, a_argv);
+   DEBUG_PROG   yLOG_value    ("args"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(begin)--------------------------*/
+   rc = PROG__begin  ();
+   DEBUG_PROG   yLOG_value    ("begin"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   DEBUG_PROG  yLOG_exit  (__FUNCTION__);
+   yURG_stage_check (YURG_MID);
    return rc;
 }
 
 
 
 /*====================------------------------------------====================*/
-/*===----                      shutdown functions                      ----===*/
+/*===----                        program shutdown                      ----===*/
 /*====================------------------------------------====================*/
 static void      o___SHUTDOWN________________o (void) {;}
 
 char
 PROG_term               (void)
 {
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    int   rc = 0;
    /*> rc = setuid(my.uid);                                                           <*/
    /*> printf("; fatal, program terminated\n");                                       <*/
    /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    exit (-1);
    return 0;
 }
 
-char
-PROG_end                (void)
+char       /*----: drive the program closure activities ----------------------*/
+PROG__end               (void)
 {
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   yDLST_wrap ();
-   /*> rc = setuid(my.uid);                                                           <*/
-   /*> printf("\n");                                                                  <*/
-   PROG__unit_cleanup ();
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   DEBUG_TOPS   yLOGS_end    ();
-   return 0;
-}
-
-
-
-/*====================------------------------------------====================*/
-/*===----                   helpers for unit testing                   ----===*/
-/*====================------------------------------------====================*/
-static void      o___UNITTEST________________o (void) {;}
-
-char*            /*--> unit test accessor ------------------------------*/
-prog__unit              (char *a_question)
-{ 
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
-   int         rc          =    0;
-   char        s           [LEN_HUND]  = "";
-   char        t           [LEN_HUND]  = "";
-   /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "PROG             : question not understood", LEN_HUND);
-   /*---(crontab name)-------------------*/
-   if      (strcmp (a_question, "mode"          )  == 0) {
-      yJOBS_iam  (my.run_as  , s);
-      yJOBS_mode (my.run_mode, t);
-      snprintf (unit_answer, LEN_HUND, "PROG mode        : (%c) %-18.18s, (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
-   }
-   else if (strcmp (a_question, "action"        )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG action      : %c  %c  %2då%sæ", my.run_as, my.run_mode, strlen (my.run_file), my.run_file);
-   }
-   else if (strcmp (a_question, "n_central"     )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG central     : %2då%sæ", strlen (my.n_central  ), my.n_central);
-   }
-   else if (strcmp (a_question, "n_home"        )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG home        : %2då%sæ", strlen (my.n_home     ), my.n_home);
-   }
-   else if (strcmp (a_question, "n_root"        )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG root        : %2då%sæ", strlen (my.n_root     ), my.n_root);
-   }
-   else if (strcmp (a_question, "n_heartbeat"   )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG heartbeat   : %2då%sæ", strlen (my.n_heartbeat), my.n_heartbeat);
-   }
-   else if (strcmp (a_question, "n_track"       )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG tracking    : %2då%sæ", strlen (my.n_track    ), my.n_track);
-   }
-   else if (strcmp (a_question, "n_status"      )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG status      : %2då%sæ", strlen (my.n_status   ), my.n_status);
-   }
-   /*---(complete)-----------------------*/
-   return unit_answer;
-}
-
-char
-PROG__unit_prepare      (void)
-{
-   char        x_cmd       [LEN_RECD]  = "";
-   char        x_home      [LEN_PATH];
-   char        x_dir       [LEN_RECD]  = "";
-   PROG__files_unit ();
-   /*---(directories)--------------------*/
-   getcwd (x_home, LEN_PATH);
-   chdir  ("/tmp");
-   sprintf (x_dir, "%s", DIR_UNIT);
-   yURG_mkdir (x_dir, "root"   , "root"  , "0755");
-   sprintf (x_dir, "%skhronos" , DIR_UNIT);
-   yURG_mkdir (x_dir, "root"   , "root"  , "0700");
-   sprintf (x_dir, "%sroot"    , DIR_UNIT);
-   yURG_mkdir (x_dir, "root"   , "root"  , "0700");
-   sprintf (x_dir, "%smember"  , DIR_UNIT);
-   yURG_mkdir (x_dir, "member" , "root"  , "0700");
-   sprintf (x_dir, "%smachine" , DIR_UNIT);
-   yURG_mkdir (x_dir, "machine", "root"  , "0700");
-   sprintf (x_dir, "%smonkey"  , DIR_UNIT);
-   yURG_mkdir (x_dir, "monkey" , "root"  , "0700");
-   chdir  (x_home);
-   /*---(complete)-----------------------*/
-   return 0;
-}
-
-char
-PROG__unit_cleanup      (void)
-{
-   char        x_cmd       [LEN_RECD];
-   char        x_home      [LEN_PATH];
-   /*---(directories)--------------------*/
-   getcwd (x_home, LEN_PATH);
-   chdir  ("/tmp");
-   yURG_rmdir (DIR_UNIT);
-   strlcpy (my.n_central, DIR_CENTRAL, LEN_PATH);
-   chdir  (x_home);
-   /*---(complete)-----------------------*/
-   return 0;
-}
-
-char       /*----: set up programgents/debugging -----------------------------*/
-prog__unit_quiet   (void)
-{
    char        rc          =    0;
-   int         x_argc      =    1;
-   char       *x_argv [1]  = { "khronos" };
-   rc = PROG_debugging (x_argc, x_argv);
-   rc = PROG_startup   (x_argc, x_argv);
-   return rc;
-}
-
-char       /*----: set up programgents/debugging -----------------------------*/
-prog__unit_loud    (void)
-{
-   char        rc          =    0;
-   int         x_argc      =    6;
-   char       *x_argv [6]  = { "khronos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@ysched", "@@yexec"  };
-   rc = PROG_debugging (x_argc, x_argv);
-   rc = PROG_startup   (x_argc, x_argv);
-   return rc;
-}
-
-char       /*----: set up program urgents/debugging --------------------------*/
-prog__unit_end     (void)
-{
-   PROG_end       ();
+   /*---(shutdown)--------------------*/
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
+   yDLST_wrap ();
+   PROG__unit_cleanup ();
+   /*---(complete)-----------------------*/
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
+char             /* [------] drive the program closure activities ------------*/
+PROG_shutdown           (void)
+{
+   /*---(stage-check)--------------------*/
+   yURG_stage_check (YURG_END);
+   /*---(header)-------------------------*/
+   DEBUG_PROG   yLOG_enter    (__FUNCTION__);
+   PROG__end ();
+   /*---(complete)-----------------------*/
+   DEBUG_PROG   yLOG_exit     (__FUNCTION__);
+   DEBUG_PROG   yLOGS_end    ();
+   return 0;
+}
 
 
 /*====================---------[[ end-of-code ]]----------====================*/

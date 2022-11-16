@@ -17,21 +17,20 @@ main                    (int a_argc, char *a_argv [])
    long        x_save      =    0;                       /* last hour ran            */
    long        x_hour      =    0;                       /* curr hour                */
    int         x_min       =    0;                       /* curr minute              */
-   /*---(initialize)---------------------*/
-   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv);
-   DEBUG_PROG  yLOG_value   ("debugging" , rc);
-   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv);
-   DEBUG_PROG  yLOG_value   ("startup"   , rc);
-   --rce;  if (rc <  0) {
-      PROG_end ();
-      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   /*---(debugging)----------------------*/
+   rc = PROG_urgents (a_argc, a_argv);
+   DEBUG_PROG   yLOG_value    ("urgents"   , rc);
+   if (rc <  0) { PROG_shutdown (); return -1; }
+   /*---(initialization)-----------------*/
+   rc = PROG_startup (a_argc, a_argv);
+   DEBUG_PROG   yLOG_value    ("startup"   , rc);
+   if (rc <  0) { PROG_shutdown (); return -2; }
    /*---(main)---------------------------*/
-   /*> rc = PROG_driver ();                                                           <*/
-   rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);
+   rc = yJOBS_driver (P_ONELINE, khronos_yjobs);
+   DEBUG_PROG   yLOG_value    ("driver"    , rc);
    /*---(wrapup)-------------------------*/
-   PROG_end  ();
+   rc = PROG_shutdown  ();
+   DEBUG_PROG   yLOG_value    ("shutdown"  , rc);
    /*---(complete)-----------------------*/
    return rc;
 }
