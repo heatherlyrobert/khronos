@@ -33,8 +33,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0b"
-#define     P_VERTXT    "fully build in yJOBS, except for daemon run"
+#define     P_VERNUM    "2.0c"
+#define     P_VERTXT    "24h by min proposed schedule report is 90p formatted"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -625,6 +625,7 @@
 #include    <yJOBS.h>             /* heatherly job execution and control      */
 #include    <yREGEX.h>            /* heatherly regular expressions            */
 #include    <ySCHED.h>            /* heatherly kernighan scheduling           */
+#include    <yCOLOR_solo.h>
 /*---(done)-----------------*/
 
 
@@ -1116,8 +1117,12 @@ char        RPTG_minute__header     (FILE *f);
 char        RPTG_minute__footer     (FILE *f, int c);
 char        RPTG_minute             (void);
 char        RPTG_by_min__prepare    (void);
-char        RPTG_by_min__header     (FILE *f, char *a_name, char a_beg, char a_end);
-char        RPTG_by_min__line       (int n, tLINE *x_line, char a_yr, char a_mo, char a_dy, char a_hr, char a_last, char *a_out);
+char        RPTG_by_min__header     (FILE *f, char a_color, char *a_name, char a_beg, char a_end);
+char        RPTG_by_min__hour       (char a_color, int n, tLINE *x_line, char a_yr, char a_mo, char a_dy, char a_hr, char *a_out);
+char        RPTG_by_min__line       (FILE *f, char a_color, int n, tLINE *a_line, char a_yr, char a_mo, char a_dy, char a_hr, char a_count);
+char        RPTG_by_min__block      (FILE *f, char a_color, char a_yr, char a_mo, char a_dy, char a_beg, char a_count);
+char        RPTG_by_min__offset     (long a_epoch, cchar a_yr, cchar a_mo, cchar a_dy, int a_offset, long *r_epoch, char *r_yr, char *r_mo, char *r_dy);
+char        RPTG_by_min_direct      (FILE *f, char a_color, char a_yr, char a_mo, char a_dy);
 char*       rptg__unit              (char *a_question, int a_num);
 
 char        khronos_yjobs           (cchar a_req, cchar *a_data);

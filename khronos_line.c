@@ -512,6 +512,9 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       } else if (strcmp (a_new->tracker, ".blackout") == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
          x_file->valid = '·';
+      } else if (strcmp (a_new->tracker, ".only"    ) == 0) {
+         DEBUG_INPT  yLOG_note    ("validity record, .only, turn on");
+         x_file->valid = 'y';
       } else {
          DEBUG_INPT  yLOG_note    ("control record not recognized");
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
