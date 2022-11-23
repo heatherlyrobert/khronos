@@ -3,10 +3,6 @@
 
 
 
-static      char        s_print     [LEN_RECD] = "";
-
-
-
 /*====================------------------------------------====================*/
 /*===----                     supporting functions                     ----===*/
 /*====================------------------------------------====================*/
@@ -71,53 +67,53 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "å____.____.___._______._____.______.__________æ", LEN_RECD);
-   ++n;  if (a_cur->tracker [0]  != '·')         s_print [n] = 'X';
-   ++n;  if (a_cur->recdno       >= 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->sched        != NULL)        s_print [n] = 'X';
-   ++n;  if (a_cur->command [0]  != '\0')        s_print [n] = 'X';
+   strlcpy (g_print, "å____.____.___._______._____.______.__________æ", LEN_RECD);
+   ++n;  if (a_cur->tracker [0]  != '·')         g_print [n] = 'X';
+   ++n;  if (a_cur->recdno       >= 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->sched        != NULL)        g_print [n] = 'X';
+   ++n;  if (a_cur->command [0]  != '£')        g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->retire       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->rpid         >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->start        >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->force        != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->retire       != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->rpid         >  0)           g_print [n] = 'X';
+   ++n;  if (a_cur->start        >  0)           g_print [n] = 'X';
+   ++n;  if (a_cur->force        != '-')         g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->est          >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->est_min      >  0)           s_print [n] = 'X';
-   ++n;  if (a_cur->est_max      >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->est          >  0)           g_print [n] = 'X';
+   ++n;  if (a_cur->est_min      >  0)           g_print [n] = 'X';
+   ++n;  if (a_cur->est_max      >  0)           g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->value        != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->track        != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->handoff      != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->strict       != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->lower        != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->upper        != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->remedy       != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->value        != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->track        != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->handoff      != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->strict       != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->lower        != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->upper        != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->remedy       != '-')         g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->flex         != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->throttle     != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->cpu          != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->disk         != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->net          != '-')         s_print [n] = 'X';
+   ++n;  if (a_cur->flex         != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->throttle     != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->cpu          != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->disk         != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->net          != '-')         g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->l_rpid       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_beg        != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_end        != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_dur        != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->l_yexec      != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->l_rc         != 0)           s_print [n] = 'X';
+   ++n;  if (a_cur->l_rpid       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->l_beg        != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->l_end        != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->l_dur        != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->l_yexec      != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->l_rc         != 0)           g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->c_runs       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_skip       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_badd       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_boom       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_kill       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_shut       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_fail       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_pass       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_earl       != 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->c_late       != 0)           s_print [n] = 'X';
-   return s_print;
+   ++n;  if (a_cur->c_runs       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_skip       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_badd       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_boom       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_kill       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_shut       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_fail       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_pass       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_earl       != 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->c_late       != 0)           g_print [n] = 'X';
+   return g_print;
 }
 
 
@@ -505,18 +501,31 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       DEBUG_INPT  yLOG_info    ("control"   ,  a_new->tracker);
       if        (strcmp (a_new->tracker, ".valid"   ) == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .valid, turn on/active");
+         yURG_msg ('-', "validity record, .valid, turn on/active");
          x_file->valid = 'y';
       } else if (strcmp (a_new->tracker, ".retire"  ) == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .retire, turn off");
+         yURG_msg ('-', "validity record, .retire, turn on/active");
          x_file->valid = '·';
       } else if (strcmp (a_new->tracker, ".blackout") == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
+         yURG_msg ('-', "validity record, .blackout, turn on/active");
          x_file->valid = '·';
       } else if (strcmp (a_new->tracker, ".only"    ) == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .only, turn on");
+         yURG_msg ('-', "validity record, .only, turn on/active");
          x_file->valid = 'y';
+      } else if (strncmp (a_new->tracker, ".graceful", 9) == 0) {
+         DEBUG_INPT  yLOG_note    ("shutdown record, .graceful, turn on");
+         DEBUG_INPT  yLOG_note    ("shutdown record, .graceful");
+         a_new->est = 180;
+      } else if (strncmp (a_new->tracker, ".violent" , 8) == 0) {
+         DEBUG_INPT  yLOG_note    ("shutdown record, .violent, turn on");
+         DEBUG_INPT  yLOG_note    ("shutdown record, .violent");
+         a_new->est = 60;
       } else {
          DEBUG_INPT  yLOG_note    ("control record not recognized");
+         yURG_err ('f', "%s is not a recognized control record", a_new->tracker);
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
@@ -612,7 +621,8 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
    int         rc          =    0;
    int         c           =    0;
    tFILE      *x_file      = NULL;
-   int         x_line      =    0;
+   tLINE      *x_line      = NULL;
+   tTRKS      *x_cur       = NULL;
    char        x_focus     [LEN_LABEL] = "";
    char        x_issue     [LEN_LABEL] = "";
    int         x_pos       =    0;
@@ -684,6 +694,25 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
+   /*---(set up tracker)-----------------*/
+   if (my.t_tracker [0] != '.') {
+      /*---(get current line)------------*/
+      rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_CURR, NULL, &x_line);
+      DEBUG_INPT  yLOG_point   ("x_line"    , x_line);
+      --rce;  if (x_line == NULL) {
+         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(create tracker)--------------*/
+      rc = TRKS_create (x_file->title, my.t_tracker, x_line, &(x_line->trks));
+      DEBUG_INPT   yLOG_value   ("trks"      , rc);
+      --rce; if (rc < 0) {
+         DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+         return rce;
+      }
+      /*---(done)------------------------*/
+   }
+   /*---(final message)------------------*/
    yURG_msg ('-', "SUCCESS, created a new line from the crontab entry");
    yURG_msg (' ', "");
    /*---(complete)-----------------------*/

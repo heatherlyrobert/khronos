@@ -33,8 +33,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0c"
-#define     P_VERTXT    "24h by min proposed schedule report is 90p formatted"
+#define     P_VERNUM    "2.0d"
+#define     P_VERTXT    "hardest tracker work done, been running in prod for 4dys straight"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -682,6 +682,7 @@
 #define     FILE_HEARTBEAT          "khronos.heartbeat"
 #define     FILE_TRACK              "khronos.tracking"
 #define     FILE_STATUS             "khronos.status"
+#define     FILE_TRACKERS           "khronos.trackers"
 
 
 
@@ -806,6 +807,7 @@ struct cACCESSOR
    char        n_heartbeat [LEN_PATH];      /* pulser file name               */
    char        n_track     [LEN_PATH];      /* job tracker file name          */
    char        n_status    [LEN_PATH];      /* status update file name        */
+   char        n_trks      [LEN_PATH];      /* tracker database               */
    /*---(pulse)----------------*/
    char        pulse_time   [ 50]; /* last time string written to pulse       */
    char        pulse_begin  [ 50]; /* start of this cron run as string        */
@@ -868,7 +870,7 @@ extern    struct cACCESSOR my;
 struct cFILE {
    /*---(master)---------------*/
    char        seq;                         /* unique id for testing          */
-   char        title       [LEN_HUND];      /* name of the cronfile           */
+   char        title       [LEN_TITLE];     /* name of the cronfile           */
    char        user        [LEN_USER];      /* execution user name            */
    int         uid;                         /* execution user uid             */
    char        note        [LEN_TERSE];     /* processing note for sysadmin   */
@@ -877,6 +879,27 @@ struct cFILE {
    char        retired;                     /* special file of retired lines  */
    /*---(done)-----------------*/
 };
+
+typedef struct cTRKS  tTRKS;
+struct cTRKS {
+   /*---(master)---------------*/
+   uchar       file        [LEN_TITLE];     /* name of the file               */
+   uchar       tracker     [LEN_TITLE];     /* description of task            */
+   uchar       last        [LEN_HUND];      /* last heartbeat used            */
+   uchar       stats       [LEN_FULL];      /* run result stats               */
+   uchar       durs        [LEN_FULL];      /* act vs est duration scale      */
+   uchar       actual      [LEN_RECD];      /* run results                    */
+   /*---(links)----------------*/
+   tLINE      *parent;                      /* tie back to source line        */
+   tTRKS      *m_prev;
+   tTRKS      *m_next;
+   /*---(done)-----------------*/
+};
+
+#define   KHRONOS_DEFLAST     "´·························  ··········  ¬¬····"
+#define   KHRONOS_DEFSTATS    "´  · ·  · · · · ·  · · · ·  · · ·  ·)´····´····´····´····´····´····´····´····´····´····´····´····´"
+#define   KHRONOS_DEFDURS     "´  · ·  · · · · · ·········· · ·········· · · · · ·  ·)´····´····´····´····´····´····´····´····´····´····´····´····´"
+#define   KHRONOS_DEFACTUAL   "´¬¬¬  ¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨"
 
 struct cLINE {
    /*---(master)---------------*/
@@ -915,6 +938,7 @@ struct cLINE {
    char        l_yexec;
    char        l_rc;
    /*---(counts)---------------*/
+   tTRKS      *trks;
    char        c_runs;
    char        c_skip;
    char        c_badd;
@@ -928,22 +952,34 @@ struct cLINE {
    /*---(done)-----------------*/
 };
 
-#define  T_BEG         '['
-#define  T_RUN         'r'
-#define  T_SKIP        's'
-#define  T_BADD        'b'
-#define  T_BOOM        'o'
-#define  T_KILL        'k'
-#define  T_SHUT        'x'
-#define  T_FAIL        'f'
-#define  T_PASS        'p'
-#define  T_EARL        'e'
-#define  T_LATE        'l'
-#define  T_END         ']'
+
+#define  KHRONOS_BEG         '['
+#define  KHRONOS_RUN         'r'
+
+#define  KHRONOS_SKIP        's'
+
+#define  KHRONOS_BADD        'B'
+#define  KHRONOS_BOOM        'O'
+#define  KHRONOS_KILL        'K'
+#define  KHRONOS_TERM        'T'
+
+#define  KHRONOS_LGRA        'g'
+#define  KHRONOS_LVIO        'v'
+#define  KHRONOS_GGRA        'G'
+#define  KHRONOS_GVIO        'V'
+
+#define  KHRONOS_FAIL        'f'
+#define  KHRONOS_WARN        'w'
+#define  KHRONOS_PASS        'p'
+
+#define  KHRONOS_EARL        'e'
+#define  KHRONOS_LATE        'l'
 
 
 
 
+
+extern char        g_print     [LEN_RECD];
 
 /*---(prototypes)-----------------------------------------------*/
 
@@ -1111,11 +1147,11 @@ char        rptg__track_ends        (char a_sig, char *a_name, char *a_desc);
 char        RPTG_track_beg          (void);
 char        RPTG_track_end          (void);
 char        RPTG_track_sig          (char a_sig, char *a_name, char *a_desc);
-char        RPTG_minute__open       (FILE **f);
-char        RPTG_minute__close      (FILE **f);
-char        RPTG_minute__header     (FILE *f);
-char        RPTG_minute__footer     (FILE *f, int c);
-char        RPTG_minute             (void);
+char        RPTG_status__open       (FILE **f);
+char        RPTG_status__close      (FILE **f);
+char        RPTG_status__header     (FILE *f);
+char        RPTG_status__footer     (FILE *f, int c);
+char        RPTG_status             (void);
 char        RPTG_by_min__prepare    (void);
 char        RPTG_by_min__header     (FILE *f, char a_color, char *a_name, char a_beg, char a_end);
 char        RPTG_by_min__hour       (char a_color, int n, tLINE *x_line, char a_yr, char a_mo, char a_dy, char a_hr, char *a_out);
@@ -1126,6 +1162,54 @@ char        RPTG_by_min_direct      (FILE *f, char a_color, char a_yr, char a_mo
 char*       rptg__unit              (char *a_question, int a_num);
 
 char        khronos_yjobs           (cchar a_req, cchar *a_data);
+
+
+
+/*===[[ KHRONOS_TRKS.C ]]=====================================================*/
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+/*---(support)--------------*/
+char        TRKS__wipe              (tTRKS *a_cur);
+char*       TRKS__memory            (tTRKS *a_cur);
+char        TRKS__tracker           (cchar *a_tracker);
+char        TRKS__coded             (char a_type, cchar *a_key, char *a_str);
+/*---(memory)---------------*/
+char        trks__new               (tTRKS **r_new, char a_force);
+char        TRKS__new               (tTRKS **r_new);
+char        TRKS__force             (tTRKS **r_new);
+char        TRKS__free              (tTRKS **a_old);
+/*---(exist)----------------*/
+char        TRKS__default           (tTRKS *a_cur);
+char        TRKS__by_name           (cchar *a_file, cchar *a_tracker, tTRKS **r_trks);
+char        TRKS__by_index          (int n, tTRKS **r_trks);
+char        TRKS__replace           (tTRKS *a_old, tTRKS *a_new);
+char        TRKS_purge              (void);
+char        TRKS_create             (cchar *a_file, cchar *a_tracker, tLINE *a_line, tTRKS **r_trks);
+/*---(file)-----------------*/
+char        TRKS__open              (char *a_name, char *a_perms);
+char        TRKS__close             (void);
+/*---(exim)-----------------*/
+char        TRKS__parse             (cchar *a_recd);
+char        TRKS_import_full        (cchar *a_file);
+char        TRKS_import             (void);
+/*---(data)-----------------*/
+char        TRKS__count2num         (char a_count);
+char        TRKS__num2count         (char a_num);
+char        TRKS__biggun2num        (char a_biggun);
+char        TRKS__num2biggun        (char a_num);
+char        TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max);
+char        TRKS__redur_full        (char a_roll, cchar *a_hist, int a_min, int a_est, int a_max, char *r_new);
+char        TRKS__stats             (char *b_str, char a_code);
+char        TRKS__restat_full       (char a_roll, cchar *a_hist, char *r_new);
+/*---(exec)-----------------*/
+char        TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn);
+char        TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn);
+char        TRKS_complete           (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est ,int a_max);
+/*---(unittest)-------------*/
+char*       TRKS__unit              (char *a_question, int a_num);
+/*---(done)-----------------*/
+
+
+
 
 #endif
 /*=============================[[ end-of-code ]]==============================*/

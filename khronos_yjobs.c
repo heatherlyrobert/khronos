@@ -20,14 +20,24 @@ khronos_yjobs           (cchar a_req, cchar *a_data)
    DEBUG_PROG    yLOG_info    ("a_data"    , a_data);
    /*---(handle)-------------------------*/
    switch (a_req) {
-   case YJOBS_READ     : /* no database */                      break;
-   case YJOBS_STATS    : /* no database */                      break;
-   case YJOBS_WRITE    : /* no database */                      break;
-   case YJOBS_PULL     : rc = FILE_pull (a_data);               break;
-   case YJOBS_CLEAR    : /* no database */                      break;
-   case YJOBS_LOCALRPT : /* rc = poly_yjobs_localrpt ();   */   break;
-   case YJOBS_REPORT   : /* no database */                      break;
-   case YJOBS_PURGE    : rc = BASE_purge ();                    break;
+   case YJOBS_STATS    :
+      DEBUG_PROG    yLOG_note    ("called for stats");
+      break;
+   case YJOBS_PULL     :
+      DEBUG_PROG    yLOG_note    ("called for pull");
+      rc = FILE_pull (a_data);
+      break;
+   case YJOBS_LOCALRPT : 
+      DEBUG_PROG    yLOG_note    ("called for localrpt");
+      break;
+   case YJOBS_REPORT   :
+      DEBUG_PROG    yLOG_note    ("called for report");
+      rc = RPTG_by_min ();
+      break;
+   case YJOBS_PURGE    :
+      DEBUG_PROG    yLOG_note    ("called for purge");
+      rc = BASE_purge ();
+      break;
    }
    /*---(trouble)------------------------*/
    if (rc < 0) {

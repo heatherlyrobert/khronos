@@ -28,6 +28,11 @@ main                    (int a_argc, char *a_argv [])
    /*---(main)---------------------------*/
    rc = yJOBS_driver (P_ONELINE, khronos_yjobs);
    DEBUG_PROG   yLOG_value    ("driver"    , rc);
+   /*---(run)----------------------------*/
+   IF_RUNNING {
+      rc = BASE_execute ();
+      DEBUG_PROG   yLOG_value    ("execute"   , rc);
+   }
    /*---(wrapup)-------------------------*/
    rc = PROG_shutdown  ();
    DEBUG_PROG   yLOG_value    ("shutdown"  , rc);

@@ -45,6 +45,7 @@ PROG__files_normal      (void)
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
    snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_YHIST, FILE_TRACK);
    snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
+   snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_CENTRAL, FILE_TRACKERS);
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
@@ -59,6 +60,7 @@ PROG__files_unit        (void)
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_UNIT, FILE_HEARTBEAT);
    snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACK);
    snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_UNIT, FILE_STATUS);
+   snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACKERS);
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
@@ -160,7 +162,7 @@ PROG__init              (int a_argc, char *a_argv[])
    /*---(defaults)-----------------------*/
    my.run_as   = IAM_KHRONOS;
    my.run_mode = ACT_NONE;
-   strcpy (my.run_file, "");
+   strlcpy (my.run_file, "", LEN_PATH);
    /*---(begin)--------------------------*/
    g_seq = 0;
    rc = yJOBS_runas (a_argv [0], &(my.run_as), P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, P_NAMESAKE, P_HERITAGE, P_IMAGERY, P_REASON, P_ONELINE, P_HOMEDIR, P_BASENAME, P_FULLPATH, P_SUFFIX, P_CONTENT, P_SYSTEM, P_LANGUAGE, P_CODESIZE, P_DEPENDS, P_AUTHOR, P_CREATED, P_VERMAJOR, P_VERMINOR, P_VERNUM, P_VERTXT, P_DEFINE, P_POTENTIAL, P_SCOPE, P_EXAMPLE, P_TROUBLE, P_NEWMIND, P_SUMMARY, P_GREEK, NULL);
@@ -197,6 +199,13 @@ PROG__init              (int a_argc, char *a_argv[])
    /*---(retirement list)----------------*/
    rc = BASE_init  ();
    DEBUG_PROG  yLOG_value   ("init"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(purge existing trackers)--------*/
+   rc = TRKS_purge ();
+   DEBUG_PROG  yLOG_value   ("purge"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;

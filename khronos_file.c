@@ -4,7 +4,7 @@
 
 
 char        g_seq   =  0;
-static      char        s_print     [LEN_RECD] = "";
+char        g_print     [LEN_RECD] = "";
 
 
 
@@ -20,7 +20,7 @@ FILE__wipe              (tFILE *a_cur)
    if (a_cur == NULL)  return -1;
    /*---(master)-------------------------*/
    a_cur->seq     =   -1;
-   strlcpy (a_cur->title  , "" , LEN_HUND);
+   strlcpy (a_cur->title  , "" , LEN_TITLE);
    strlcpy (a_cur->user   , "" , LEN_USER);
    a_cur->uid     =   -1;
    strlcpy (a_cur->note   , "-", LEN_TERSE);
@@ -35,18 +35,18 @@ char*
 FILE__memory            (tFILE *a_cur)
 {
    int         n           =    0;
-   strlcpy (s_print, "å____.__.__æ", LEN_RECD);
-   ++n;  if (a_cur->seq         >= 0)           s_print [n] = 'X';
-   ++n;  if (a_cur->title   [0] != '\0')        s_print [n] = 'X';
-   ++n;  if (a_cur->user    [0] != '\0')        s_print [n] = 'X';
-   ++n;  if (a_cur->uid         >= 0)           s_print [n] = 'X';
+   strlcpy (g_print, "å____.__.__æ", LEN_RECD);
+   ++n;  if (a_cur->seq         >= 0)           g_print [n] = 'X';
+   ++n;  if (a_cur->title   [0] != '£')         g_print [n] = 'X';
+   ++n;  if (a_cur->user    [0] != '£')         g_print [n] = 'X';
+   ++n;  if (a_cur->uid         >= 0)           g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->note    [0] != '-')         s_print [n] = 'X';
-   ++n;  if (a_cur->lines       >  0)           s_print [n] = 'X';
+   ++n;  if (a_cur->note    [0] != '-')         g_print [n] = 'X';
+   ++n;  if (a_cur->lines       >  0)           g_print [n] = 'X';
    ++n;
-   ++n;  if (a_cur->valid       != '·')         s_print [n] = 'X';
-   ++n;  if (a_cur->retired     != '-')         s_print [n] = 'X';
-   return s_print;
+   ++n;  if (a_cur->valid       != '·')         g_print [n] = 'X';
+   ++n;  if (a_cur->retired     != '-')         g_print [n] = 'X';
+   return g_print;
 }
 
 
@@ -191,7 +191,7 @@ FILE_create             (char *a_name, char *a_user, int a_uid)
    }
    /*---(populate)-----------------------*/
    DEBUG_INPT   yLOG_info    ("file"      , a_name);
-   strlcpy (x_file->title, a_name, LEN_HUND);
+   strlcpy (x_file->title, a_name, LEN_TITLE);
    DEBUG_INPT   yLOG_info    ("user"      , a_user);
    strlcpy (x_file->user , a_user, LEN_USER);
    DEBUG_INPT   yLOG_value   ("uid"       , a_uid);

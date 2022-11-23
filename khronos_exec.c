@@ -132,41 +132,41 @@ EXEC_mark_done          (char a_yexec, int a_return)
    case YEXEC_NOSUCH  : case YEXEC_NOTREAL : case YEXEC_NOCHMOD :
    case YEXEC_BADLOG  : case YEXEC_NOTEXEC : case YEXEC_NOPERM  :
       if (x_line->c_badd < 99)  ++x_line->c_badd;
-      x_reason = T_BADD;
+      x_reason = KHRONOS_BADD;
       break;
    case YEXEC_SEGV    : case YEXEC_USER    : case YEXEC_LIMIT   :
    case YEXEC_DIED    : case YEXEC_ERROR   :
       if (x_line->c_boom < 99)  ++x_line->c_boom;
-      x_reason = T_BOOM;
+      x_reason = KHRONOS_BOOM;
       break;
    case YEXEC_KILLED  :
       if (x_line->force == 'g' && a_return == SIGTERM) {
          if (x_line->c_shut < 99)  ++x_line->c_shut;
-         x_reason = T_SHUT;
+         x_reason = KHRONOS_TERM;
       } else if (x_line->force == 'k' && a_return == SIGKILL) {
          if (x_line->c_shut < 99)  ++x_line->c_shut;
-         x_reason = T_SHUT;
+         x_reason = KHRONOS_TERM;
       } else {
          if (x_line->c_kill < 99)  ++x_line->c_kill;
-         x_reason = T_KILL;
+         x_reason = KHRONOS_KILL;
       }
       break;
    case YEXEC_NORMAL  : case YEXEC_WARNING :
       if (x_line->force == 'g') {
          if (x_line->c_shut < 99)  ++x_line->c_shut;
-         x_reason = T_SHUT;
+         x_reason = KHRONOS_TERM;
       } else {
          if (x_line->c_pass < 99)  ++x_line->c_pass;
-         x_reason = T_PASS;
+         x_reason = KHRONOS_PASS;
       }
       break;
    case YEXEC_FAILURE : default            :
       if (x_line->force == 'g') {
          if (x_line->c_shut < 99)  ++x_line->c_shut;
-         x_reason = T_SHUT;
+         x_reason = KHRONOS_TERM;
       } else {
          if (x_line->c_fail < 99)  ++x_line->c_fail;
-         x_reason = T_FAIL;
+         x_reason = KHRONOS_FAIL;
       }
       break;
    }
@@ -174,12 +174,12 @@ EXEC_mark_done          (char a_yexec, int a_return)
    if      (x_msec < x_line->est_min) {
       if (x_line->c_earl < 99)   ++x_line->c_earl;
       if (a_yexec == 'n')        a_yexec = '<';
-      x_note   = T_EARL;
+      x_note   = KHRONOS_EARL;
    }
    else if (x_msec > x_line->est_max) {
       if (x_line->c_late < 99)   ++x_line->c_late;
       if (a_yexec == 'n')        a_yexec = '>';
-      x_note   = T_LATE;
+      x_note   = KHRONOS_LATE;
    }
    /*---(set last data)------------------*/
    if (x_sec <= 0)  x_sec = 1;
@@ -480,63 +480,6 @@ EXEC_check              (void)
          ++c;
          DEBUG_INPT  yLOG_note    ("collected, next");
       }
-      /*> switch (rc)  {                                                              <* 
-       *> case YEXEC_NOSUCH  : case YEXEC_NOTREAL : case YEXEC_NOCHMOD :              <* 
-       *> case YEXEC_BADLOG  : case YEXEC_NOTEXEC : case YEXEC_NOPERM  :              <* 
-       *>    if (x_line->c_badd < 99)  ++x_line->c_badd;                              <* 
-       *>    x_reason = T_BADD;                                                       <* 
-       *>    break;                                                                   <* 
-       *> case YEXEC_SEGV    : case YEXEC_USER    : case YEXEC_LIMIT   :              <* 
-       *> case YEXEC_DIED    : case YEXEC_ERROR   :                                   <* 
-       *>    if (x_line->c_boom < 99)  ++x_line->c_boom;                              <* 
-       *>    x_reason = T_BOOM;                                                       <* 
-       *>    break;                                                                   <* 
-       *> case YEXEC_KILLED  :                                                        <* 
-       *>    if (x_line->force == 'g' && x_return == SIGTERM) {                       <* 
-       *>       if (x_line->c_shut < 99)  ++x_line->c_shut;                           <* 
-       *>       x_reason = T_SHUT;                                                    <* 
-       *>    } else if (x_line->force == 'k' && x_return == SIGKILL) {                <* 
-       *>       if (x_line->c_shut < 99)  ++x_line->c_shut;                           <* 
-       *>       x_reason = T_SHUT;                                                    <* 
-       *>    } else {                                                                 <* 
-       *>       if (x_line->c_kill < 99)  ++x_line->c_kill;                           <* 
-       *>       x_reason = T_KILL;                                                    <* 
-       *>    }                                                                        <* 
-       *>    break;                                                                   <* 
-       *> case YEXEC_NORMAL  : case YEXEC_WARNING :                                   <* 
-       *>    if (x_line->c_pass < 99)  ++x_line->c_pass;                              <* 
-       *>    x_reason = T_PASS;                                                       <* 
-       *>    break;                                                                   <* 
-       *> case YEXEC_FAILURE : default            :                                   <* 
-       *>    if (x_line->c_fail < 99)  ++x_line->c_fail;                              <* 
-       *>    x_reason = T_FAIL;                                                       <* 
-       *>    break;                                                                   <* 
-       *> }                                                                           <*/
-      /*---(early/late)------------------*/
-      /*> if      (x_dur < x_line->est_min && x_line->c_earl < 99) {                  <* 
-       *>    ++x_line->c_earl;                                                        <* 
-       *>    x_note   = T_EARL;                                                       <* 
-       *> }                                                                           <* 
-       *> else if (x_dur > x_line->est_max && x_line->c_late < 99) {                  <* 
-       *>    ++x_line->c_late;                                                        <* 
-       *>    x_note   = T_LATE;                                                       <* 
-       *> }                                                                           <* 
-       *> x_dur  = my.now - x_line->start;                                            <* 
-       *> if (x_dur <= 0)  x_dur = 1;                                                 <*/
-      /*---(set last data)---------------*/
-      /*> x_line->l_rpid     = x_line->rpid;                                          <* 
-       *> x_line->l_beg      = x_line->start;                                         <* 
-       *> x_line->l_end      = my.now;                                                <* 
-       *> x_line->l_rc       = x_return;                                              <* 
-       *> x_line->l_dur      = x_dur;                                                 <*/
-      /*---(reporting)-------------------*/
-      /*> RPTG_track_exec (x_file, x_line, x_reason, x_note);                         <*/
-      /*---(reset run data)--------------*/
-      /*> x_line->rpid       =  0;                                                    <* 
-       *> x_line->start      =  0;                                                    <* 
-       *> x_line->force      = '-';                                                   <*/
-      /*---(reset lists)-----------------*/
-      /*> yDLST_active_off ();                                                        <*/
       /*---(next)------------------------*/
       rc = yDLST_active_by_cursor (YDLST_NEXT, NULL, &x_line);
       /*---(done)------------------------*/
@@ -639,12 +582,14 @@ EXEC_dispatch           (int a_min)
          continue;
       }
       /*---(check for running)-----------*/
-      if (x_line->c_runs < 99)  ++x_line->c_runs;
+      TRKS_launch (x_line->trks, my.hour, a_min);
+      /*> if (x_line->c_runs < 99)  ++x_line->c_runs;                                 <*/
       DEBUG_INPT   yLOG_value   ("rpid"      , x_line->rpid);
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");
-         if (x_line->c_skip < 99)  ++x_line->c_skip;
-         RPTG_track_exec (x_file, x_line, T_SKIP, '-');
+         /*> if (x_line->c_skip < 99)  ++x_line->c_skip;                              <*/
+         RPTG_track_exec (x_file, x_line, KHRONOS_SKIP, '-');
+         TRKS_complete (x_line->trks, my.hour, a_min, KHRONOS_SKIP, x_line->est_min, 0, x_line->est, x_line->est_max);
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -663,9 +608,10 @@ EXEC_dispatch           (int a_min)
       DEBUG_INPT   yLOG_value   ("x_rpid"    , x_rpid);
       if (x_rpid <  0) {
          DEBUG_INPT  yLOG_note    ("line/process could not launch");
-         RPTG_track_exec (x_file, x_line, T_BADD, '-');
+         RPTG_track_exec (x_file, x_line, KHRONOS_BADD, '-');
          x_line->rpid       = -2;
-         if (x_line->c_badd < 99)  ++x_line->c_badd;
+         /*> if (x_line->c_badd < 99)  ++x_line->c_badd;                              <*/
+         TRKS_complete (x_line->trks, my.hour, a_min, KHRONOS_BADD, x_line->est_min, 0, x_line->est, x_line->est_max);
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -673,7 +619,7 @@ EXEC_dispatch           (int a_min)
       x_line->rpid       = x_rpid;
       x_line->start      = my.now;
       /*---(report)----------------------*/
-      RPTG_track_exec (x_file, x_line, T_RUN , '-');
+      RPTG_track_exec (x_file, x_line, KHRONOS_RUN , '-');
       /*---(next)------------------------*/
       DEBUG_INPT  yLOG_note    ("launched, move to next");
       rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);

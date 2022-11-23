@@ -102,17 +102,19 @@ BASE_execute            (void)
    /*---(header)-------------------------*/
    DEBUG_PROG  yLOG_enter   (__FUNCTION__);
    /*---(daemonize)----------------------*/
-   rc  = base_daemon ();
-   DEBUG_PROG  yLOG_value   ("daemon"    , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+   IF_DAEMONY {
+      rc  = base_daemon ();
+      DEBUG_PROG  yLOG_value   ("daemon"    , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
    }
    /*---(startup)------------------------*/
    x_hour  = EXEC_time (0);
    rc      = RPTG_track_beg ();
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-   RPTG_minute   ();
+   RPTG_status   ();
    /*> catchup();                                                                     <*/
    EXEC_wait_min ();
    /*---(main loop)----------------------*/
@@ -127,7 +129,7 @@ BASE_execute            (void)
          DEBUG_PROG  yLOG_value   ("minutely"  , rc);
          x_hour = EXEC_time (0);
          DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-         RPTG_minute ();
+         RPTG_status ();
       }
    }
    /*---(complete------------------------*/
