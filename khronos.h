@@ -33,8 +33,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0d"
-#define     P_VERTXT    "hardest tracker work done, been running in prod for 4dys straight"
+#define     P_VERNUM    "2.0e"
+#define     P_VERTXT    "tracker execution functions and export look good"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -955,6 +955,7 @@ struct cLINE {
 
 #define  KHRONOS_BEG         '['
 #define  KHRONOS_RUN         'r'
+#define  KHRONOS_ACTV        'a'
 
 #define  KHRONOS_SKIP        's'
 
@@ -1191,6 +1192,8 @@ char        TRKS__close             (void);
 char        TRKS__parse             (cchar *a_recd);
 char        TRKS_import_full        (cchar *a_file);
 char        TRKS_import             (void);
+char        TRKS_export_full        (cchar *a_file);
+char        TRKS_export             (void);
 /*---(data)-----------------*/
 char        TRKS__count2num         (char a_count);
 char        TRKS__num2count         (char a_num);
@@ -1200,6 +1203,7 @@ char        TRKS__durs              (char *b_str, int a_dur, int a_min, int a_es
 char        TRKS__redur_full        (char a_roll, cchar *a_hist, int a_min, int a_est, int a_max, char *r_new);
 char        TRKS__stats             (char *b_str, char a_code);
 char        TRKS__restat_full       (char a_roll, cchar *a_hist, char *r_new);
+char        TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code);
 /*---(exec)-----------------*/
 char        TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn);
 char        TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn);
