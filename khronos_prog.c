@@ -43,7 +43,7 @@ PROG__files_normal      (void)
    snprintf (my.n_home        , LEN_PATH, "%s"  , "/home/");
    snprintf (my.n_root        , LEN_PATH, "%s"  , "/root");
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
-   snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_YHIST, FILE_TRACK);
+   snprintf (my.n_activity    , LEN_PATH, "%s%s", DIR_YHIST, FILE_ACTIVITY);
    snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
    snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_CENTRAL, FILE_TRACKERS);
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
@@ -58,7 +58,7 @@ PROG__files_unit        (void)
    snprintf (my.n_home        , LEN_PATH, "%s%s", DIR_UNIT, "home/");
    snprintf (my.n_root        , LEN_PATH, "%s%s", DIR_UNIT, "root");
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_UNIT, FILE_HEARTBEAT);
-   snprintf (my.n_track       , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACK);
+   snprintf (my.n_activity    , LEN_PATH, "%s%s", DIR_UNIT, FILE_ACTIVITY);
    snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_UNIT, FILE_STATUS);
    snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACKERS);
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);

@@ -147,7 +147,7 @@ char
 RPTG_track__guidelines  (FILE *f)
 {
    int         c           =    0;
-   c = yURG_peek_count (my.n_track);
+   c = yURG_peek_count (my.n_activity);
    if (c > 0)  return 0;
    fprintf (f, "## %s\n", P_ONELINE);
    fprintf (f, "## detailed launch tracker\n");
@@ -179,8 +179,8 @@ rptg__track_open        (void)
       return rce;
    }
    /*---(open)---------------------------*/
-   DEBUG_RPTG   yLOG_snote   (my.n_track);
-   f_track = fopen (my.n_track, "at");
+   DEBUG_RPTG   yLOG_snote   (my.n_activity);
+   f_track = fopen (my.n_activity, "at");
    DEBUG_RPTG   yLOG_spoint  (f_track);
    --rce;  if (f_track == NULL) {
       DEBUG_RPTG   yLOG_sexitr  (__FUNCTION__, rce);
@@ -469,14 +469,18 @@ RPTG_status__header     (FILE *f)
    fprintf (f, "## %s\n", P_ONELINE);
    fprintf (f, "## inventory with major tracking data, updated every minute on logging ram disk (fast)\n");
    fprintf (f, "## heartbeat to verify update å%sæ\n", my.heartbeat);
+   /*> fprintf (f, "##\n");                                                                                                                                                                                                           <* 
+    *> fprintf (f, "#@ x-parse  35åÏ-----------------------------·Ï---·Ï-----------------------------·Ï·Ï Ï---------·Ï----·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï----·Ï----·Ï---··Ï·Ï·Ï·Ï·Ï·Ï·Ï··Ï·Ï·Ï·Ï·Ï··Ï------·Ï------·Ï------·æ\n");   <* 
+    *> fprintf (f, "#@ titles     åfile···························line·tracker························f·a·start······rpid··rn·sk·bd·bo·ki·sh·fa·ps·er·la·rpid··dur···rc····v·t·h·s·n·x·r··f·t·c·d·n··dur·····min·····max·····æ\n");   <*/
    fprintf (f, "##\n");
-   fprintf (f, "#@ x-parse  35åÏ-----------------------------·Ï---·Ï-----------------------------·Ï·Ï Ï---------·Ï----·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï-·Ï----·Ï----·Ï---··Ï·Ï·Ï·Ï·Ï·Ï·Ï··Ï·Ï·Ï·Ï·Ï··Ï------·Ï------·Ï------·æ\n");
-   fprintf (f, "#@ titles     åfile···························line·tracker························f·a·start······rpid··rn·sk·bd·bo·ki·sh·fa·ps·er·la·rpid··dur···rc····v·t·h·s·n·x·r··f·t·c·d·n··dur·····min·····max·····æ\n");
-   fprintf (f, "##\n");
-   fprintf (f, "##                                                                 f a                                                                  v t h s m m r  f t c d n                          ]\n");
-   fprintf (f, "##                                                                 o c *---- curr ----* *---------- counts ---------* *---- last ----*  a k n t i a e  l h p s e  *------ timings ------* ]\n");
-   fprintf (f, "##          file               line           tracker              c t   start     rpid rn sk bd bo ki sh fa ps er la  rpid  dur   rc   l r d r n x m  x r u k t    dur     min     max   ]\n");
-   fprintf (f, "##---------------------------- ---- ------------------------------ - - ---------- ----- -- -- -- -- -- -- -- -- -- -- ----- ----- ----  - - - - - - -  - - - - -  ------- ------- ------- ]\n");
+   /*> fprintf (f, "##                                                                 f a                                                                  v t r s m m r  f t c d n                          ]\n");   <* 
+    *> fprintf (f, "##                                                                 o c *---- curr ----* *---------- counts ---------* *---- last ----*  a k o t i a e  l h p s e  *------ timings ------* ]\n");   <* 
+    *> fprintf (f, "##          file               line           tracker              c t   start     rpid rn sk bd bo ki sh fa ps er la  rpid  dur   rc   l r l r n x m  x r u k t    dur     min     max   ]\n");   <* 
+    *> fprintf (f, "##---------------------------- ---- ------------------------------ - - ---------- ----- -- -- -- -- -- -- -- -- -- -- ----- ----- ----  - - - - - - -  - - - - -  ------- ------- ------- ]\n");   <*/
+   fprintf (f, "##                                                                 f a                                                                                                                           v t r s m m r  f t c d n                          ]\n");
+   fprintf (f, "##                                                                 o c *---- curr ----*   *----------- counts ---------*   *-------------------- durations ---------------*   *---- last ----*   a k o t i a e  l h p s e  *------ timings ------* ]\n");
+   fprintf (f, "##          file               line           tracker              c t   start     rpid   r a  s b o k t  g v G V  f w p   e l  < 3 · 2 · 10·······1 0 1·······10 · 2 · 3 >    rpid  dur   rc    l r l r n x m  x r u k t    dur     min     max   ]\n");
+   fprintf (f, "##---------------------------- ---- ------------------------------ - - ---------- -----   ---  ---------  -------  -----   ---  - ------- ---------- - ---------- ------- -   ----- ----- ----   - - - - - - -  - - - - -  ------- ------- ------- ]\n");
    fflush  (f);
    /*---(complete)-----------------------*/
    DEBUG_RPTG   yLOG_sexit   (__FUNCTION__);
@@ -486,7 +490,8 @@ RPTG_status__header     (FILE *f)
 char
 RPTG_status__break      (FILE *f)
 {
-   fprintf (f, "##----------file-------------- line ----------tracker------------- f a --start--- -rpid rn·sk·bd·bo·ki·sh·fa·ps·er·la -rpid -dur- -rc-  v·t·h·s·n·x·r  f·t·c·d·n  --dur-- --min-- --max-- ]\n");
+   /*> fprintf (f, "##----------file-------------- line ----------tracker------------- f a --start--- -rpid rn·sk·bd·bo·ki·sh·fa·ps·er·la -rpid -dur- -rc-  v·t·h·s·n·x·r  f·t·c·d·n  --dur-- --min-- --max-- ]\n");   <*/
+   fprintf (f, "##----------file-------------- line ----------tracker------------- f a --start--- -rpid   r-a  s-b-o-k-t  g-v-G-V  f-w-p   e-l  <-3---2-- 1--------- 0 ---------1 --2---3->   -rpid -dur- -rc-   v-t-r-s-n-x-r  f-t-c-d-n  --dur-- --min-- --max-- ]\n");
    return 0;
 }
 
@@ -561,29 +566,37 @@ RPTG_status             (void)
       strlcat (t, RPTG__number ( 5, x_line->rpid  , " "), LEN_RECD);
       fprintf (f, "%s", t);
       /*---(statistics)------------------*/
-      strlcpy (t, RPTG__number ( 2, x_line->c_runs, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_skip, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_badd, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_boom, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_kill, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_shut, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_fail, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_pass, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_earl, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 2, x_line->c_late, " "), LEN_RECD);
-      fprintf (f, "%s", t);
+      /*> strlcpy (t, RPTG__number ( 2, x_line->c_runs, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_skip, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_badd, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_boom, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_kill, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_shut, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_fail, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_pass, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_earl, " "), LEN_RECD);              <* 
+       *> strlcat (t, RPTG__number ( 2, x_line->c_late, " "), LEN_RECD);              <*/
+      /*> fprintf (f, "%s", t);                                                       <*/
+      if (x_line->trks != NULL) {
+         fprintf (f, "  %30.30s ", x_line->trks->stats + 3);
+         fprintf (f, "  %49.49s ", x_line->trks->durs  + 3);
+      } else {
+         fprintf (f, "  %30.30s ", KHRONOS_DEFSTATS + 3);
+         fprintf (f, "  %49.49s ", KHRONOS_DEFDURS  + 3);
+      }
       /*---(last run)--------------------*/
-      strlcpy (t, RPTG__number ( 5, x_line->l_rpid, " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 5, x_line->l_dur , " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 4, x_line->l_rc  , " "), LEN_RECD);
-      fprintf (f, "%s ", t);
+      fprintf (f, " ");
+      strlcpy (t, RPTG__number ( 5, x_line->l_rpid     , " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 5, x_line->l_dur / 60 , " "), LEN_RECD);
+      strlcat (t, RPTG__number ( 4, x_line->l_rc       , " "), LEN_RECD);
+      fprintf (f, "%s  ", t);
       /*---(controls)--------------------*/
       fprintf (f, "%c %c %c %c %c %c %c  ",
-            x_line->value, x_line->track, x_line->handoff, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
+            x_line->value, x_line->track, x_line->rolling, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
       fprintf (f, "%c %c %c %c %c  ",
             x_line->flex, x_line->throttle, x_line->cpu, x_line->disk, x_line->net, x_line->upper, x_line->remedy);
       fprintf (f, "%7d %7d %7d\n",
-            x_line->est, x_line->est_min, x_line->est_max);
+            x_line->est / 60, x_line->est_min / 60, x_line->est_max / 60);
       /*---(next)------------------------*/
       ++c;
       rc = yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_NEXT, NULL, &x_line);

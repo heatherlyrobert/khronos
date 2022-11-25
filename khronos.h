@@ -33,8 +33,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0e"
-#define     P_VERTXT    "tracker execution functions and export look good"
+#define     P_VERNUM    "2.0f"
+#define     P_VERTXT    "running in prod with trackers, not perfect, but working"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -680,7 +680,7 @@
 
 
 #define     FILE_HEARTBEAT          "khronos.heartbeat"
-#define     FILE_TRACK              "khronos.tracking"
+#define     FILE_ACTIVITY           "khronos.activity"
 #define     FILE_STATUS             "khronos.status"
 #define     FILE_TRACKERS           "khronos.trackers"
 
@@ -805,7 +805,7 @@ struct cACCESSOR
    char        n_home      [LEN_PATH];      /* home directory                 */
    char        n_root      [LEN_PATH];      /* root directory                 */
    char        n_heartbeat [LEN_PATH];      /* pulser file name               */
-   char        n_track     [LEN_PATH];      /* job tracker file name          */
+   char        n_activity  [LEN_PATH];      /* job activity file name         */
    char        n_status    [LEN_PATH];      /* status update file name        */
    char        n_trks      [LEN_PATH];      /* tracker database               */
    /*---(pulse)----------------*/
@@ -919,7 +919,7 @@ struct cLINE {
    /*---(flags)----------------*/
    char        value;                       /* how critical is the job        */
    char        track;                       /* how tightly to monitor         */
-   char        handoff;                     /* handoff to kharon/haides       */
+   char        rolling;                     /* history rolling value          */
    char        strict;                      /* strictness of limits           */
    char        lower;
    char        upper;
@@ -939,16 +939,6 @@ struct cLINE {
    char        l_rc;
    /*---(counts)---------------*/
    tTRKS      *trks;
-   char        c_runs;
-   char        c_skip;
-   char        c_badd;
-   char        c_boom;
-   char        c_kill;
-   char        c_shut;
-   char        c_fail;
-   char        c_pass;
-   char        c_earl;
-   char        c_late;
    /*---(done)-----------------*/
 };
 
@@ -1197,12 +1187,23 @@ char        TRKS_export             (void);
 /*---(data)-----------------*/
 char        TRKS__count2num         (char a_count);
 char        TRKS__num2count         (char a_num);
-char        TRKS__biggun2num        (char a_biggun);
-char        TRKS__num2biggun        (char a_num);
+uchar       TRKS__biggun2num        (uchar a_biggun);
+uchar       TRKS__num2biggun        (uchar a_num);
+/*---(statistics------------*/
+char        TRKS__stat_prepare      (char *b_str, char a_code, char *r_roll, char *r_hist);
+char        TRKS__stat_history      (char *b_str, char a_code, char *b_hist);
+char        TRKS__stat_update       (char *b_str, char a_code, char a_roll);
+char        TRKS__stat_restat       (char *b_str, char a_roll, char a_hist);
+char        TRKS__stat              (char *b_str, char a_code);
+char        TRKS_restat             (char *b_str);
+/*---(durations)------------*/
+char        TRKS__durs_prepare      (char *b_str, int *b_dur, char *r_roll, char *r_hist, int *b_min, int a_est, int *b_max);
+char        TRKS__durs_history      (char *b_str, int a_dur, char *r_hist);
+char        TRKS__durs_update       (char *b_str, int a_dur, int a_min, int a_est, int a_max);
+char        TRKS__durs_redur        (char *b_str, char a_roll, char a_hist, int a_min, int a_est, int a_max);
 char        TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max);
-char        TRKS__redur_full        (char a_roll, cchar *a_hist, int a_min, int a_est, int a_max, char *r_new);
-char        TRKS__stats             (char *b_str, char a_code);
-char        TRKS__restat_full       (char a_roll, cchar *a_hist, char *r_new);
+char        TRKS_redur              (char *b_str, int a_min, int a_est, int a_max);
+/*---(actuals)--------------*/
 char        TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code);
 /*---(exec)-----------------*/
 char        TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn);

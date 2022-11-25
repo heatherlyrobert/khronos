@@ -15,6 +15,7 @@ void             /* [------] receive signals ---------------------------------*/
 EXEC_comm          (int a_signal, siginfo_t *a_info, char *a_name, char *a_desc)
 {
    /*---(catch)--------------------------*/
+   DEBUG_PROG  yLOG_value    ("signal", a_signal);
    switch (a_signal) {
    case  SIGHUP:
       DEBUG_PROG  yLOG_info     ("SIGNAL", "SIGHUP MEANS REFRESH CRONTABS BEFORE NEXT RUN");
@@ -113,6 +114,7 @@ EXEC_mark_done          (char a_yexec, int a_return)
    char        rce         =  -10;
    tFILE      *x_file      = NULL;
    tLINE      *x_line      = NULL;
+   int         x_mins      =    0;
    int         x_sec       =    0;
    int         x_msec      =    0;
    char        x_reason    =  '-';
@@ -125,59 +127,61 @@ EXEC_mark_done          (char a_yexec, int a_return)
    /*---(duration)-----------------------*/
    x_sec  = my.now - x_line->start;
    if (x_sec  <  0)  x_sec  = 0;
+   x_mins = x_sec / 60;
    x_msec = x_sec * 1000;
    if (x_msec <= 0)  x_msec = 1;
    /*---(log results)--------------------*/
    switch (a_yexec)  {
    case YEXEC_NOSUCH  : case YEXEC_NOTREAL : case YEXEC_NOCHMOD :
    case YEXEC_BADLOG  : case YEXEC_NOTEXEC : case YEXEC_NOPERM  :
-      if (x_line->c_badd < 99)  ++x_line->c_badd;
+      /*> if (x_line->c_badd < 99)  ++x_line->c_badd;                                 <*/
       x_reason = KHRONOS_BADD;
       break;
    case YEXEC_SEGV    : case YEXEC_USER    : case YEXEC_LIMIT   :
    case YEXEC_DIED    : case YEXEC_ERROR   :
-      if (x_line->c_boom < 99)  ++x_line->c_boom;
+      /*> if (x_line->c_boom < 99)  ++x_line->c_boom;                                 <*/
       x_reason = KHRONOS_BOOM;
       break;
    case YEXEC_KILLED  :
       if (x_line->force == 'g' && a_return == SIGTERM) {
-         if (x_line->c_shut < 99)  ++x_line->c_shut;
+         /*> if (x_line->c_shut < 99)  ++x_line->c_shut;                              <*/
          x_reason = KHRONOS_TERM;
       } else if (x_line->force == 'k' && a_return == SIGKILL) {
-         if (x_line->c_shut < 99)  ++x_line->c_shut;
+         /*> if (x_line->c_shut < 99)  ++x_line->c_shut;                              <*/
          x_reason = KHRONOS_TERM;
       } else {
-         if (x_line->c_kill < 99)  ++x_line->c_kill;
+         /*> if (x_line->c_kill < 99)  ++x_line->c_kill;                              <*/
          x_reason = KHRONOS_KILL;
       }
       break;
    case YEXEC_NORMAL  : case YEXEC_WARNING :
       if (x_line->force == 'g') {
-         if (x_line->c_shut < 99)  ++x_line->c_shut;
+         /*> if (x_line->c_shut < 99)  ++x_line->c_shut;                              <*/
          x_reason = KHRONOS_TERM;
       } else {
-         if (x_line->c_pass < 99)  ++x_line->c_pass;
+         /*> if (x_line->c_pass < 99)  ++x_line->c_pass;                              <*/
          x_reason = KHRONOS_PASS;
       }
       break;
    case YEXEC_FAILURE : default            :
       if (x_line->force == 'g') {
-         if (x_line->c_shut < 99)  ++x_line->c_shut;
+         /*> if (x_line->c_shut < 99)  ++x_line->c_shut;                              <*/
          x_reason = KHRONOS_TERM;
       } else {
-         if (x_line->c_fail < 99)  ++x_line->c_fail;
+         /*> if (x_line->c_fail < 99)  ++x_line->c_fail;                              <*/
          x_reason = KHRONOS_FAIL;
       }
       break;
    }
+   TRKS_complete (x_line->trks, my.hour, my.minute, x_reason, x_mins, x_line->est_min / 60, x_line->est / 60, x_line->est_max / 60);
    /*---(early/late)---------------------*/
    if      (x_msec < x_line->est_min) {
-      if (x_line->c_earl < 99)   ++x_line->c_earl;
+      /*> if (x_line->c_earl < 99)   ++x_line->c_earl;                                <*/
       if (a_yexec == 'n')        a_yexec = '<';
       x_note   = KHRONOS_EARL;
    }
    else if (x_msec > x_line->est_max) {
-      if (x_line->c_late < 99)   ++x_line->c_late;
+      /*> if (x_line->c_late < 99)   ++x_line->c_late;                                <*/
       if (a_yexec == 'n')        a_yexec = '>';
       x_note   = KHRONOS_LATE;
    }

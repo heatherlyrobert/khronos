@@ -43,8 +43,8 @@ prog__unit              (char *a_question)
    else if (strcmp (a_question, "n_heartbeat"   )  == 0) {
       snprintf (unit_answer, LEN_HUND, "PROG heartbeat   : %2då%sæ", strlen (my.n_heartbeat), my.n_heartbeat);
    }
-   else if (strcmp (a_question, "n_track"       )  == 0) {
-      snprintf (unit_answer, LEN_HUND, "PROG tracking    : %2då%sæ", strlen (my.n_track    ), my.n_track);
+   else if (strcmp (a_question, "n_activity"    )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG activity    : %2då%sæ", strlen (my.n_activity ), my.n_activity);
    }
    else if (strcmp (a_question, "n_status"      )  == 0) {
       snprintf (unit_answer, LEN_HUND, "PROG status      : %2då%sæ", strlen (my.n_status   ), my.n_status);

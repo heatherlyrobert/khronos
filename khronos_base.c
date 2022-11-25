@@ -114,10 +114,15 @@ BASE_execute            (void)
    x_hour  = EXEC_time (0);
    rc      = RPTG_track_beg ();
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-   RPTG_status   ();
+   rc = TRKS_import   ();
+   DEBUG_PROG  yLOG_value   ("import"    , rc);
+   rc = RPTG_status   ();
+   DEBUG_PROG  yLOG_value   ("status"    , rc);
    /*> catchup();                                                                     <*/
    EXEC_wait_min ();
+   DEBUG_PROG  yLOG_note    ("after wait");
    /*---(main loop)----------------------*/
+   DEBUG_PROG  yLOG_note    ("entering main loop");
    while (1) {
       x_hour = x_save = EXEC_time (0);
       DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
@@ -129,6 +134,7 @@ BASE_execute            (void)
          DEBUG_PROG  yLOG_value   ("minutely"  , rc);
          x_hour = EXEC_time (0);
          DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
+         TRKS_export ();
          RPTG_status ();
       }
    }

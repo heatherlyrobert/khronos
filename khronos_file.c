@@ -37,8 +37,8 @@ FILE__memory            (tFILE *a_cur)
    int         n           =    0;
    strlcpy (g_print, "å____.__.__æ", LEN_RECD);
    ++n;  if (a_cur->seq         >= 0)           g_print [n] = 'X';
-   ++n;  if (a_cur->title   [0] != '£')         g_print [n] = 'X';
-   ++n;  if (a_cur->user    [0] != '£')         g_print [n] = 'X';
+   ++n;  if (a_cur->title   [0] != '\0')        g_print [n] = 'X';
+   ++n;  if (a_cur->user    [0] != '\0')        g_print [n] = 'X';
    ++n;  if (a_cur->uid         >= 0)           g_print [n] = 'X';
    ++n;
    ++n;  if (a_cur->note    [0] != '-')         g_print [n] = 'X';

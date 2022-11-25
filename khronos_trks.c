@@ -122,8 +122,8 @@ TRKS__tracker           (cchar *a_tracker)
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   --rce;  if (l > 25) {
-      DEBUG_OUTP   yLOG_note    ("can not be more than 25 characters");
+   --rce;  if (l > LEN_TITLE) {
+      DEBUG_OUTP   yLOG_note    ("can not be more than 30 characters");
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -581,6 +581,10 @@ TRKS__parse             (cchar *a_recd)
    char       *x_dst       = NULL;
    int         l           =    0;
    tTRKS      *x_cur       = NULL;
+   char        t           [LEN_RECD]  = "";
+   int         x_len       =    0;
+   uchar       x_runs      =    0;
+   uchar       x_actv      =    0;
    /*---(header)-------------------------*/
    DEBUG_OUTP   yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
@@ -602,11 +606,17 @@ TRKS__parse             (cchar *a_recd)
       case  3 : x_dst = x_cur->stats;    l = LEN_FULL;   break;
       case  4 : x_dst = x_cur->durs;     l = LEN_FULL;   break;
       case  5 : x_dst = x_cur->actual;   l = LEN_RECD;   break;
-      default :
-                break;  /* too many fields */
+      default : break;  /* too many fields */
       }
-      strlcpy  (x_dst, p        , l);
-      strltrim (x_dst, ySTR_BOTH, l);
+      strlcpy  (t, p        , LEN_RECD);
+      strltrim (t, ySTR_BOTH, LEN_RECD);
+      x_len = strlen (t);
+      DEBUG_OUTP   yLOG_complex ("saving"    , "%d, %p, %d, %d, %s", n, x_dst, l, x_len, t);
+      if (x_len >= l) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      strlcpy  (x_dst, t, l);
       /*---(enough)----------------------*/
       if (n == 1) {
          rc = TRKS_create (x_file, x_tracker, NULL, &x_cur);
@@ -640,6 +650,15 @@ TRKS__parse             (cchar *a_recd)
       strlcpy (x_cur->durs  , KHRONOS_DEFDURS  , LEN_FULL);
    if (TRKS__coded ('a' ,KHRONOS_DEFACTUAL, x_cur->actual   ) < 0)
       strlcpy (x_cur->actual, KHRONOS_DEFACTUAL, LEN_RECD);
+   /*---(update rolling)-----------------*/
+   if (x_cur->parent != NULL) {
+      x_cur->stats [0] = x_cur->parent->rolling;
+      if (x_cur->stats [3] == '0')  x_cur->stats [3] == '·';
+      x_cur->stats [5] = '·';
+      TRKS_restat (x_cur->stats);
+      x_cur->durs  [0] = x_cur->parent->rolling;
+      TRKS_redur  (x_cur->durs, x_cur->parent->est_min / 60, x_cur->parent->est / 60, x_cur->parent->est_max / 60);
+   }
    /*---(complete)-----------------------*/
    DEBUG_OUTP   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -693,6 +712,7 @@ TRKS_import_full        (cchar *a_file)
          DEBUG_YJOBS   yLOG_note    ("record could not be parsed");
          continue;
       }
+      /*---(next)------------------------*/
       ++g;
       /*---(done)------------------------*/
    }
@@ -711,6 +731,24 @@ TRKS_import_full        (cchar *a_file)
 char TRKS_import   (void) { return TRKS_import_full (my.n_trks); }
 
 char
+TRKS__export_check      (char *a_tracker)
+{
+   int         l           =    0;
+   if (a_tracker == NULL)                            return 'y';
+   l = strlen (a_tracker);
+   if (a_tracker [0] == '.')                         return '-';
+   if (l <  6)                                       return 'y';
+   if (strncmp (a_tracker, "line ", 5) != 0)         return 'y';
+   if (strchr (YSTR_NUMBER, a_tracker [5]) == NULL)  return 'y';
+   if (l == 6 && a_tracker [6] == '\0')              return '-';
+   if (strchr (YSTR_NUMBER, a_tracker [6]) == NULL)  return 'y';
+   if (l == 7 && a_tracker [7] == '\0')              return '-';
+   if (strchr (YSTR_NUMBER, a_tracker [7]) == NULL)  return 'y';
+   if (l == 8 && a_tracker [8] == '\0')              return '-';
+   return 'y';
+}
+
+char
 TRKS_export_full        (cchar *a_file)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -718,6 +756,9 @@ TRKS_export_full        (cchar *a_file)
    char        rc          =    0;
    tTRKS      *x_cur       = NULL;
    int         c           =    0;
+   int         i           =    0;
+   tLINE      *x_save      = NULL;
+   char        x_good      =  '-';
    /*---(header)-------------------------*/
    DEBUG_OUTP   yLOG_enter   (__FUNCTION__);
    /*---(open file)----------------------*/
@@ -739,15 +780,27 @@ TRKS_export_full        (cchar *a_file)
    DEBUG_OUTP   yLOG_value   ("s_count"   , s_count);
    x_cur = s_head;
    while (x_cur != NULL) {
-      if (c % 5 == 0) fprintf (f_trks, "##---file--------------------  ---tracker-------------------  ---heartbeat--------------··--epoch---··--ppid  ---statistics--------------------··---shistory----------------------------------------------------  ---durations---------------------------------------··---dhistory----------------------------------------------------  ---actuals----------------------------------------------------------------------------->>>\n");
-      fprintf (f_trks, "%-29.29s  %-29.29s  ", x_cur->file, x_cur->tracker);
-      fprintf (f_trks, "%s  %s  " , x_cur->last, x_cur->stats);
-      fprintf (f_trks, "%s  %s \n", x_cur->durs, x_cur->actual);
-      ++c;
-      x_cur = x_cur->m_next;
+      x_good = TRKS__export_check (x_cur->tracker);
+      if (x_good == 'y') {
+         if (x_save != NULL && x_cur->parent == NULL && i > 0) {
+            fprintf (f_trks, "## %d current lines written\n\n", i);
+            i = 0;
+         }
+         if (i % 5 == 0) fprintf (f_trks, "##---file--------------------  ---tracker-------------------  ---heartbeat--------------··--epoch---··--ppid  ---statistics--------------------··---shistory----------------------------------------------------  ---durations---------------------------------------··---dhistory----------------------------------------------------  ---actuals----------------------------------------------------------------------------->>>\n");
+         fprintf (f_trks, "%-29.29s  %-29.29s  ", x_cur->file, x_cur->tracker);
+         fprintf (f_trks, "%s  %s  " , x_cur->last, x_cur->stats);
+         fprintf (f_trks, "%s  %s \n", x_cur->durs, x_cur->actual);
+         ++c; ++i;
+         x_save = x_cur->parent;
+      }
+      x_cur  = x_cur->m_next;
    }
    /*---(write footer)-------------------*/
-   fprintf (f_trks, "## end-of-file.  %d lines.  done, finito, completare, whimper [Ï´···\n", c);
+   if (i > 0) {
+      if (x_save != NULL)  fprintf (f_trks, "## %d current lines written\n", i);
+      if (x_save == NULL)  fprintf (f_trks, "## %d non-current lines written\n", i);
+   }
+   fprintf (f_trks, "\n## end-of-file.  %d total lines.  done, finito, completare, whimper [Ï´···\n", c);
    /*---(close file)---------------------*/
    rc = TRKS__close ();
    DEBUG_OUTP   yLOG_value   ("close"     , rc);
@@ -793,27 +846,51 @@ TRKS__num2count         (char a_num)
    return YSTR_COUNT [n];
 }
 
-char
-TRKS__biggun2num        (char a_biggun)
+uchar
+TRKS__biggun2num        (uchar a_biggun)
 {
+   char        rce         =  -10;
    char       *p           = NULL;
-   if (a_biggun ==   0)   return  -1;
-   if (a_biggun == '´')   return   0;
-   p = strchr (YSTR_BIGGUN, a_biggun);
-   if (p == NULL)  return -1;
+   DEBUG_OUTP    yLOG_senter  (__FUNCTION__);
+   DEBUG_OUTP    yLOG_schar   (a_biggun);
+   -rce;  if (a_biggun ==   0) {
+      DEBUG_OUTP    yLOG_snote   ("sent a null char, return error");
+      DEBUG_OUTP    yLOG_sexit   (__FUNCTION__);
+      return '¢';
+   }
+   if (a_biggun == (uchar) '·') {
+      DEBUG_OUTP    yLOG_snote   ("· defaults to 0");
+      DEBUG_OUTP    yLOG_sexit   (__FUNCTION__);
+      return   0;
+   }
+   if (a_biggun == (uchar) '´') {
+      DEBUG_OUTP    yLOG_snote   ("´ defaults to 0");
+      DEBUG_OUTP    yLOG_sexit   (__FUNCTION__);
+      return   0;
+   }
+   p = strchr ((uchar *) YSTR_BIGGUN, a_biggun);
+   if (p == NULL) {
+      DEBUG_OUTP    yLOG_snote   ("couldn't find char, return error");
+      DEBUG_OUTP    yLOG_sexit   (__FUNCTION__);
+      return '¢';
+   }
+   DEBUG_OUTP    yLOG_sexit   (__FUNCTION__);
    return p - YSTR_BIGGUN;
 }
 
-char
-TRKS__num2biggun        (char a_num)
+uchar
+TRKS__num2biggun        (uchar a_num)
 {
    int         l           =    0;
    char       *p           = NULL;
-   char        n           =    0;
+   uchar       n           =    0;
+   DEBUG_OUTP    yLOG_senter  (__FUNCTION__);
+   DEBUG_OUTP    yLOG_sint    (a_num);
    n = a_num;
    l = strlen (YSTR_BIGGUN);
-   if (a_num <    0)   return -1;
-   if (a_num >=   l)   return -1;
+   DEBUG_OUTP    yLOG_sint    (l);
+   if (a_num >=   l)   a_num = l - 1;
+   DEBUG_OUTP    yLOG_sexit   (__FUNCTION__);
    return YSTR_BIGGUN [n];
 }
 
@@ -824,25 +901,33 @@ TRKS__num2biggun        (char a_num)
  */
 
 
+
+/*====================------------------------------------====================*/
+/*===----                         statistics                           ----===*/
+/*====================------------------------------------====================*/
+static void  o___STATS___________o () { return; }
+
+
 #define    KHRONOS_STAT  "[sBOKTgvGVfwp"
 
 char
-TRKS__stats             (char *b_str, char a_code)
+TRKS__stat_prepare      (char *b_str, char a_code, char *r_roll, char *r_hist)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   int         l           =    0;
-   char       *p           = NULL;
-   char        n           =    0;
    char        x_roll      =    0;
    char        x_hist      =    0;
-   char        x_next      =    0;
-   char        x_ch        =    0;
-   char        x_off       =    0;
-   char        x_actv      =    0;
+   char        i           =    0;
+   char        x_check     =    0;
+   char        l           =    0;
+   /*---(quick-out)----------------------*/
+   if (a_code == KHRONOS_ACTV)  return 0;
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(default)------------------------*/
+   if (r_roll != NULL)  *r_roll = 0;
+   if (r_hist != NULL)  *r_hist = 0;
    /*---(defense)------------------------*/
    DEBUG_OUTP    yLOG_char    ("a_code"    , a_code);
    --rce;  if (a_code == 0 || strchr (KHRONOS_STAT, a_code) == NULL) {
@@ -855,20 +940,91 @@ TRKS__stats             (char *b_str, char a_code)
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(prepare)------------------------*/
-   x_roll  = TRKS__count2num (b_str [ 0]);
+   l  = strlen (b_str);
+   /*---(get roll)-----------------------*/
+   if      (b_str [0] == '´')  x_roll = 60;
+   else if (b_str [0] == '·')  x_roll = 60;
+   else                        x_roll  = TRKS__count2num (b_str [ 0]);
    if (x_roll > 60)  x_roll = 60;
    DEBUG_OUTP    yLOG_complex ("x_roll"    , "%c, %d", b_str [ 0], x_roll);
-   x_actv  = TRKS__count2num (b_str [ 5]);
-   DEBUG_OUTP    yLOG_complex ("x_actv"    , "%c, %d", b_str [ 5], x_actv);
-   --rce;  if (x_actv <= 0 && a_code != KHRONOS_BEG) {
+   --rce;  if (x_roll < 0) {
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(get history)--------------------*/
    x_hist  = TRKS__count2num (b_str [35]);
-   x_next  = x_hist + 37;
-   DEBUG_OUTP    yLOG_complex ("x_hist"    , "%c, %d, %d", b_str [35], x_hist, x_next);
-   l = strlen (KHRONOS_STAT);
+   DEBUG_OUTP    yLOG_complex ("x_hist"    , "%c, %d", b_str [35], x_hist);
+   --rce;  if (x_hist < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(verify history string)----------*/
+   for (i = 0; i < 60; ++i) {
+      if (strchr (KHRONOS_STAT, b_str [i + 37]) != NULL)  ++x_check;
+      else break;
+   }
+   DEBUG_OUTP    yLOG_value   ("check"     , x_check);
+   --rce;  if (x_hist != x_check) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_OUTP    yLOG_char    ("tail"      , b_str [l - 1]);
+   --rce;  if (b_str [l - 1] != '´') {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(save-back)----------------------*/
+   if (r_roll != NULL)  *r_roll = x_roll;
+   if (r_hist != NULL)  *r_hist = x_hist;
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+TRKS__stat_history      (char *b_str, char a_code, char *b_hist)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_next      =    0;
+   char        i           =    0;
+   /*---(quick-out)----------------------*/
+   if (a_code == KHRONOS_BEG)   return 0;
+   if (a_code == KHRONOS_ACTV)  return 0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(get history)--------------------*/
+   x_next  = *b_hist + 37;
+   DEBUG_OUTP    yLOG_complex ("history"   , "%c, %d, %d", b_str [35], *b_hist, x_next);
+   /*---(not full yet)-------------------*/
+   if (*b_hist < 60) {
+      b_str [x_next] = a_code;
+      b_str [35    ] = TRKS__num2count (++(*b_hist));
+      DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(full)---------------------------*/
+   for (i = 1; i < 60; ++i)  b_str [i + 37 - 1] = b_str [i + 37];
+   b_str [59 + 37] = a_code;
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return 2;
+}
+
+char
+TRKS__stat_update       (char *b_str, char a_code, char a_roll)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   uchar       n           =    0;
+   char        x_off       =    0;
+   char        x_actv      =    0;
+   /*---(quick-out)----------------------*/
+   if (a_code == KHRONOS_ACTV)  return 0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
    /*---(beginnings)---------------------*/
    --rce;  switch  (a_code) {
    case KHRONOS_BEG  :  x_off =  3;    break;
@@ -895,29 +1051,33 @@ TRKS__stats             (char *b_str, char a_code)
    case KHRONOS_PASS :  x_off = 32;    break;
    }
    /*---(summarize)----------------------*/
-   x_ch   = a_code;
-   DEBUG_OUTP    yLOG_complex ("values"    , "%c, %d, %c", a_code, x_off, x_ch);
+   DEBUG_OUTP    yLOG_complex ("values"    , "%c, %d", a_code, x_off);
    --rce;  if (x_off == 0) {
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(update history)-----------------*/
-   if (a_code != KHRONOS_BEG) {
-      b_str [x_next] = x_ch;
-      b_str [35    ] = TRKS__num2count (++x_hist);
+   /*---(check active)-------------------*/
+   x_actv = TRKS__count2num (b_str [5]);
+   DEBUG_OUTP    yLOG_value   ("x_actv"    , x_actv);
+   --rce;  if (a_code != KHRONOS_BEG && x_actv == 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   /*---(update stats)-------------------*/
-   if (strchr ("]a", a_code) == NULL) {
-      n = TRKS__count2num (b_str [x_off]);
-      b_str [x_off ] = TRKS__num2count (++n);
+   /*---(update specific stat)-----------*/
+   if (x_off == 3)  n = TRKS__biggun2num (b_str [x_off]);
+   else             n = TRKS__count2num  (b_str [x_off]);
+   --rce;  if (x_off > 5 && n + 1 > a_roll) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
+   DEBUG_OUTP    yLOG_value   ("n"         , n);
+   if (x_off == 3)  b_str [x_off ] = TRKS__num2biggun (++n);
+   else             b_str [x_off ] = TRKS__num2count  (++n);
    /*---(also update active)-------------*/
    if (a_code == KHRONOS_BEG) {
-      n = TRKS__count2num (b_str [5]);
-      b_str [5] = TRKS__num2count (++n);
+      b_str [5] = TRKS__num2count (++x_actv);
    } else  {
-      n = TRKS__count2num (b_str [5]);
-      b_str [5] = TRKS__num2count (--n);
+      b_str [5] = TRKS__num2count (--x_actv);
    }
    /*---(complete)-----------------------*/
    DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
@@ -925,68 +1085,110 @@ TRKS__stats             (char *b_str, char a_code)
 }
 
 char
-TRKS__restat_full       (char a_roll, cchar *a_hist, char *r_new)
+TRKS__stat_restat       (char *b_str, char a_roll, char a_hist)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
    int         l           =    0;
    char        i           =    0;
-   char       *p           =    0;
-   char        n           =    0;
    int         x_code      =    0;
+   char        t           [LEN_FULL]  = "";
+   char        x_actv      =    0;
+   char        x_max       =    0;
+   char        x_off       =    0;
+   uchar       n, m;
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_OUTP    yLOG_point   ("r_new"     , r_new);
-   --rce;  if (r_new == NULL) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+   /*---(capture history)----------------*/
+   strlcpy (t, b_str + 35, LEN_FULL);
+   l = strlen (t);
+   DEBUG_OUTP    yLOG_complex ("t"         , "%2då%sæ", l, t);
+   /*---(check active)-------------------*/
+   x_actv = b_str [5];
+   DEBUG_OUTP    yLOG_char    ("x_actv"    , x_actv);
+   /*---(refresh stats)------------------*/
+   sprintf (b_str, "%33.33s  %s", KHRONOS_DEFSTATS, t);
+   b_str [0] = TRKS__num2count (a_roll);
+   b_str [5] = x_actv;
+   DEBUG_OUTP    yLOG_complex ("b_str"     , "%2då%sæ", strlen (b_str), b_str);
+   /*---(set offset)---------------------*/
+   if (a_roll < a_hist) {
+      x_max  = a_roll;
+      x_off  = 2 + (a_hist - a_roll);
+   } else {
+      x_max  = a_hist;
+      x_off  = 2;
    }
-   DEBUG_OUTP    yLOG_point   ("a_hist"    , a_hist);
-   --rce;  if (a_hist == NULL) {
-      strlcpy (r_new, KHRONOS_DEFSTATS, LEN_FULL);
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(prepare)------------------------*/
-   strlcpy (r_new, KHRONOS_DEFSTATS, LEN_FULL);
-   l = strlen (a_hist);
-   if (l > 60)  l = 60;
-   /*---(update roll)--------------------*/
-   n = TRKS__count2num (a_roll);
-   DEBUG_OUTP    yLOG_complex ("a_roll"    , "%c, %d", a_roll, n);
-   --rce;  if (n < 0) {
-      strlcpy (r_new, KHRONOS_DEFSTATS, LEN_FULL);
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   r_new [0] = a_roll;
    /*---(run history)--------------------*/
-   --rce;  for (i = 0; i < l; ++i) {
-      if (strchr ("·´", a_hist [i]) != NULL) {
-         DEBUG_OUTP   yLOG_complex ("trailing"  , "at pos %d, found trailing · or ´, ending", i);
-         break;
-      }
-      p = strchr (KHRONOS_STAT, a_hist [i]);
-      if (p == NULL || a_hist [i] == KHRONOS_BEG) {
-         DEBUG_OUTP   yLOG_complex ("bad char"  , "at pos %d, found bad char (%c), stopping", i, a_hist [i]);
-         strlcpy (r_new, KHRONOS_DEFSTATS, LEN_FULL);
-         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      rc = TRKS__stats (r_new, KHRONOS_BEG);
+   --rce;  for (i = 0; i < x_max; ++i) {
+      rc = TRKS__stat_update (b_str, KHRONOS_BEG, a_roll);
       if (rc < 0) {
          DEBUG_OUTP   yLOG_note    ("failed to begin a job");
-         strlcpy (r_new, KHRONOS_DEFSTATS, LEN_FULL);
+         strlcpy (b_str, KHRONOS_DEFSTATS, LEN_FULL);
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      x_code = a_hist [i];
-      rc = TRKS__stats (r_new, x_code);
+      x_code = t [i + x_off];
+      rc = TRKS__stat_update (b_str, x_code, a_roll);
       if (rc < 0) {
-         DEBUG_OUTP   yLOG_complex ("failed"    , "at pos %d, could not update with (%c), stopping", i, a_hist [i]);
-         strlcpy (r_new, KHRONOS_DEFSTATS, LEN_FULL);
+         DEBUG_OUTP   yLOG_complex ("failed"    , "at pos %d, could not update with (%c), stopping", i, t [i]);
+         strlcpy (b_str, KHRONOS_DEFSTATS, LEN_FULL);
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(update total runs)--------------*/
+   n = TRKS__biggun2num (b_str [3]);
+   m = TRKS__count2num  (b_str [5]);
+   DEBUG_OUTP    yLOG_complex ("jobs"      , "%c, %3d, %c, %3d, %3d", b_str [3], n, b_str [5], m, n + m);
+   b_str [3] = TRKS__num2biggun (n + m);
+   if (b_str [3] == '0')  b_str [3] == '·';
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+TRKS__stat_handler      (char a_type, char *b_str, char a_code)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_roll      =    0;
+   char        x_hist      =    0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(prepare)------------------------*/
+   rc = TRKS__stat_prepare (b_str, a_code, &x_roll, &x_hist);
+   DEBUG_OUTP    yLOG_value   ("prepare"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(history)------------------------*/
+   if (a_type != 'r') {
+      rc = TRKS__stat_history (b_str, a_code, &x_hist);
+      DEBUG_OUTP    yLOG_value   ("history"   , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(update one)---------------------*/
+   if (a_type != 'r') {
+      rc = TRKS__stat_update  (b_str, a_code, x_roll);
+      DEBUG_OUTP    yLOG_value   ("update"    , rc);
+      if (rc < 0) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(update all)---------------------*/
+   --rce;  if (x_roll <  x_hist || a_type == 'r') {
+      rc = TRKS__stat_restat  (b_str, x_roll, x_hist);
+      DEBUG_OUTP    yLOG_value   ("restat"    , rc);
+      if (rc < 0) {
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
@@ -996,7 +1198,24 @@ TRKS__restat_full       (char a_roll, cchar *a_hist, char *r_new)
    return 0;
 }
 
+char
+TRKS__stat              (char *b_str, char a_code)
+{
+   return TRKS__stat_handler  ('-', b_str, a_code);
+}
 
+char
+TRKS_restat             (char *b_str)
+{
+   return TRKS__stat_handler  ('r', b_str, KHRONOS_BEG);
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                         durations                            ----===*/
+/*====================------------------------------------====================*/
+static void  o___DURS____________o () { return; }
 
 #define    KHRONOS_DURS  "<nmlkjihgfedcba0ABCDEFGHIJKLMN>"
 
@@ -1010,22 +1229,21 @@ TRKS__restat_full       (char a_roll, cchar *a_hist, char *r_new)
  *> 0         1         2         3         4         5         6                                                          <*/
 
 char
-TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max)
+TRKS__durs_prepare      (char *b_str, int *b_dur, char *r_roll, char *r_hist, int *b_min, int a_est, int *b_max)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   int         l           =    0;
-   char       *p           = NULL;
-   char        n           =    0;
    char        x_roll      =    0;
    char        x_hist      =    0;
-   char        x_next      =    0;
-   char        x_ch        =    0;
-   char        x_off       =    0;
-   int         x_dur       =    0;
+   char        i           =    0;
+   char        x_check     =    0;
+   char        l           =    0;
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(default)------------------------*/
+   if (r_roll != NULL)  *r_roll = 0;
+   if (r_hist != NULL)  *r_hist = 0;
    /*---(defense)------------------------*/
    rc = TRKS__coded ('d', KHRONOS_DEFDURS  , b_str);
    DEBUG_OUTP    yLOG_value   ("coded"     , rc);
@@ -1033,39 +1251,120 @@ TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(prepare)------------------------*/
-   x_roll  = TRKS__count2num (b_str [ 0]);
+   l  = strlen (b_str);
+   /*---(get roll)-----------------------*/
+   if      (b_str [0] == '´')  x_roll = 60;
+   else if (b_str [0] == '·')  x_roll = 60;
+   else                        x_roll  = TRKS__count2num (b_str [ 0]);
    if (x_roll > 60)  x_roll = 60;
    DEBUG_OUTP    yLOG_complex ("x_roll"    , "%c, %d", b_str [ 0], x_roll);
+   --rce;  if (x_roll < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(get history)--------------------*/
    x_hist  = TRKS__count2num (b_str [53]);
-   x_next  = x_hist + 55;
-   DEBUG_OUTP    yLOG_complex ("x_hist"    , "%c, %d, %d", b_str [53], x_hist, x_next);
-   l = strlen (KHRONOS_DURS);
-   x_dur = a_dur - a_est;
+   DEBUG_OUTP    yLOG_complex ("x_hist"    , "%c, %d", b_str [53], x_hist);
+   --rce;  if (x_hist < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(verify history string)----------*/
+   for (i = 0; i < 60; ++i) {
+      if (strchr (YSTR_BIGGUN, b_str [i + 55]) != NULL)  ++x_check;
+      else break;
+   }
+   DEBUG_OUTP    yLOG_value   ("check"     , x_check);
+   --rce;  if (x_hist != x_check) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_OUTP    yLOG_char    ("tail"      , b_str [l - 1]);
+   --rce;  if (b_str [l - 1] != '´') {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(verify duration)----------------*/
+   DEBUG_OUTP    yLOG_value   ("*b_dur"    , *b_dur);
+   --rce;  if (*b_dur < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   rc = 0;
+   if (*b_dur >= strlen (YSTR_BIGGUN)) {
+      *b_dur = strlen (YSTR_BIGGUN) - 1;
+      rc = 1;
+   }
+   /*---(fix range)----------------------*/
+   if (b_min != NULL && *b_min > a_est)  *b_min = a_est;
+   if (b_max != NULL && *b_max < a_est)  *b_max = a_est;
+   /*---(save-back)----------------------*/
+   if (r_roll != NULL)  *r_roll = x_roll;
+   if (r_hist != NULL)  *r_hist = x_hist;
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+TRKS__durs_history      (char *b_str, int a_dur, char *b_hist)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_next      =    0;
+   char        i           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(get history)--------------------*/
+   x_next  = *b_hist + 55;
+   DEBUG_OUTP    yLOG_complex ("history"   , "%c, %d, %d", b_str [55], *b_hist, x_next);
+   /*---(not full yet)-------------------*/
+   if (*b_hist < 60) {
+      b_str [x_next] = TRKS__num2biggun (a_dur);
+      b_str [53    ] = TRKS__num2count  (++(*b_hist));
+      DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(full)---------------------------*/
+   for (i = 1; i < 60; ++i)  b_str [i + 55 - 1] = b_str [i + 55];
+   b_str [59 + 55] = TRKS__num2biggun (a_dur);
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return 2;
+}
+
+char
+TRKS__durs_update       (char *b_str, int a_dur, int a_min, int a_est, int a_max)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_var       =    0;
+   char        x_off       =    0;
+   char        n           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(prepare)------------------------*/
+   x_var = a_dur - a_est;
    /*---(negatives)----------------------*/
-   if      (x_dur  <  -30)  { n = 0;           x_off =  0; }
-   else if (x_dur  <  -25)  { n = 1;           x_off =  2; }
-   else if (x_dur  <  -20)  { n = 2;           x_off =  4; }
-   else if (x_dur  <  -15)  { n = 3;           x_off =  6; }
-   else if (x_dur  <  -10)  { n = 4;           x_off =  8; }
-   else if (x_dur  <    0)  { n = 15 + x_dur;  x_off = 20 + x_dur; }
+   if      (x_var  <  -30)   x_off =  0; 
+   else if (x_var  <  -25)   x_off =  2; 
+   else if (x_var  <  -20)   x_off =  4; 
+   else if (x_var  <  -15)   x_off =  6; 
+   else if (x_var  <  -10)   x_off =  8; 
+   else if (x_var  <    0)   x_off = 20 + x_var;
    /*---(zero)---------------------------*/
-   else if (x_dur  ==   0)  { n = 15;          x_off = 21; }
+   else if (x_var  ==   0)   x_off = 21;
    /*---(positives)----------------------*/
-   else if (x_dur  >   30)  { n = l - 1;       x_off = 42; }
-   else if (x_dur  >   25)  { n = l - 2;       x_off = 40; }
-   else if (x_dur  >   20)  { n = l - 3;       x_off = 38; }
-   else if (x_dur  >   15)  { n = l - 4;       x_off = 36; }
-   else if (x_dur  >   10)  { n = l - 5;       x_off = 34; }
-   else                     { n = 15 + x_dur;  x_off = 22 + x_dur; }
-   /*---(updates)------------------------*/
-   x_ch   = KHRONOS_DURS [n];
-   x_off += 8;
-   DEBUG_OUTP    yLOG_complex ("values"    , "%d, %d, %d, %c", x_dur, n, x_off, x_ch);
-   /*---(update history)-----------------*/
-   b_str [x_next] = TRKS__num2biggun (a_dur);
-   b_str [53    ] = TRKS__num2biggun (++x_hist);
+   else if (x_var  >   30)   x_off = 42;
+   else if (x_var  >   25)   x_off = 40;
+   else if (x_var  >   20)   x_off = 38;
+   else if (x_var  >   15)   x_off = 36;
+   else if (x_var  >   10)   x_off = 34;
+   else                      x_off = 22 + x_var;
    /*---(update stats)-------------------*/
+   x_off += 8;
    n = TRKS__count2num (b_str [x_off]);
    b_str [x_off ] = TRKS__num2count (++n);
    /*---(early/late)---------------------*/
@@ -1083,62 +1382,42 @@ TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max
 }
 
 char
-TRKS__redur_full        (char a_roll, cchar *a_hist, int a_min, int a_est, int a_max, char *r_new)
+TRKS__durs_redur        (char *b_str, char a_roll, char a_hist, int a_min, int a_est, int a_max)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
    int         l           =    0;
    char        i           =    0;
-   char       *p           =    0;
-   char        n           =    0;
-   char        x_dur       =    0;
-   char        x_trans     [31]  = { -60, -30, -25, -20, -15, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 60 };
+   char        t           [LEN_FULL]  = "";
+   char        x_max       =    0;
+   char        x_off       =    0;
+   int         x_dur       =    0;
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_OUTP    yLOG_point   ("r_new"     , r_new);
-   --rce;  if (r_new == NULL) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+   /*---(capture history)----------------*/
+   strlcpy (t, b_str + 53, LEN_FULL);
+   l = strlen (t);
+   DEBUG_OUTP    yLOG_complex ("t"         , "%2då%sæ", l, t);
+   /*---(refresh stats)------------------*/
+   sprintf (b_str, "%51.51s  %s", KHRONOS_DEFDURS, t);
+   b_str [0] = TRKS__num2count (a_roll);
+   DEBUG_OUTP    yLOG_complex ("b_str"     , "%2då%sæ", strlen (b_str), b_str);
+   /*---(set offset)---------------------*/
+   if (a_roll < a_hist) {
+      x_max  = a_roll;
+      x_off  = 2 + (a_hist - a_roll);
+   } else {
+      x_max  = a_hist;
+      x_off  = 2;
    }
-   DEBUG_OUTP    yLOG_point   ("a_hist"    , a_hist);
-   --rce;  if (a_hist == NULL) {
-      strlcpy (r_new, KHRONOS_DEFDURS, LEN_FULL);
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(prepare)------------------------*/
-   strlcpy (r_new, KHRONOS_DEFDURS, LEN_FULL);
-   l = strlen (a_hist);
-   if (l > 60)  l = 60;
-   /*---(update roll)--------------------*/
-   n = TRKS__count2num (a_roll);
-   DEBUG_OUTP    yLOG_complex ("a_roll"    , "%c, %d", a_roll, n);
-   --rce;  if (n < 0) {
-      strlcpy (r_new, KHRONOS_DEFDURS, LEN_FULL);
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   r_new [0] = a_roll;
    /*---(run history)--------------------*/
-   --rce;  for (i = 0; i < l; ++i) {
-      if (strchr ("·´", a_hist [i]) != NULL) {
-         DEBUG_OUTP   yLOG_complex ("trailing"  , "at pos %d, found trailing · or ´, ending", i);
-         break;
-      }
-      p = strchr (YSTR_BIGGUN, a_hist [i]);
-      if (p == NULL) {
-         DEBUG_OUTP   yLOG_complex ("bad char"  , "at pos %d, found bad char (%c), stopping", i, a_hist [i]);
-         strlcpy (r_new, KHRONOS_DEFDURS, LEN_FULL);
-         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      n = p - YSTR_BIGGUN;
-      rc = TRKS__durs (r_new, n, a_min, a_est, a_max);
+   --rce;  for (i = 0; i < x_max; ++i) {
+      x_dur  = TRKS__biggun2num (t [i + x_off]);
+      rc = TRKS__durs_update (b_str, x_dur, a_min, a_est, a_max);
       if (rc < 0) {
-         DEBUG_OUTP   yLOG_complex ("failed"    , "at pos %d, could not update with (%c), stopping", i, a_hist [i]);
-         strlcpy (r_new, KHRONOS_DEFDURS, LEN_FULL);
+         DEBUG_OUTP   yLOG_complex ("failed"    , "at pos %d, could not update with (%c), stopping", i, t [i]);
+         strlcpy (b_str, KHRONOS_DEFDURS , LEN_FULL);
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
@@ -1147,6 +1426,74 @@ TRKS__redur_full        (char a_roll, cchar *a_hist, int a_min, int a_est, int a
    DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
    return 0;
 }
+
+char
+TRKS__durs_handler      (char a_type, char *b_str, int a_dur, int a_min, int a_est, int a_max)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_roll      =    0;
+   char        x_hist      =    0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(prepare)------------------------*/
+   rc = TRKS__durs_prepare (b_str, &a_dur, &x_roll, &x_hist, &a_min, a_est, &a_max);
+   DEBUG_OUTP    yLOG_value   ("prepare"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(history)------------------------*/
+   if (a_type != 'r') {
+      rc = TRKS__durs_history (b_str, a_dur, &x_hist);
+      DEBUG_OUTP    yLOG_value   ("history"   , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(update one)---------------------*/
+   if (a_type != 'r') {
+      rc = TRKS__durs_update  (b_str, a_dur, a_min, a_est, a_max);
+      DEBUG_OUTP    yLOG_value   ("update"    , rc);
+      if (rc < 0) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(update all)---------------------*/
+   --rce;  if (x_roll <  x_hist || a_type == 'r') {
+      rc = TRKS__durs_redur   (b_str, x_roll, x_hist, a_min, a_est, a_max);
+      DEBUG_OUTP    yLOG_value   ("restat"    , rc);
+      if (rc < 0) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max)
+{
+   return  TRKS__durs_handler ('-', b_str, a_dur, a_min, a_est, a_max);
+}
+
+char
+TRKS_redur              (char *b_str, int a_min, int a_est, int a_max)
+{
+   return  TRKS__durs_handler ('r', b_str, 0, a_min, a_est, a_max);
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      schedule tracking                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___ACTUAL__________________o (void) {;}
 
 /*>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       <* 
  *> ´¬¬¬  ¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨   <* 
@@ -1167,7 +1514,6 @@ TRKS__redur_full        (char a_roll, cchar *a_hist, int a_min, int a_est, int a
  *> ´¬¬¬  ¨····¼€€€½´´´´´·····+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨   <* 
  *> ´¬¬¬  ¨····Ï´´¼€€€€€½·····+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨·········+·········+·········|·········+·········+·········¨   <* 
  *>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       <*/
-
 
 char
 TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code)
@@ -1264,7 +1610,7 @@ TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code)
 static void      o___EXEC____________________o (void) {;}
 
 char
-TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn)
+TRKS__exec              (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est ,int a_max)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -1280,81 +1626,20 @@ TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn)
    /*---(update heartbeat)---------------*/
    strlcpy (a_cur->last, my.heartbeat, LEN_HUND);
    /*---(update statistics)--------------*/
-   rc = TRKS__stats  (a_cur->stats, KHRONOS_BEG);
-   DEBUG_OUTP    yLOG_value   ("stats"     , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(update actual)------------------*/
-   rc = TRKS__actual (a_cur->actual, a_hr, a_mn, KHRONOS_BEG);
-   DEBUG_OUTP    yLOG_value   ("actual"    , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_OUTP    yLOG_point   ("a_cur"     , a_cur);
-   --rce;  if (a_cur == NULL) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(update heartbeat)---------------*/
-   strlcpy (a_cur->last, my.heartbeat, LEN_HUND);
-   /*---(update actual)------------------*/
-   rc = TRKS__actual (a_cur->actual, a_hr, a_mn, KHRONOS_ACTV);
-   DEBUG_OUTP    yLOG_value   ("actual"    , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-TRKS_complete           (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est ,int a_max)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_OUTP    yLOG_point   ("a_cur"     , a_cur);
-   --rce;  if (a_cur == NULL) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(update heartbeat)---------------*/
-   strlcpy (a_cur->last, my.heartbeat, LEN_HUND);
-   /*---(update statistics)--------------*/
-   rc = TRKS__stats  (a_cur->stats, a_code);
+   rc = TRKS__stat  (a_cur->stats, a_code);
    DEBUG_OUTP    yLOG_value   ("stats"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(update duration)----------------*/
-   rc = TRKS__durs   (a_cur->durs, a_dur, a_min, a_est, a_max);
-   DEBUG_OUTP    yLOG_value   ("durs"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+   if (strchr ("[a", a_code) == NULL) {
+      rc = TRKS__durs   (a_cur->durs, a_dur, a_min, a_est, a_max);
+      DEBUG_OUTP    yLOG_value   ("durs"      , rc);
+      --rce;  if (rc < 0) {
+         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
    }
    /*---(update actual)------------------*/
    rc = TRKS__actual (a_cur->actual, a_hr, a_mn, a_code);
@@ -1366,6 +1651,24 @@ TRKS_complete           (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_
    /*---(complete)-----------------------*/
    DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
    return 0;
+}
+
+char
+TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn)
+{
+   return TRKS__exec (a_cur, a_hr, a_mn, KHRONOS_BEG , 0, 0, 0, 0);
+}
+
+char
+TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn)
+{
+   return TRKS__exec (a_cur, a_hr, a_mn, KHRONOS_ACTV, 0, 0, 0, 0);
+}
+
+char
+TRKS_complete           (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est ,int a_max)
+{
+   return TRKS__exec (a_cur, a_hr, a_mn, a_code, a_dur, a_min, a_est, a_max);
 }
 
 
@@ -1412,11 +1715,13 @@ TRKS__unit              (char *a_question, int a_num)
          sprintf  (s, "%2då%-.25sæ", strlen (x_cur->file)   , x_cur->file);
          sprintf  (t, "%2då%-.25sæ", strlen (x_cur->tracker), x_cur->tracker);
          strcpy (r, "· · · ·   ·");
-         if (strcmp (x_cur->last  , KHRONOS_DEFLAST  ) != 0)  r [ 0] = 'Ï';
-         if (strcmp (x_cur->stats , KHRONOS_DEFSTATS ) != 0)  r [ 2] = 'Ï';
-         if (strcmp (x_cur->durs  , KHRONOS_DEFDURS  ) != 0)  r [ 4] = 'Ï';
-         if (strcmp (x_cur->actual, KHRONOS_DEFACTUAL) != 0)  r [ 6] = 'Ï';
-         if (x_cur->parent != NULL)                           r [10] = 'Ï';
+         if (strcmp (x_cur->last  , KHRONOS_DEFLAST  ) != 0)       r [ 0] = 'Ï';
+         if (strcmp (x_cur->stats + 1, KHRONOS_DEFSTATS + 1) != 0) r [ 2] = 'Ï';
+         else if (x_cur->stats [0] != (uchar) '´')                 r [ 2] = 'r';
+         if (strcmp (x_cur->durs  + 1, KHRONOS_DEFDURS  + 1) != 0) r [ 4] = 'Ï';
+         else if (x_cur->durs  [0] != (uchar) '´')                 r [ 4] = 'r';
+         if (strcmp (x_cur->actual, KHRONOS_DEFACTUAL) != 0)       r [ 6] = 'Ï';
+         if (x_cur->parent != NULL)                                r [10] = 'Ï';
          snprintf (unit_answer, LEN_HUND, "TRKS entry  (%2d) : %-29.29s  %-29.29s   %s", a_num, s, t, r);
       }
 
