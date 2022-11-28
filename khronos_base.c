@@ -18,6 +18,7 @@ BASE_init               (void)
    char        rce         =  -10;
    int         rc          =    0;
    tFILE      *x_file      = NULL;
+   int         i           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(clear everything)---------------*/
@@ -44,6 +45,13 @@ BASE_init               (void)
    }
    /*---(update retired flag)------------*/
    x_file->retired = 'y';
+   /*---(clear usec)---------------------*/
+   rc = yEXEC_heartbeat (my.m_pid, my.now, "daemonizing, initializing, and waiting for next min", my.n_heartbeat, my.heartbeat);
+   DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -90,6 +98,7 @@ char BASE_retire        (void)  { return BASE__purge ('r'); }
 
 
 
+
 char
 BASE_execute            (void)
 {
@@ -111,6 +120,7 @@ BASE_execute            (void)
       }
    }
    /*---(startup)------------------------*/
+   EXEC_sysstart ();
    x_hour  = EXEC_time (0);
    rc      = RPTG_track_beg ();
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
@@ -121,22 +131,20 @@ BASE_execute            (void)
    /*> catchup();                                                                     <*/
    EXEC_wait_min ();
    DEBUG_PROG  yLOG_note    ("after wait");
+   USAGE_prerun ();
    /*---(main loop)----------------------*/
    DEBUG_PROG  yLOG_note    ("entering main loop");
    while (1) {
-      x_hour = x_save = EXEC_time (0);
+      x_hour = EXEC_time (0);
       DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-      rc     = EXEC_every_hour (x_hour);
-      DEBUG_PROG  yLOG_value   ("hourly"    , rc);
-      while (x_hour == x_save) {
-         DEBUG_PROG  yLOG_value   ("minute"    , my.minute);
-         rc     = EXEC_every_min (my.minute);
-         DEBUG_PROG  yLOG_value   ("minutely"  , rc);
-         x_hour = EXEC_time (0);
-         DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
-         TRKS_export ();
-         RPTG_status ();
+      if (x_hour != x_save)  {
+         x_save = x_hour;
+         rc     = EXEC_every_hour (x_hour);
+         DEBUG_PROG  yLOG_value   ("hourly"    , rc);
       }
+      DEBUG_PROG  yLOG_value   ("minute"    , my.minute);
+      rc     = EXEC_every_min (my.minute);
+      DEBUG_PROG  yLOG_value   ("minutely"  , rc);
    }
    /*---(complete------------------------*/
    DEBUG_PROG  yLOG_exit    (__FUNCTION__);
@@ -160,12 +168,21 @@ base_daemon        (void)
    int         x_uid       =    0;
    /*---(header)-------------------------*/
    DEBUG_ENVI   yLOG_enter   (__FUNCTION__);
-   /*---(check for other)----------------*/
+   /*---(check for normal version)-------*/
    x_running = yEXEC_find ("khronos", NULL);
    DEBUG_ENVI   yLOG_value   ("x_running" , x_running);
    --rce;  if (x_running > 1) {
       printf ("khronos already running in daemon mode\n");
       DEBUG_ENVI   yLOG_note    ("khronos already running in daemon mode");
+      DEBUG_ENVI   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(check for debug version)--------*/
+   x_running = yEXEC_find ("khronos_debug", NULL);
+   DEBUG_ENVI   yLOG_value   ("x_running" , x_running);
+   --rce;  if (x_running > 1) {
+      printf ("khronos already running in debug daemon mode\n");
+      DEBUG_ENVI   yLOG_note    ("khronos already running in debug daemon mode");
       DEBUG_ENVI   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }

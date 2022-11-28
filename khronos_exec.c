@@ -112,6 +112,7 @@ EXEC_mark_done          (char a_yexec, int a_return)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
+   char        rc          =    0;
    tFILE      *x_file      = NULL;
    tLINE      *x_line      = NULL;
    int         x_mins      =    0;
@@ -173,7 +174,6 @@ EXEC_mark_done          (char a_yexec, int a_return)
       }
       break;
    }
-   TRKS_complete (x_line->trks, my.hour, my.minute, x_reason, x_mins, x_line->est_min / 60, x_line->est / 60, x_line->est_max / 60);
    /*---(early/late)---------------------*/
    if      (x_msec < x_line->est_min) {
       /*> if (x_line->c_earl < 99)   ++x_line->c_earl;                                <*/
@@ -194,6 +194,8 @@ EXEC_mark_done          (char a_yexec, int a_return)
    x_line->l_yexec    = a_yexec;
    x_line->l_rc       = a_return;
    /*---(report complete)----------------*/
+   rc = TRKS_complete (x_line->trks, my.hour, my.minute, x_reason, x_mins, x_line->est_min / 60, x_line->est / 60, x_line->est_max / 60);
+   DEBUG_INPT   yLOG_value   ("complete"  , rc);
    RPTG_track_exec (x_file, x_line, x_reason, x_note);
    /*---(reset run data)-----------------*/
    x_line->rpid       =  0;
@@ -212,6 +214,200 @@ EXEC_mark_done          (char a_yexec, int a_return)
 /*====================------------------------------------====================*/
 static void      o___TIMEKEEP________________o (void) {;};
 
+char
+EXEC__elapsed           (long *e, char u, char d, char *o)
+{
+   char        a           =    0;
+   char        s           [LEN_HUND]  = "";
+   char        t           [LEN_LABEL] = "";
+   char        l           =    0;
+   a = *e % d;
+   if (a > 0) {
+      strlcpy (s, o, LEN_HUND);
+      sprintf (t, ", %d%c", a, u);
+      sprintf (o, "%s%s", t, s);
+   }
+   *e /= d;
+   return 0;
+}
+
+char
+EXEC_elapsed            (long a_now)
+{
+   long        e           =    0;
+   char        d           =    0;
+   char        u           =  'm';
+   e = (a_now - my.start) / 60;
+   strlcpy (my.elapsed, "", LEN_HUND);
+   u  = 'm';
+   d  = e % 60;
+   e /= 60;
+   if (e > 0) {
+      u  = 'h';
+      d  = e % 24;
+      e /= 24;
+      if (e > 0) {
+         u  = 'd';
+         d  = e;
+      }
+   }
+   sprintf (my.elapsed, "%d%c", d, u);
+   /*> EXEC__elapsed (&e, 'm', 60, my.elapsed);                                       <* 
+    *> EXEC__elapsed (&e, 'h', 60, my.elapsed);                                       <* 
+    *> EXEC__elapsed (&e, 'd', 24, my.elapsed);                                       <* 
+    *> EXEC__elapsed (&e, 'o', 30, my.elapsed);                                       <* 
+    *> EXEC__elapsed (&e, 'y', 12, my.elapsed);                                       <*/
+   return 0;
+}
+
+char
+EXEC_sysstart           (void)
+{
+   /*> /+---(locals)-----------+-----+-----+-+/                                       <* 
+    *> int         rce         =  -10;                                                <* 
+    *> int         rc          =    0;                                                <* 
+    *> FILE       *f;                                                                 <* 
+    *> char        x_file      [LEN_RECD]  = "";                                      <* 
+    *> char        x_recd      [LEN_RECD]  = "";                                      <* 
+    *> char       *p           = NULL;                                                <* 
+    *> char       *r           = NULL;                                                <* 
+    *> char        c           =    0;                                                <* 
+    *> /+---(header)------------------------+/                                        <* 
+    *> DEBUG_INPT   yLOG_enter   (__FUNCTION__);                                      <* 
+    *> /+---(defense)-----------------------+/                                        <* 
+    *> sprintf (x_file, "/proc/uptime");                                              <* 
+    *> /+---(open proc)----------------------+/                                       <* 
+    *> f = fopen (x_file, "rt");                                                      <* 
+    *> DEBUG_INPT   yLOG_point   ("f"         , f);                                   <* 
+    *> --rce;  if (f == NULL) {                                                       <* 
+    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <* 
+    *> /+---(read line)---------------------+/                                        <* 
+    *> fgets (x_recd, LEN_RECD, f);                                                   <* 
+    *> p = strtok_r (x_recd, " ", &r);                                                <* 
+    *> DEBUG_INPT   yLOG_point   ("p"         , p);                                   <* 
+    *> --rce;  if (p == NULL) {                                                       <* 
+    *>    fclose (f);                                                                 <* 
+    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <* 
+    *> --rce;  while (p != NULL && c <= 0) {                                          <* 
+    *>    DEBUG_INPT   yLOG_info    ("p"         , p);                                <* 
+    *>    switch (c) {                                                                <* 
+    *>    case 0  :                                                                   <* 
+    *>       my.m_spock  = atol (p);                                                  <* 
+    *>       DEBUG_INPT   yLOG_value   ("m_spock"   , my.m_spock);                    <* 
+    *>       break;                                                                   <* 
+    *>    }                                                                           <* 
+    *>    ++c;                                                                        <* 
+    *>    p = strtok_r (NULL  , " ", &r);                                             <* 
+    *> }                                                                              <* 
+    *> DEBUG_INPT   yLOG_value   ("c"         , c);                                   <* 
+    *> /+---(close file)--------------------+/                                        <* 
+    *> rc = fclose (f);                                                               <* 
+    *> DEBUG_INPT   yLOG_value   ("close"     , rc);                                  <* 
+    *> --rce;  if (f <  0) {                                                          <* 
+    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <* 
+    *> /+---(get ticks per sec)-------------+/                                        <* 
+    *> my.m_clktck = sysconf (_SC_CLK_TCK);                                           <* 
+    *> DEBUG_INPT   yLOG_value   ("m_clktck"  , my.m_clktck);                         <* 
+    *> /+---(make start in ticks)-----------+/                                        <* 
+    *> my.m_spock *= my.m_clktck;                                                     <* 
+    *> /+---(complete)----------------------+/                                        <* 
+    *> DEBUG_INPT   yLOG_exit    (__FUNCTION__);                                      <* 
+    *> return 0;                                                                      <*/
+}
+
+char
+EXEC_sysload            (void)
+{
+   /*> /+---(locals)-----------+-----+-----+-+/                                       <* 
+    *> int         rce         =  -10;                                                <* 
+    *> int         rc          =    0;                                                <* 
+    *> FILE       *f;                                                                 <* 
+    *> char        x_file      [LEN_HUND]  = "";                                      <* 
+    *> char        x_recd      [LEN_RECD]  = "";                                      <* 
+    *> char       *p           = NULL;                                                <* 
+    *> char       *r           = NULL;                                                <* 
+    *> char        c           =    0;                                                <* 
+    *> /+---(header)------------------------+/                                        <* 
+    *> DEBUG_INPT   yLOG_enter   (__FUNCTION__);                                      <* 
+    *> /+---(defense)-----------------------+/                                        <* 
+    *> sprintf (x_file, "/proc/%d/stat", my.m_pid);                                   <* 
+    *> /+---(open proc)----------------------+/                                       <* 
+    *> f = fopen (x_file, "rt");                                                      <* 
+    *> DEBUG_INPT   yLOG_point   ("f"         , f);                                   <* 
+    *> --rce;  if (f == NULL) {                                                       <* 
+    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <* 
+    *> /+---(read line)---------------------+/                                        <* 
+    *> fgets (x_recd, LEN_RECD, f);                                                   <* 
+    *> p = strtok_r (x_recd, " ", &r);                                                <* 
+    *> DEBUG_INPT   yLOG_point   ("p"         , p);                                   <* 
+    *> --rce;  if (p == NULL) {                                                       <* 
+    *>    fclose (f);                                                                 <* 
+    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <* 
+    *> --rce;  while (p != NULL && c <= 21) {                                         <* 
+    *>    DEBUG_INPT   yLOG_info    ("p"         , p);                                <* 
+    *>    switch (c) {                                                                <* 
+    *>    case 13 :                                                                   <* 
+    *>       my.m_utime = atol (p);                                                   <* 
+    *>       DEBUG_INPT   yLOG_value   ("m_utime"   , my.m_utime);                    <* 
+    *>       break;                                                                   <* 
+    *>    case 14 :                                                                   <* 
+    *>       my.m_stime = atol (p);                                                   <* 
+    *>       DEBUG_INPT   yLOG_value   ("m_stime"   , my.m_stime);                    <* 
+    *>       break;                                                                   <* 
+    *>    case 21 :                                                                   <* 
+    *>       my.m_ppock = atol (p);                                                   <* 
+    *>       DEBUG_INPT   yLOG_value   ("m_ppock"   , my.m_ppock);                    <* 
+    *>       break;                                                                   <* 
+    *>    }                                                                           <* 
+    *>    ++c;                                                                        <* 
+    *>    p = strtok_r (NULL  , " ", &r);                                             <* 
+    *> }                                                                              <* 
+    *> DEBUG_INPT   yLOG_value   ("c"         , c);                                   <* 
+    *> /+---(close file)--------------------+/                                        <* 
+    *> rc = fclose (f);                                                               <* 
+    *> DEBUG_INPT   yLOG_value   ("close"     , rc);                                  <* 
+    *> --rce;  if (f <  0) {                                                          <* 
+    *>    DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <* 
+    *> /+---(complete)----------------------+/                                        <* 
+    *> DEBUG_INPT   yLOG_exit    (__FUNCTION__);                                      <* 
+    *> return 0;                                                                      <*/
+}
+
+long
+EXEC_epoch              (char y, char o, char d, char h, char m)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   long        x_epoch     =    0;
+   tTIME      *x_broke     = NULL;
+   /*---(get a base time)----------------*/
+   x_epoch   = time (NULL);
+   x_epoch  -= (x_epoch % 60);
+   x_broke   = localtime (&x_epoch);
+   /*---(save values)--------------------*/
+   x_broke->tm_year  = y + 100;
+   x_broke->tm_mon   = o - 1;
+   x_broke->tm_mday  = d;
+   x_broke->tm_hour  = h;
+   x_broke->tm_min   = m;
+   /*---(get epoch)----------------------*/
+   x_epoch   = mktime (x_broke);
+   /*---(complete)-----------------------*/
+   return x_epoch;
+}
+
+
 long         /*--> set the cron times ----------------------------------------*/
 EXEC_time               (long a_now)
 {
@@ -220,7 +416,6 @@ EXEC_time               (long a_now)
    char        rc          =    0;
    tTIME      *x_broke     = NULL;
    int         x_year, x_month, x_day;
-   char        t           [LEN_RECD]  = "";
    /*---(header)-------------------------*/
    DEBUG_LOOP   yLOG_enter   (__FUNCTION__);
    /*---(save)---------------------------*/
@@ -232,6 +427,10 @@ EXEC_time               (long a_now)
    if (a_now > 0)  my.now  = a_now;
    else            my.now  = time (NULL);
    DEBUG_LOOP   yLOG_value   ("my.now"    , my.now);
+   if (my.start == 0) {
+      my.start = my.now;
+      DEBUG_LOOP   yLOG_value   ("my.start"  , my.start);
+   }
    /*---(break it down)------------------*/
    my.clean  = my.now - (my.now % 3600);
    DEBUG_LOOP   yLOG_value   ("my.clean"  , my.clean);
@@ -242,13 +441,15 @@ EXEC_time               (long a_now)
    my.day    = x_broke->tm_mday;
    my.month  = x_broke->tm_mon   +   1;
    my.year   = x_broke->tm_year  - 100;
-   /*---(heartbeat)----------------------*/
-   rc = yEXEC_heartbeat (my.m_pid, my.now, NULL, my.n_heartbeat, my.heartbeat);
-   DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   /*> /+---(set the elapsed string)---------+/                                             <* 
+    *> EXEC_elapsed (my.now);                                                               <* 
+    *> /+---(heartbeat)----------------------+/                                             <* 
+    *> rc = yEXEC_heartbeat (my.m_pid, my.now, my.elapsed, my.n_heartbeat, my.heartbeat);   <* 
+    *> DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);                                        <* 
+    *> --rce;  if (rc < 0) {                                                                <* 
+    *>    DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);                                    <* 
+    *>    return rce;                                                                       <* 
+    *> }                                                                                    <*/
    /*---(set the date)-------------------*/
    if (x_year != my.year || x_month != my.month || x_day != my.day) {
       ySCHED_date (my.year, my.month, my.day);
@@ -415,13 +616,88 @@ EXEC_every_min          (int a_min)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   char        t           [LEN_HUND];
+   tTVAL       x_beg, x_end;
+   long        x_usec      =    0;
+   long        x_asec      =    0;
+   long        x_total     =    0;
+   int         i           =    0;
+   FILE       *f           = NULL;
+   tRUSE       x_ruse;
+   long        x_last      =    0;
+   long        x_rsec      =    0;
+   char        s           [LEN_LABEL] = "";
    /*---(break)--------------------------*/
    DEBUG_LOOP  yLOG_break();
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    DEBUG_LOOP  yLOG_value   ("a_min"     , a_min);
+   /*---(get time of end)----------------*/
+   USAGE_beg (my.hour, my.minute);
+   EXEC_elapsed (my.now);
+   DEBUG_LOOP  yLOG_info    ("elpased"   , my.elapsed);
+   /*---(execute)------------------------*/
    EXEC_check    ();
    EXEC_dispatch (a_min);
+   /*---(set the elapsed string)---------*/
+   /*> strl4comma (my.m_cpu, s, 6, 'C', '-', LEN_LABEL);                              <*/
+   /*> sprintf (t, "%3s  %4dc  %4.2fm  %10.10s", my.elapsed, my.ucnt, my.uavg, my);   <*/
+   /*---(heartbeat)----------------------*/
+   sprintf (t, "%s  %s", my.elapsed, my.usage);
+   rc = yEXEC_heartbeat (my.m_pid, my.now, t, my.n_heartbeat, my.heartbeat);
+   DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   TRKS_export   ();
+   RPTG_status   ();
+   /*> EXEC_sysstart ();                                                              <*/
+   /*> EXEC_sysload  ();                                                              <*/
+   /*---(get time of end)----------------*/
+   USAGE_end (my.hour, my.minute);
+   /*> gettimeofday (&x_end, NULL);                                                   <* 
+    *> x_usec  = (x_end.tv_sec - x_beg.tv_sec) * 1000000;                             <* 
+    *> x_usec += x_end.tv_usec - x_beg.tv_usec;                                       <*/
+   /*---(get all uptime)-----------------*/
+   /*> x_asec  = (x_end.tv_sec - my.m_beg.tv_sec) * 1000000;                          <* 
+    *> x_asec += x_end.tv_usec - my.m_beg.tv_usec;                                    <*/
+   /*---(get usage)----------------------*/
+   /*> getrusage (RUSAGE_SELF, &x_ruse);                                              <* 
+    *> x_rsec  = (x_ruse.ru_stime.tv_sec + x_ruse.ru_utime.tv_sec) * 1000000;         <* 
+    *> x_rsec += x_ruse.ru_stime.tv_usec + x_ruse.ru_utime.tv_usec;                   <*/
+   /*---(final time)---------------------*/
+   /*> my.ucnt = 0;                                                                                                   <* 
+    *> my.uavg = 0.0;                                                                                                 <* 
+    *> my.usec [my.hour * 60 + my.minute] = x_usec;                                                                   <* 
+    *> f = fopen ("/var/lib/khronos/khronos.usage", "wt");                                                            <* 
+    *> fprintf (f, "## %s\n", P_ONELINE);                                                                             <* 
+    *> fprintf (f, "##    rolling system usage data by minute\n");                                                    <* 
+    *> fprintf (f, "##    heartbeat to verify update å%sæ\n", my.heartbeat);                                          <* 
+    *> fprintf (f, "\n");                                                                                             <* 
+    *> fprintf (f, "## %ld %ld, %ld %ld, %ld\n", x_beg.tv_sec, x_end.tv_sec, x_beg.tv_usec, x_end.tv_usec, x_usec);   <* 
+    *> fprintf (f, "\n");                                                                                             <* 
+    *> for (i = 0; i < LEN_RECD; ++i) {                                                                               <* 
+    *>    if (my.usec [i] > 0) {                                                                                      <* 
+    *>       if (my.ucnt % 5 == 0)  fprintf (f, "##-t  ---n  usec  ----cum\n");                                       <* 
+    *>       x_total += my.usec [i];                                                                                  <* 
+    *>       ++my.ucnt;                                                                                               <* 
+    *>       fprintf (f, "%4d  %4d  %4d  %7ld\n", i, my.ucnt, my.usec [i], x_total);                                  <* 
+    *>    }                                                                                                           <* 
+    *> }                                                                                                              <* 
+    *> if (my.ucnt > 0 && x_total > 0) {                                                                              <* 
+    *>    my.uavg = ((float) x_total / ((float) my.ucnt)) / 1000;                                                     <* 
+    *> }                                                                                                              <* 
+    *> fprintf (f, "\n");                                                                                             <* 
+    *> fprintf (f, "## %4.2f\n", my.uavg);                                                                            <* 
+    *> /+> my.m_cpu  = ((double) (my.m_stime + my.m_utime)) / ((double) (my.m_spock - my.m_ppock));   <+/             <* 
+    *> my.m_cpu  = ((double) x_rsec) / ((double) x_asec);                                                             <* 
+    *> my.m_cpu *= 100.0;                                                                                             <* 
+    *> fprintf (f, "\n");                                                                                             <* 
+    *> fprintf (f, "## %ld %ld, %ld %ld, %8.4lf\n", my.m_spock, my.m_ppock, my.m_stime, my.m_utime, my.m_cpu);        <* 
+    *> fprintf (f, "\n");                                                                                             <* 
+    *> fclose  (f);                                                                                                   <*/
+   /*---(sleep)--------------------------*/
    EXEC_wait_min ();
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
@@ -442,6 +718,7 @@ EXEC_check              (void)
    int         x_dur       =    0;
    char        x_reason    =  '-';
    char        x_note      =  '-';
+   float       x_csec      =  0.0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(check count)--------------------*/
@@ -469,7 +746,7 @@ EXEC_check              (void)
       DEBUG_INPT   yLOG_info    ("tracker"   , x_line->tracker);
       snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
-      rc = yEXEC_verify (t, x_line->rpid, &x_return);
+      rc = yEXEC_verify (t, x_line->rpid, &x_return, &x_csec);
       DEBUG_INPT   yLOG_value   ("check"     , rc);
       /*---(if running)------------------*/
       if (rc == YEXEC_RUNNING) {
@@ -477,6 +754,8 @@ EXEC_check              (void)
          x_dur  = (my.now - x_line->start) * 1000;
          if (x_dur < 0)  x_dur = 0;
          x_line->force = yEXEC_timing (x_line->rpid, x_line->strict, x_line->est_max, x_dur, 2 * 60 * 1000, 0);
+         rc = TRKS_running (x_line->trks, my.hour, my.minute);
+         DEBUG_INPT   yLOG_value   ("running"   , rc);
       }
       /*---(if done)---------------------*/
       else {
@@ -586,14 +865,16 @@ EXEC_dispatch           (int a_min)
          continue;
       }
       /*---(check for running)-----------*/
-      TRKS_launch (x_line->trks, my.hour, a_min);
+      rc = TRKS_launch (x_line->trks, my.hour, a_min);
+      DEBUG_INPT   yLOG_value   ("launch"    , rc);
       /*> if (x_line->c_runs < 99)  ++x_line->c_runs;                                 <*/
       DEBUG_INPT   yLOG_value   ("rpid"      , x_line->rpid);
       if (x_line->rpid > 1) {
          DEBUG_INPT  yLOG_note    ("already running, do not duplicate");
          /*> if (x_line->c_skip < 99)  ++x_line->c_skip;                              <*/
          RPTG_track_exec (x_file, x_line, KHRONOS_SKIP, '-');
-         TRKS_complete (x_line->trks, my.hour, a_min, KHRONOS_SKIP, x_line->est_min, 0, x_line->est, x_line->est_max);
+         rc = TRKS_complete (x_line->trks, my.hour, a_min, KHRONOS_SKIP, x_line->est_min, 0, x_line->est, x_line->est_max);
+         DEBUG_INPT   yLOG_value   ("complete"  , rc);
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
@@ -615,7 +896,8 @@ EXEC_dispatch           (int a_min)
          RPTG_track_exec (x_file, x_line, KHRONOS_BADD, '-');
          x_line->rpid       = -2;
          /*> if (x_line->c_badd < 99)  ++x_line->c_badd;                              <*/
-         TRKS_complete (x_line->trks, my.hour, a_min, KHRONOS_BADD, x_line->est_min, 0, x_line->est, x_line->est_max);
+         rc = TRKS_complete (x_line->trks, my.hour, a_min, KHRONOS_BADD, x_line->est_min, 0, x_line->est, x_line->est_max);
+         DEBUG_INPT   yLOG_value   ("complete"  , rc);
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }

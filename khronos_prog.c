@@ -43,9 +43,10 @@ PROG__files_normal      (void)
    snprintf (my.n_home        , LEN_PATH, "%s"  , "/home/");
    snprintf (my.n_root        , LEN_PATH, "%s"  , "/root");
    snprintf (my.n_heartbeat   , LEN_PATH, "%s%s", DIR_RUN  , FILE_HEARTBEAT);
-   snprintf (my.n_activity    , LEN_PATH, "%s%s", DIR_YHIST, FILE_ACTIVITY);
-   snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_YLOG , FILE_STATUS);
-   snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_CENTRAL, FILE_TRACKERS);
+   snprintf (my.n_activity    , LEN_PATH, "%s%s", DIR_HOME , FILE_ACTIVITY);
+   snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_HOME , FILE_STATUS);
+   snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_HOME , FILE_TRACKERS);
+   snprintf (my.n_usage       , LEN_PATH, "%s%s", DIR_HOME , FILE_USAGE);
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
@@ -61,6 +62,7 @@ PROG__files_unit        (void)
    snprintf (my.n_activity    , LEN_PATH, "%s%s", DIR_UNIT, FILE_ACTIVITY);
    snprintf (my.n_status      , LEN_PATH, "%s%s", DIR_UNIT, FILE_STATUS);
    snprintf (my.n_trks        , LEN_PATH, "%s%s", DIR_UNIT, FILE_TRACKERS);
+   snprintf (my.n_usage       , LEN_PATH, "%s%s", DIR_UNIT, FILE_USAGE);
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
@@ -159,6 +161,12 @@ PROG__init              (int a_argc, char *a_argv[])
    yURG_msg_none ();
    yURG_msg_mute ();
    ySCHED_date (11,  5, 14);    /* MUST FIX FIX FIX */
+   /*> my.start = 0;                                                                  <*/
+   /*> my.ucnt  = 0;                                                                  <*/
+   /*> my.uavg  = 0.0;                                                                <*/
+   /*> my.m_stime = my.m_utime = 0;                                                   <*/
+   strlcpy (my.elapsed, "", LEN_HUND);
+   strlcpy (my.usage  , "", LEN_HUND);
    /*---(defaults)-----------------------*/
    my.run_as   = IAM_KHRONOS;
    my.run_mode = ACT_NONE;
@@ -210,6 +218,8 @@ PROG__init              (int a_argc, char *a_argv[])
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(usage)--------------------------*/
+   USAGE_init ();
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;

@@ -33,8 +33,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0f"
-#define     P_VERTXT    "running in prod with trackers, not perfect, but working"
+#define     P_VERNUM    "2.0g"
+#define     P_VERTXT    "all the basics are golden, working on actuals graphing"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -674,6 +674,7 @@
 #define     DIR_YLOG                "/var/log/yLOG/"
 #define     DIR_YHIST               "/var/log/yLOG.historical/"
 #define     DIR_CENTRAL             "/var/spool/khronos/"
+#define     DIR_HOME                "/var/lib/khronos/"
 
 #define     DIR_UNIT                "/tmp/"
 
@@ -683,6 +684,7 @@
 #define     FILE_ACTIVITY           "khronos.activity"
 #define     FILE_STATUS             "khronos.status"
 #define     FILE_TRACKERS           "khronos.trackers"
+#define     FILE_USAGE              "khronos.usage"
 
 
 
@@ -775,6 +777,8 @@ typedef struct stat      tSTAT;
 typedef struct passwd    tPASSWD;
 typedef struct tm        tTIME;
 typedef struct dirent    tDIRENT;
+typedef struct timeval   tTVAL;
+typedef struct rusage    tRUSE;
 
 
 typedef struct cFILE     tFILE;
@@ -789,6 +793,19 @@ struct cACCESSOR
    char        run_as;                      /* khronos, eos, heracles, ...    */
    char        run_mode;                    /* verify, install, audit, ...    */
    char        run_file    [LEN_PATH];      /* file to act on                 */
+   long        start;                       /* start time                     */
+   char        elapsed     [LEN_HUND];      /* elapsed since start            */
+   char        usage       [LEN_HUND];      /* elapsed since start            */
+   /*> tTVAL       m_beg;                       /+ process beginning              +/   <*/
+   /*> short       usec        [LEN_RECD];      /+ microsecs of run time          +/   <*/
+   /*> short       ucnt;                        /+ usec values used               +/   <*/
+   /*> float       uavg;                        /+ average msec for 24 hours      +/   <*/
+   /*> long        m_spock;                     /+ system uptime in ticks         +/   <*/
+   /*> long        m_ppock;                     /+ process start time in ticks    +/   <*/
+   /*> long        m_stime;                     /+ sysland use in ticks           +/   <*/
+   /*> long        m_utime;                     /+ userland use in ticks          +/   <*/
+   /*> char        m_clktck;                    /+ system ticks per sec           +/   <*/
+   /*> double      m_cpu;                       /+ percent of cpu used LTD        +/   <*/
    /*---(warnings)-------------*/
    char        alt_dir;                     /* use of dir central             */
    /*---(current time)---------*/
@@ -808,10 +825,7 @@ struct cACCESSOR
    char        n_activity  [LEN_PATH];      /* job activity file name         */
    char        n_status    [LEN_PATH];      /* status update file name        */
    char        n_trks      [LEN_PATH];      /* tracker database               */
-   /*---(pulse)----------------*/
-   char        pulse_time   [ 50]; /* last time string written to pulse       */
-   char        pulse_begin  [ 50]; /* start of this cron run as string        */
-   char        pulse_end    [ 50]; /* ending of last cron run as string       */
+   char        n_usage     [LEN_PATH];      /* usage database                 */
    /*---(main identifiers)-----*/
    char        m_prog      [LEN_DESC];      /* program name called            */
    char        m_who       [LEN_USER];      /* caller user name               */
@@ -1117,6 +1131,10 @@ char        EXEC_linekill           (char *a_file, char *a_line, char a_sig);
 /*---(marking)--------------*/
 char        EXEC_mark_done          (char a_yexec, int a_return);
 /*---(timekeep)-------------*/
+long        EXEC_epoch              (char y, char o, char d, char h, char m);
+char        EXEC_elapsed            (long a_now);
+char        EXEC_sysstart           (void);
+char        EXEC_sysload            (void);
 long        EXEC_time               (long a_now);
 char        EXEC_wait_min           (void);
 /*---(hour)-----------------*/
@@ -1213,6 +1231,17 @@ char        TRKS_complete           (tTRKS *a_cur, char a_hr, char a_mn, char a_
 char*       TRKS__unit              (char *a_question, int a_num);
 /*---(done)-----------------*/
 
+
+char        USAGE_purge             (void);
+char        USAGE_init              (void);
+char        USAGE_prerun            (void);
+char        USAGE_beg               (char a_hr, char a_mn);
+char        USAGE_end               (char a_hr, char a_mn);
+char        USAGE_import_full       (char  *a_name);
+char        USAGE_import            (void);
+char        USAGE_export_full       (char  *a_name);
+char        USAGE_export            (void);
+char*       USAGE__unit             (char *a_question, int a_num);
 
 
 
