@@ -881,12 +881,12 @@ line__unit              (char *a_question, int a_num)
       snprintf (unit_answer, LEN_HUND, "LINE flags       : %2då%.37sæ", strlen (my.t_flags), my.t_flags);
    }
    else if (strcmp (a_question, "count"   )        == 0) {
-      snprintf (unit_answer, LEN_HUND, "LINE count       : %d", yDLST_line_count ('*'));
+      snprintf (unit_answer, LEN_HUND, "LINE count       : %d", yDLST_line_count (YDLST_GLOBAL));
    }
    else if (strcmp (a_question, "entry"   )        == 0) {
       rc = yDLST_line_by_index  (YDLST_GLOBAL, a_num, NULL, &x_line);
       rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
-      if (x_line != NULL) {
+      if (x_line != NULL && x_file != NULL) {
          sprintf (t, "%2då%-.12sæ", strlen (x_line->tracker), x_line->tracker);
          sprintf (s, "%2då%-.12sæ", strlen (x_line->command), x_line->command);
          sprintf (u, "%3d %7d %7d", x_line->est, x_line->est_min, x_line->est_max);

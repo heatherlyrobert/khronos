@@ -137,6 +137,10 @@ BASE_execute            (void)
    while (1) {
       x_hour = EXEC_time (0);
       DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);
+      if (x_hour == 20) {
+         DEBUG_PROG  yLOG_note    ("PLANNING: 8pm, default actuals and create plan");
+         TRKS_plan ();
+      }
       if (x_hour != x_save)  {
          x_save = x_hour;
          rc     = EXEC_every_hour (x_hour);

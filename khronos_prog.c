@@ -167,13 +167,14 @@ PROG__init              (int a_argc, char *a_argv[])
    /*> my.m_stime = my.m_utime = 0;                                                   <*/
    strlcpy (my.elapsed, "", LEN_HUND);
    strlcpy (my.usage  , "", LEN_HUND);
+   my.actuals = 'r';
    /*---(defaults)-----------------------*/
    my.run_as   = IAM_KHRONOS;
    my.run_mode = ACT_NONE;
    strlcpy (my.run_file, "", LEN_PATH);
    /*---(begin)--------------------------*/
    g_seq = 0;
-   rc = yJOBS_runas (a_argv [0], &(my.run_as), P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, P_NAMESAKE, P_HERITAGE, P_IMAGERY, P_REASON, P_ONELINE, P_HOMEDIR, P_BASENAME, P_FULLPATH, P_SUFFIX, P_CONTENT, P_SYSTEM, P_LANGUAGE, P_CODESIZE, P_DEPENDS, P_AUTHOR, P_CREATED, P_VERMAJOR, P_VERMINOR, P_VERNUM, P_VERTXT, P_DEFINE, P_POTENTIAL, P_SCOPE, P_EXAMPLE, P_TROUBLE, P_NEWMIND, P_SUMMARY, P_GREEK, NULL);
+   rc = yJOBS_runas (a_argv [0], &(my.run_as), P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, P_NAMESAKE, P_PRONOUNCE, P_HERITAGE, P_BRIEFLY, P_IMAGERY, P_REASON, P_ONELINE, P_HOMEDIR, P_BASENAME, P_FULLPATH, P_SUFFIX, P_CONTENT, P_SYSTEM, P_LANGUAGE, P_COMPILER, P_CODESIZE, P_DEPENDS, P_AUTHOR, P_CREATED, P_VERMAJOR, P_VERMINOR, P_VERNUM, P_VERTXT, P_DEFINE, P_POTENTIAL, P_SCOPE, P_EXAMPLE, P_TROUBLE, P_NEWMIND, P_SUMMARY, P_GREEK, NULL);
    DEBUG_PROG  yLOG_value   ("runas"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
@@ -268,7 +269,17 @@ PROG__args              (int a_argc, char *a_argv[])
       ++x_args;
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
       rc = yJOBS_argument (&i, a, b, &(my.run_as), &(my.run_mode), my.run_file);
+      DEBUG_ARGS  yLOG_value    ("rc"        , rc);
+      if (rc > 0)  continue;
+      /*---(local args)------------------*/
+      rc = 0;
+      if      (strcmp (a, "--defactual") == 0)    my.actuals = 'd';
+      else if (strcmp (a, "--plan"     ) == 0)    my.actuals = 'p';
+      else if (strcmp (a, "--unplan"   ) == 0)    my.actuals = 'u';
+      else if (strcmp (a, "--replan"   ) == 0)    my.actuals = 'r';
+      else                                        rc = rce;
       if (rc < 0)  break;
+      /*---(done)------------------------*/
    }
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);

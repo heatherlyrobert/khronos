@@ -441,15 +441,15 @@ EXEC_time               (long a_now)
    my.day    = x_broke->tm_mday;
    my.month  = x_broke->tm_mon   +   1;
    my.year   = x_broke->tm_year  - 100;
-   /*> /+---(set the elapsed string)---------+/                                             <* 
-    *> EXEC_elapsed (my.now);                                                               <* 
-    *> /+---(heartbeat)----------------------+/                                             <* 
-    *> rc = yEXEC_heartbeat (my.m_pid, my.now, my.elapsed, my.n_heartbeat, my.heartbeat);   <* 
-    *> DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);                                        <* 
-    *> --rce;  if (rc < 0) {                                                                <* 
-    *>    DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);                                    <* 
-    *>    return rce;                                                                       <* 
-    *> }                                                                                    <*/
+   /*---(set the elapsed string)---------*/
+   EXEC_elapsed (my.now);
+   /*---(heartbeat)----------------------*/
+   rc = yEXEC_heartbeat (my.m_pid, my.now, my.elapsed, my.n_heartbeat, my.heartbeat);
+   DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(set the date)-------------------*/
    if (x_year != my.year || x_month != my.month || x_day != my.day) {
       ySCHED_date (my.year, my.month, my.day);
@@ -550,7 +550,12 @@ EXEC__focus_file        (tFILE *a_file)
       DEBUG_INPT   yLOG_info    ("MY_RAW_3"  , ySCHED_raw (x_line->sched));
       rc = ySCHED_test (x_line->sched, my.hour, YSCHED_ANY, NULL);
       DEBUG_INPT  yLOG_value   ("ySCHED"    , rc);
-      if (rc == 0) {
+      /*---(focus or not)-------------*/
+      if (strcmp (x_line->tracker, ".only"    ) == 0) {
+         DEBUG_LOOP   yLOG_note  (".only is always focused in order to work");
+         yDLST_focus_on ();
+         ++c;
+      } else if (rc == 0) {
          DEBUG_LOOP   yLOG_note  ("not scheduled within current hour, SKIPPING");
       } else if (rc <  0) {
          DEBUG_LOOP   yLOG_note  ("can not test/update schedule, FATAL");
@@ -637,6 +642,7 @@ EXEC_every_min          (int a_min)
    EXEC_elapsed (my.now);
    DEBUG_LOOP  yLOG_info    ("elpased"   , my.elapsed);
    /*---(execute)------------------------*/
+   TRKS_now      ();
    EXEC_check    ();
    EXEC_dispatch (a_min);
    /*---(set the elapsed string)---------*/
@@ -826,7 +832,12 @@ EXEC_dispatch           (int a_min)
       DEBUG_INPT   yLOG_value   ("test"      , rc);
       if (rc <= 0) {
          if (rc == 0) {
-            DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
+            if (strcmp (x_line->tracker, ".only"    ) == 0) {
+               DEBUG_INPT  yLOG_note    ("validity record, .only, turn off");
+               x_file->valid = '·';
+            } else {
+               DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
+            }
          } else {
             DEBUG_LOOP   yLOG_note  ("BOOM, can not test");
          }
@@ -853,6 +864,15 @@ EXEC_dispatch           (int a_min)
          } else if (strcmp (x_line->tracker, ".blackout") == 0) {
             DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
             x_file->valid = '·';
+         } else if (strcmp (x_line->tracker, ".plan"    ) == 0) {
+            DEBUG_INPT  yLOG_note    ("planning record, .plan, default and plan");
+            TRKS_plan ();
+         } else if (strcmp (x_line->tracker, ".unplan"  ) == 0) {
+            DEBUG_INPT  yLOG_note    ("planning record, .unplan, remove plan");
+            TRKS_unplan ();
+         } else if (strcmp (x_line->tracker, ".replan"  ) == 0) {
+            DEBUG_INPT  yLOG_note    ("planning record, .replan, replace plan");
+            TRKS_replan ();
          } else {
             DEBUG_INPT  yLOG_note    ("control record not recognized");
          }

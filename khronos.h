@@ -2,7 +2,7 @@
 
 
 /*===[[ ONE_LINERS ]]=========================================================*/
-/*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
+/*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-123456789-"  */
 
 #define     P_FOCUS     "AU (system automation)"
 #define     P_NICHE     "ba (batch automation)"
@@ -10,10 +10,11 @@
 #define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling"
 
 #define     P_NAMESAKE  "khronos-anileis (merciless time)"
-#define     P_QUICK     "god of creation and unyielding time"
+#define     P_PRONOUNCE "kroh·nohs aa·nee·lays"
 #define     P_HERITAGE  "incorporeal protogenoi god of creation and unyielding time"
+#define     P_BRIEFLY   "creation and unyielding time"
 #define     P_IMAGERY   "winged serpent (drakon) with three heads; bull, lion, and man"
-#define     P_REASON    "khronos is the embodiment of the merciless march of time"
+#define     P_REASON    "khronos embodies the merciless, unyielding forward march of time"
 
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
 
@@ -25,6 +26,7 @@
 
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
+#define     P_COMPILER  "gcc 5.3.0"
 #define     P_CODESIZE  "small       (appoximately 1,000 slocl)"
 #define     P_DEPENDS   "ySTR,yPARSE,yDLST,yJOBS,yEXEC,ySCHED"
 
@@ -33,8 +35,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0g"
-#define     P_VERTXT    "all the basics are golden, working on actuals graphing"
+#define     P_VERNUM    "2.0h"
+#define     P_VERTXT    "actuals are nicely updating and showy"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -796,6 +798,7 @@ struct cACCESSOR
    long        start;                       /* start time                     */
    char        elapsed     [LEN_HUND];      /* elapsed since start            */
    char        usage       [LEN_HUND];      /* elapsed since start            */
+   char        actuals;                     /* request for tracker actuals    */
    /*> tTVAL       m_beg;                       /+ process beginning              +/   <*/
    /*> short       usec        [LEN_RECD];      /+ microsecs of run time          +/   <*/
    /*> short       ucnt;                        /+ usec values used               +/   <*/
@@ -1120,6 +1123,7 @@ int         LINE_retire_global      (void);
 /*> int         LINE_prune_local        (void);                                       <*/
 /*> int         LINE_retire_local       (void);                                       <*/
 /*---(unittest)-------------*/
+char*       line__unit              (char *a_question, int a_num);
 char        LINE_setrpid            (char *a_file, char *a_line, int a_rpid);
 /*---(done)-----------------*/
 
@@ -1222,7 +1226,17 @@ char        TRKS__durs_redur        (char *b_str, char a_roll, char a_hist, int 
 char        TRKS__durs              (char *b_str, int a_dur, int a_min, int a_est, int a_max);
 char        TRKS_redur              (char *b_str, int a_min, int a_est, int a_max);
 /*---(actuals)--------------*/
+char        TRKS__actual_reset      (tTRKS *a_trks);
+char        TRKS__planning_hour     (tTRKS *a_trks, char a_vis, char a_yr, char a_mo, char a_dy, char a_hr, char *a_out);
 char        TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code);
+char        TRKS_actual_reset       (void);
+char        TRKS_now                (void);
+char        TRKS__planning          (void);
+char        TRKS_plan               (void);
+char        TRKS_replan             (void);
+char        TRKS__unplan_one        (tTRKS *a_trks);
+char        TRKS_unplan             (void);
+char*       TRKS_actual_shift       (char *a_tracker, char a_shift);
 /*---(exec)-----------------*/
 char        TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn);
 char        TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn);
