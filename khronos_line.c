@@ -695,7 +695,7 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       return rce;
    }
    /*---(set up tracker)-----------------*/
-   if (my.t_tracker [0] != '.') {
+   /*> if (my.t_tracker [0] != '.') {                                                 <*/
       /*---(get current line)------------*/
       rc = yDLST_line_by_cursor (YDLST_LOCAL, YDLST_CURR, NULL, &x_line);
       DEBUG_INPT  yLOG_point   ("x_line"    , x_line);
@@ -711,7 +711,7 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
          return rce;
       }
       /*---(done)------------------------*/
-   }
+   /*> }                                                                              <*/
    /*---(final message)------------------*/
    yURG_msg ('-', "SUCCESS, created a new line from the crontab entry");
    yURG_msg (' ', "");

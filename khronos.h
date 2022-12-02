@@ -35,8 +35,8 @@
 
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0h"
-#define     P_VERTXT    "actuals are nicely updating and showy"
+#define     P_VERNUM    "2.0i"
+#define     P_VERTXT    "tracker unit tests clean, current time is placed on tracker actual"
 
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -913,6 +913,8 @@ struct cTRKS {
    /*---(done)-----------------*/
 };
 
+#define   KHRONOS_VALIDITY    'V'
+
 #define   KHRONOS_DEFLAST     "´·························  ··········  ¬¬····"
 #define   KHRONOS_DEFSTATS    "´  · ·  · · · · ·  · · · ·  · · ·  ·)´····´····´····´····´····´····´····´····´····´····´····´····´"
 #define   KHRONOS_DEFDURS     "´  · ·  · · · · · ·········· · ·········· · · · · ·  ·)´····´····´····´····´····´····´····´····´····´····´····´····´"
@@ -1185,6 +1187,7 @@ char        TRKS__wipe              (tTRKS *a_cur);
 char*       TRKS__memory            (tTRKS *a_cur);
 char        TRKS__tracker           (cchar *a_tracker);
 char        TRKS__coded             (char a_type, cchar *a_key, char *a_str);
+char        TRKS__typing            (cchar *a_tracker);
 /*---(memory)---------------*/
 char        trks__new               (tTRKS **r_new, char a_force);
 char        TRKS__new               (tTRKS **r_new);
@@ -1236,7 +1239,7 @@ char        TRKS_plan               (void);
 char        TRKS_replan             (void);
 char        TRKS__unplan_one        (tTRKS *a_trks);
 char        TRKS_unplan             (void);
-char*       TRKS_actual_shift       (char *a_tracker, char a_shift);
+char*       TRKS_actual_shift       (char *a_file, char *a_tracker, char a_shift);
 /*---(exec)-----------------*/
 char        TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn);
 char        TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn);

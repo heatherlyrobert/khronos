@@ -212,6 +212,21 @@ TRKS__coded             (char a_type, cchar *a_key, char *a_str)
    return 0;
 }
 
+char
+TRKS__typing            (cchar *a_tracker)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        x_type      =  '·';
+   /*---(defense)------------------------*/
+   if      (a_tracker == NULL)                     ;
+   else if (strcmp (a_tracker, ".valid"    ) == 0) x_type = KHRONOS_VALIDITY;
+   else if (strcmp (a_tracker, ".only"     ) == 0) x_type = KHRONOS_VALIDITY;
+   else if (strcmp (a_tracker, ".blackout" ) == 0) x_type = KHRONOS_VALIDITY;
+   else if (strcmp (a_tracker, ".retire"   ) == 0) x_type = KHRONOS_VALIDITY;
+   /*---(complete)-----------------------*/
+   return x_type;
+}
+
 
 
 /*====================------------------------------------====================*/
@@ -729,9 +744,9 @@ TRKS_import_full        (cchar *a_file)
    DEBUG_OUTP   yLOG_value   ("my.actuals", my.actuals);
    switch (my.actuals) {
    case 'd'  :  TRKS_actual_reset ();  break;
-   case 'u'  :  TRKS_unplan  ();  break;
-   case 'p'  :  TRKS_plan    ();  break;
-   case 'r'  :  TRKS_replan  ();  break;
+   case 'u'  :  TRKS_unplan  ();       break;
+   case 'p'  :  TRKS_plan    ();       break;
+   case 'r'  :  TRKS_replan  ();       break;
    }
    /*---(complete)-----------------------*/
    DEBUG_OUTP   yLOG_exit    (__FUNCTION__);
@@ -746,7 +761,7 @@ TRKS__export_check      (char *a_tracker)
    int         l           =    0;
    if (a_tracker == NULL)                            return 'y';
    l = strlen (a_tracker);
-   if (a_tracker [0] == '.')                         return '-';
+   /*> if (a_tracker [0] == '.')                         return '-';                  <*/
    if (l <  6)                                       return 'y';
    if (strncmp (a_tracker, "line ", 5) != 0)         return 'y';
    if (strchr (YSTR_NUMBER, a_tracker [5]) == NULL)  return 'y';
@@ -765,9 +780,11 @@ TRKS_export_full        (cchar *a_file)
    char        rce         =  -10;
    char        rc          =    0;
    tTRKS      *x_cur       = NULL;
+   tTRKS      *x_last      = NULL;
    int         c           =    0;
    int         i           =    0;
    int         j           =    0;
+   int         k           =    0;
    int         x_hr        =    8;
    tLINE      *x_save      = NULL;
    char        x_good      =  '-';
@@ -797,12 +814,23 @@ TRKS_export_full        (cchar *a_file)
    x_cur = s_head;
    while (x_cur != NULL) {
       x_good = TRKS__export_check (x_cur->tracker);
+      DEBUG_OUTP   yLOG_complex ("x_cur"     , "%2di, %2dk, %c, %s, %s", i, k, x_good, x_cur->file, x_cur->tracker);
       if (x_good == 'y') {
+         /*---(end of used trackers)-----*/
          if (x_save != NULL && x_cur->parent == NULL && i > 0) {
-            fprintf (f_trks, "## %d current lines written\n\n", i);
+            DEBUG_OUTP   yLOG_note    ("end of currently used trackers");
+            fprintf (f_trks, "\n## %d current lines written\n\n", i);
             i = 0;
+            k = 0;
          }
-         if (i % 5 == 0) {
+         /*---(break between files)------*/
+         if (x_last == NULL || strcmp (x_last->file, x_cur->file) != 0)  {
+            DEBUG_OUTP   yLOG_note    ("break between files");
+            fprintf (f_trks, "\n");
+            k = 0;
+         }
+         /*---(periodic breaks)----------*/
+         if (k % 5 == 0) {
             /*---(all but actual)--------*/
             strlcpy (s, "##---file--------------------  ---tracker-------------------  ---heartbeat--------------··--epoch---··--ppid  ---statistics--------------------··---shistory----------------------------------------------------  ---durations---------------------------------------··---dhistory----------------------------------------------------  -pos- ", LEN_RECD);
             /*---(actual header)---------*/
@@ -826,15 +854,16 @@ TRKS_export_full        (cchar *a_file)
          fprintf (f_trks, "%-29.29s  %-29.29s  ", x_cur->file, x_cur->tracker);
          fprintf (f_trks, "%s  %s  " , x_cur->last, x_cur->stats);
          fprintf (f_trks, "%s  %s \n", x_cur->durs, x_cur->actual);
-         ++c; ++i;
+         ++c; ++i; ++k;
          x_save = x_cur->parent;
+         x_last = x_cur;
       }
       x_cur  = x_cur->m_next;
    }
    /*---(write footer)-------------------*/
    if (i > 0) {
-      if (x_save != NULL)  fprintf (f_trks, "## %d current lines written\n", i);
-      if (x_save == NULL)  fprintf (f_trks, "## %d non-current lines written\n", i);
+      if (x_save != NULL)  fprintf (f_trks, "\n## %d current lines written\n", i);
+      if (x_save == NULL)  fprintf (f_trks, "\n## %d non-current lines written\n", i);
    }
    fprintf (f_trks, "\n## end-of-file.  %d total lines.  done, finito, completare, whimper [Ï´···\n", c);
    /*---(close file)---------------------*/
@@ -1181,6 +1210,7 @@ TRKS__stat_restat       (char *b_str, char a_roll, char a_hist)
    /*---(refresh stats)------------------*/
    sprintf (b_str, "%33.33s  %s", KHRONOS_DEFSTATS, t);
    b_str [0] = TRKS__num2count (a_roll);
+   if (b_str [0] == '·')  b_str [0] = '´';
    b_str [5] = x_actv;
    DEBUG_OUTP    yLOG_complex ("b_str"     , "%2då%sæ", strlen (b_str), b_str);
    /*---(set offset)---------------------*/
@@ -1478,6 +1508,7 @@ TRKS__durs_redur        (char *b_str, char a_roll, char a_hist, int a_min, int a
    /*---(refresh stats)------------------*/
    sprintf (b_str, "%51.51s  %s", KHRONOS_DEFDURS, t);
    b_str [0] = TRKS__num2count (a_roll);
+   if (b_str [0] == '·')  b_str [0] = '´';
    DEBUG_OUTP    yLOG_complex ("b_str"     , "%2då%sæ", strlen (b_str), b_str);
    /*---(set offset)---------------------*/
    if (a_roll < a_hist) {
@@ -1670,10 +1701,11 @@ TRKS__planning_hour     (tTRKS *a_trks, char a_vis, char a_yr, char a_mo, char a
       return rce;
    }
    /*---(prepare)------------------------*/
-   if      (strncmp (x_line->tracker, ".graceful", 9) == 0) x_type = '·';
-   else if (strncmp (x_line->tracker, ".violent" , 8) == 0) x_type = '·';
-   else if (x_line->tracker [0] == '.')                     x_type = 'V';
-   else                                                     x_type = '·';
+   x_type = TRKS__typing (x_line->tracker);
+   /*> if      (strncmp (x_line->tracker, ".graceful", 9) == 0) x_type = '·';         <* 
+    *> else if (strncmp (x_line->tracker, ".violent" , 8) == 0) x_type = '·';         <* 
+    *> else if (x_line->tracker [0] == '.')                     x_type = 'V';         <* 
+    *> else                                                     x_type = '·';         <*/
    if (a_vis == 'y') {
       if      (a_hr == 25) { x_hr = 24;  a_hr = 20; }
       else if (a_hr >= 20)   x_hr = a_hr - 20;
@@ -1697,11 +1729,16 @@ TRKS__planning_hour     (tTRKS *a_trks, char a_vis, char a_yr, char a_mo, char a
          continue;
       }
       /*---(validity lines)--------------*/
-      if (x_type == 'V') {
+      if (x_type == KHRONOS_VALIDITY) {
          DEBUG_INPT   yLOG_note    ("handle viability");
          if (x_yes) {
-            if (rc >  0)  x_hour [i] =  '=';
-            else          x_hour [i] =  '­';
+            if (rc >  0) {
+               if (strchr ("‡²", x_hour [i - 1]) == NULL)  x_hour [i] =  '‡';
+               else                                        x_hour [i] =  '²';
+            } else {
+               x_hour [i] =  '­';
+               if (strchr ("‡²", x_hour [i - 1]) != NULL)  x_hour [i -1 ] =  '†';
+            }
          }
          continue;
       }
@@ -1802,11 +1839,14 @@ char
 TRKS_now                (void)
 {
    tTRKS      *x_cur       = NULL;
+   tTRKS      *x_prv       = NULL;
    uchar      *p           = NULL;
    int         n           =    0;
    char        x_def       =    0;
    char        x_ch        =  '-';
    char        x_hr        =    0;
+   char        x_usable    =  'y';
+   char        x_type      =  '·';
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
@@ -1816,22 +1856,54 @@ TRKS_now                (void)
    /*---(walk trackers)------------------*/
    while (x_cur != NULL) {
       DEBUG_INPT   yLOG_info    ("x_cur"     , x_cur->tracker);
-      /*---(remove all old)--------------*/
-      p = strchr (x_cur->actual, '');
-      while (p != NULL) {
-         n = p - x_cur->actual;
-         if      (n % 60 == 0)  x_def = '¨';
-         else if (n % 30 == 0)  x_def = '|';
-         else if (n % 10 == 0)  x_def = '+';
-         else                   x_def = '·';
-         x_cur->actual [n] = x_def;
+      x_type = TRKS__typing (x_cur->tracker);
+      /*---(switching files)-------------*/
+      n = 6 + x_hr * 60 + my.minute;
+      if (x_prv == NULL || strcmp (x_prv->file, x_cur->file) != 0) {
+         x_usable = 'y';
+      }
+      /*---(ckeck validity)--------------*/
+      if (x_type == KHRONOS_VALIDITY) {
+         if (x_cur->actual [n] == (uchar) '­')  x_usable = '-';
+      }
+      /*---(remove from normal)----------*/
+      if (x_type != KHRONOS_VALIDITY) {
          p = strchr (x_cur->actual, '');
+         if (p == NULL)  p = strchr (x_cur->actual, '');
+         while (p != NULL) {
+            n = p - x_cur->actual;
+            if      ((n - 6) % 60 == 0)  x_def = '¨';
+            else if ((n - 6) % 30 == 0)  x_def = '|';
+            else if ((n - 6) % 10 == 0)  x_def = '+';
+            else                         x_def = '·';
+            x_cur->actual [n] = x_def;
+            p = strchr (x_cur->actual, '');
+            if (p == NULL)  p = strchr (x_cur->actual, '');
+         }
+      }
+      /*---(remove from validity)--------*/
+      else {
+         p = strchr (x_cur->actual, 'Š');
+         if (p == NULL)  p = strchr (x_cur->actual, '');
+         while (p != NULL) {
+            n = p - x_cur->actual;
+            if (x_cur->actual [n] == (uchar)'Š')   x_cur->actual [n] = '²';
+            else                                   x_cur->actual [n] = '­';
+            p = strchr (x_cur->actual, 'Š');
+            if (p == NULL)  p = strchr (x_cur->actual, '');
+         }
       }
       /*---(place new)-------------------*/
       n = 6 + x_hr * 60 + my.minute;
       x_ch = x_cur->actual [n];
-      if (strchr ("¨|+·", x_ch) != NULL)   x_cur->actual [n] = '';
+      if (x_usable == 'y') {
+         if (strchr ("¨|+·"  , x_ch) != NULL)   x_cur->actual [n] = '';
+         if (strchr ("²"     , x_ch) != NULL)   x_cur->actual [n] = 'Š';
+      } else {
+         if (strchr ("¨|+·­²", x_ch) != NULL)   x_cur->actual [n] = '';
+      }
       /*---(next)------------------------*/
+      x_prv = x_cur;
       x_cur = x_cur->m_next;
       /*---(done)------------------------*/
    }
@@ -1852,6 +1924,7 @@ TRKS__unplan_one        (tTRKS *a_trks)
    char        x_def       =    0;
    int         n           =    0;
    char        x_ch        =  '-';
+   char        x_type      =  '·';
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
@@ -1868,6 +1941,7 @@ TRKS__unplan_one        (tTRKS *a_trks)
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   x_type = TRKS__typing (a_trks->tracker);
    /*---(walk actual)--------------------*/
    for (x_hr = 0; x_hr < 25; ++x_hr) {
       for (x_min = 0; x_min < 60; ++x_min) {
@@ -1880,7 +1954,8 @@ TRKS__unplan_one        (tTRKS *a_trks)
          else if (x_min % 10 == 0)  x_def = '+';
          else                       x_def = '·';
          /*---(unplan)-------------------*/
-         if (strchr ("Ï´¥=­", x_ch) != NULL)  a_trks->actual [n] = x_def;
+         if (x_type == KHRONOS_VALIDITY)               a_trks->actual [n] = x_def;
+         else if (strchr ("¨|+·Ï´¥­²", x_ch) != NULL)  a_trks->actual [n] = x_def;
          /*---(done)---------------------*/
       }
    }
@@ -1907,7 +1982,52 @@ TRKS_unplan             (void)
 }
 
 char*
-TRKS_actual_shift       (char *a_tracker, char a_shift)
+TRKS_actual_shift       (char *a_file, char *a_tracker, char a_shift)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tLINE      *x_line      = NULL;
+   int         n           =    0;
+   int         l           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   rc = yDLST_list_by_name (a_file, NULL, NULL);
+   DEBUG_OUTP    yLOG_value   ("by_name"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return "";
+   }
+   rc = yDLST_line_by_name (YDLST_LOCAL, a_tracker, NULL, &x_line);
+   DEBUG_OUTP    yLOG_value   ("by_name"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return "";
+   }
+   /*---(check existance)----------------*/
+   DEBUG_OUTP    yLOG_info    ("->file"    , x_line->trks->file);
+   DEBUG_OUTP    yLOG_info    ("->tracker" , x_line->trks->tracker);
+   l = strlen (x_line->trks->actual);
+   DEBUG_OUTP    yLOG_value   ("l"         , l);
+   /*---(work offset)--------------------*/
+   DEBUG_OUTP    yLOG_value   ("a_shift"   , a_shift);
+   --rce;  if (a_shift < 0 || a_shift > 8) {
+      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      return "";
+   }
+   n = 6 + a_shift * (60 * 3);
+   DEBUG_OUTP    yLOG_value   ("n"         , n);
+   /*---(save-back)----------------------*/
+   strlcpy (g_print, x_line->trks->actual + n, 182);
+   DEBUG_OUTP    yLOG_info    ("g_print"   , g_print);
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   return g_print;
+}
+
+char*
+TRKS_actual_shift_OLD   (char *a_tracker, char a_shift)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -2005,11 +2125,11 @@ TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code)
    case KHRONOS_ACTV :
       if      (x_prv == '¼')   ;
       else if (x_prv == ' ')   ;
-      else                     b_str [x_off - 1] = '€';
+      else                     b_str [x_off - 1] = '-';
       break;
    case KHRONOS_PASS :
       if      (x_prv == '¼')   b_str [x_off - 1] = 'Ù';
-      else if (x_prv != ' ')   ;
+      else if (x_prv == ' ')   ;
       else                     b_str [x_off - 1] = '½';
       break;
    default           :

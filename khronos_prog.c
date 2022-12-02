@@ -167,7 +167,8 @@ PROG__init              (int a_argc, char *a_argv[])
    /*> my.m_stime = my.m_utime = 0;                                                   <*/
    strlcpy (my.elapsed, "", LEN_HUND);
    strlcpy (my.usage  , "", LEN_HUND);
-   my.actuals = 'r';
+   my.actuals = '·';
+   my.year = my.month = my.day = my.hour = my.minute = 0;;
    /*---(defaults)-----------------------*/
    my.run_as   = IAM_KHRONOS;
    my.run_mode = ACT_NONE;
