@@ -46,7 +46,7 @@ BASE_init               (void)
    /*---(update retired flag)------------*/
    x_file->retired = 'y';
    /*---(clear usec)---------------------*/
-   rc = yEXEC_heartbeat (my.m_pid, my.now, "daemonizing, initializing, and waiting for next min", my.n_heartbeat, my.heartbeat);
+   rc = yEXEC_heartlong (my.m_pid, my.now, 60, "daemonizing, initializing, and waiting for next min", my.n_heartbeat, my.heartbeat);
    DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_LOOP   yLOG_exitr   (__FUNCTION__, rce);
@@ -120,7 +120,6 @@ BASE_execute            (void)
       }
    }
    /*---(startup)------------------------*/
-   EXEC_sysstart ();
    x_hour  = EXEC_time (0);
    rc      = RPTG_track_beg ();
    DEBUG_PROG  yLOG_value   ("x_hour"    , x_hour);

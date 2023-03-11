@@ -1258,6 +1258,8 @@ TRKS__stat_handler      (char a_type, char *b_str, char a_code)
    char        rc          =    0;
    char        x_roll      =    0;
    char        x_hist      =    0;
+   /*---(quick-out)----------------------*/
+   if (a_code == KHRONOS_ACTV)  return 0;
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
@@ -1402,6 +1404,11 @@ TRKS__durs_prepare      (char *b_str, int *b_dur, char *r_roll, char *r_hist, in
       rc = 1;
    }
    /*---(fix range)----------------------*/
+   DEBUG_OUTP    yLOG_value   ("b_min"     , *b_min);
+   DEBUG_OUTP    yLOG_value   ("a_est"     ,  a_est);
+   DEBUG_OUTP    yLOG_value   ("b_max"     , *b_max);
+   *b_min /= 1000;
+   *b_max /= 1000;
    if (b_min != NULL && *b_min > a_est)  *b_min = a_est;
    if (b_max != NULL && *b_max < a_est)  *b_max = a_est;
    /*---(save-back)----------------------*/
@@ -1453,6 +1460,7 @@ TRKS__durs_update       (char *b_str, int a_dur, int a_min, int a_est, int a_max
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
    x_var = a_dur - a_est;
+   DEBUG_OUTP    yLOG_value   ("x_var"     , x_var);
    /*---(negatives)----------------------*/
    if      (x_var  <  -30)   x_off =  0; 
    else if (x_var  <  -25)   x_off =  2; 
@@ -1470,15 +1478,20 @@ TRKS__durs_update       (char *b_str, int a_dur, int a_min, int a_est, int a_max
    else if (x_var  >   10)   x_off = 34;
    else                      x_off = 22 + x_var;
    /*---(update stats)-------------------*/
+   DEBUG_OUTP    yLOG_value   ("x_off"     , x_off);
    x_off += 8;
    n = TRKS__count2num (b_str [x_off]);
+   DEBUG_OUTP    yLOG_char    ("n"         , n);
    b_str [x_off ] = TRKS__num2count (++n);
    /*---(early/late)---------------------*/
+   DEBUG_OUTP    yLOG_complex ("durs"      , "%7dd, %7dn, %7de, %7dx", a_dur, a_min, a_est, a_max);
    if (a_dur < a_min) {
+      DEBUG_OUTP    yLOG_note    ("register/update early");
       n = TRKS__count2num (b_str [3]);
       b_str [3] = TRKS__num2count (++n);
    }
    if (a_dur > a_max) {
+      DEBUG_OUTP    yLOG_note    ("register/update late");
       n = TRKS__count2num (b_str [5]);
       b_str [5] = TRKS__num2count (++n);
    }
@@ -1545,12 +1558,14 @@ TRKS__durs_handler      (char a_type, char *b_str, int a_dur, int a_min, int a_e
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
+   DEBUG_OUTP    yLOG_complex ("durs"      , "%7dd, %7dn, %7de, %7dx", a_dur, a_min, a_est, a_max);
    rc = TRKS__durs_prepare (b_str, &a_dur, &x_roll, &x_hist, &a_min, a_est, &a_max);
    DEBUG_OUTP    yLOG_value   ("prepare"   , rc);
    --rce;  if (rc < 0) {
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   DEBUG_OUTP    yLOG_complex ("durs"      , "%7dd, %7dn, %7de, %7dx", a_dur, a_min, a_est, a_max);
    /*---(history)------------------------*/
    if (a_type != 'r') {
       rc = TRKS__durs_history (b_str, a_dur, &x_hist);
@@ -2164,34 +2179,37 @@ TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code)
 static void      o___EXEC____________________o (void) {;}
 
 char
-TRKS__exec              (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est ,int a_max)
+TRKS__exec              (char *a_func, tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est, int a_max)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
    /*---(header)-------------------------*/
-   DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
+   DEBUG_OUTP    yLOG_enter   (a_func);
+   DEBUG_OUTP    yLOG_complex ("durs"      , "%7dd, %7dn, %7de, %7dx", a_dur, a_min, a_est, a_max);
    /*---(defense)------------------------*/
    DEBUG_OUTP    yLOG_point   ("a_cur"     , a_cur);
    --rce;  if (a_cur == NULL) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      DEBUG_OUTP   yLOG_exitr   (a_func, rce);
       return rce;
    }
    /*---(update heartbeat)---------------*/
    strlcpy (a_cur->last, my.heartbeat, 47);
    /*---(update statistics)--------------*/
+   DEBUG_OUTP    yLOG_info    ("->stats"   , a_cur->stats);
    rc = TRKS__stat  (a_cur->stats, a_code);
    DEBUG_OUTP    yLOG_value   ("stats"     , rc);
    --rce;  if (rc < 0) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      DEBUG_OUTP   yLOG_exitr   (a_func, rce);
       return rce;
    }
+   DEBUG_OUTP    yLOG_info    ("->stats"   , a_cur->stats);
    /*---(update duration)----------------*/
-   if (strchr ("[a", a_code) == NULL) {
+   if (strchr (KHRONOS_NODUR, a_code) == NULL) {
       rc = TRKS__durs   (a_cur->durs, a_dur, a_min, a_est, a_max);
       DEBUG_OUTP    yLOG_value   ("durs"      , rc);
       --rce;  if (rc < 0) {
-         DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+         DEBUG_OUTP   yLOG_exitr   (a_func, rce);
          return rce;
       }
    }
@@ -2199,30 +2217,30 @@ TRKS__exec              (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_
    rc = TRKS__actual (a_cur->actual, a_hr, a_mn, a_code);
    DEBUG_OUTP    yLOG_value   ("actual"    , rc);
    --rce;  if (rc < 0) {
-      DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
+      DEBUG_OUTP   yLOG_exitr   (a_func, rce);
       return rce;
    }
    /*---(complete)-----------------------*/
-   DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
+   DEBUG_OUTP    yLOG_exit    (a_func);
    return 0;
 }
 
 char
 TRKS_launch             (tTRKS *a_cur, char a_hr, char a_mn)
 {
-   return TRKS__exec (a_cur, a_hr, a_mn, KHRONOS_BEG , 0, 0, 0, 0);
+   return TRKS__exec (__FUNCTION__, a_cur, a_hr, a_mn, KHRONOS_BEG , 0, 0, 0, 0);
 }
 
 char
 TRKS_running            (tTRKS *a_cur, char a_hr, char a_mn)
 {
-   return TRKS__exec (a_cur, a_hr, a_mn, KHRONOS_ACTV, 0, 0, 0, 0);
+   return TRKS__exec (__FUNCTION__, a_cur, a_hr, a_mn, KHRONOS_ACTV, 0, 0, 0, 0);
 }
 
 char
 TRKS_complete           (tTRKS *a_cur, char a_hr, char a_mn, char a_code, int a_dur, int a_min, int a_est ,int a_max)
 {
-   return TRKS__exec (a_cur, a_hr, a_mn, a_code, a_dur, a_min, a_est, a_max);
+   return TRKS__exec (__FUNCTION__, a_cur, a_hr, a_mn, a_code, a_dur, a_min, a_est, a_max);
 }
 
 
@@ -2254,8 +2272,8 @@ TRKS__unit              (char *a_question, int a_num)
       x_lines = yURG_peek_count (s_name);
       if (x_lines < 0)    x_lines = 0;
       else                x_exist = 'y';
-      if (f_trks == NULL)  snprintf (unit_answer, LEN_HUND, "TRKS file        : %c  %3d  null          %2då%sæ", x_exist, x_lines, strlen (s_name), s_name);
-      else                 snprintf (unit_answer, LEN_HUND, "TRKS file        : %c  %3d  %-10.10p  %2då%sæ", x_exist, x_lines, f_trks, strlen (s_name), s_name);
+      if (f_trks == NULL)  snprintf (unit_answer, LEN_HUND, "TRKS file        : %c  %3d  null            %2då%sæ", x_exist, x_lines, strlen (s_name), s_name);
+      else                 snprintf (unit_answer, LEN_HUND, "TRKS file        : %c  %3d  %-12.12p  %2då%sæ", x_exist, x_lines, f_trks, strlen (s_name), s_name);
    }
    else if (strcmp (a_question, "count"         )  == 0) {
       x_cur = s_head; while (x_cur != NULL) { ++x_fore; x_cur = x_cur->m_next; }

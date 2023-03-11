@@ -60,6 +60,7 @@ PROG__unit_prepare      (void)
    char        x_home      [LEN_PATH];
    char        x_dir       [LEN_RECD]  = "";
    PROG__files_unit ();
+   yJOBS_mkdirs ();
    /*---(directories)--------------------*/
    /*> getcwd (x_home, LEN_PATH);                                                     <* 
     *> chdir  ("/tmp");                                                               <* 
@@ -86,6 +87,7 @@ PROG__unit_cleanup      (void)
    char        x_cmd       [LEN_RECD];
    char        x_home      [LEN_PATH];
    /*---(directories)--------------------*/
+   yJOBS_rmdirs ();
    /*> getcwd (x_home, LEN_PATH);                                                     <* 
     *> chdir  ("/tmp");                                                               <* 
     *> yURG_rmdir (DIR_UNIT);                                                         <* 

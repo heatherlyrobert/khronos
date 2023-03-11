@@ -2,48 +2,50 @@
 
 
 /*===[[ ONE_LINERS ]]=========================================================*/
-/*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-123456789-"  */
-
+/*                      ´·········1·········2·········3·········4·········5·········6·········7*/
+/*--------- 12345678901 ´123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+/*········· ··········· ´·····························´········································*/
 #define     P_FOCUS     "AU (system automation)"
 #define     P_NICHE     "ba (batch automation)"
-#define     P_SUBJECT   "time-based batch automation"
+#define     P_SUBJECT   "primary batch-automation daemon"
 #define     P_PURPOSE   "reliable, trackable, and focused time-based job scheduling"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_NAMESAKE  "khronos-anileis (merciless time)"
 #define     P_PRONOUNCE "kroh·nohs aa·nee·lays"
 #define     P_HERITAGE  "incorporeal protogenoi god of creation and unyielding time"
 #define     P_BRIEFLY   "creation and unyielding time"
 #define     P_IMAGERY   "winged serpent (drakon) with three heads; bull, lion, and man"
 #define     P_REASON    "khronos embodies the merciless, unyielding forward march of time"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
-
+/*········· ··········· ´·····························´········································*/
 #define     P_HOMEDIR   "/home/system/khronos.heatherly_cron_daemon"
 #define     P_BASENAME  "khronos"
 #define     P_FULLPATH  "/usr/sbin/khronos"
 #define     P_SUFFIX    "khronos"
 #define     P_CONTENT   "revised crontabs allowing enhanced controls"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
 #define     P_COMPILER  "gcc 5.3.0"
 #define     P_CODESIZE  "small       (appoximately 1,000 slocl)"
 #define     P_DEPENDS   "ySTR,yPARSE,yDLST,yJOBS,yEXEC,ySCHED"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_AUTHOR    "heatherlyrobert"
 #define     P_CREATED   "2010-05"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
-#define     P_VERMINOR  "2.0-, streamline given eos and herakles"
-#define     P_VERNUM    "2.0i"
-#define     P_VERTXT    "tracker unit tests clean, current time is placed on tracker actual"
-
+#define     P_VERMINOR  "2.1-, keep moving on updated system"
+#define     P_VERNUM    "2.1a"
+#define     P_VERTXT    "caught-up unit testing with previous changes and verified"
+/*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
 #define     P_REMINDER  "there are many better options, but i *own* every byte of this one"
+/*········· ··········· ´·····························´········································*/
+/*--------- 12345678901 ´123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
 
-/*-------   --12345678  "123456789-123456789-123456789-123456789-123456789-123456789-"  */
 /*===[[ END ONE_LINERS ]]=====================================================*/
 
 /*3456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
@@ -242,19 +244,19 @@
  *> down and rebuilding can really teach -- even if its more basic in the end.        <* 
  *>                                                                                   <* 
  *> as luck would have it, dcron (dillon's cron) is a wonderfully straight            <* 
- *> forward and clean implementation that we can learn from.  it is licenced          <* 
- *> under the gnu gpl and so is perfect as our base.  so, we study dcron...           <* 
- *>                                                                                   <* 
- *> so, as always, there are many stable, accepted, existing programs and             <* 
- *> utilities written by better programmers which are likely superior in              <* 
- *> speed, size, capability, and reliability; BUT, i would not have learned           <* 
- *> nearly as much just using them, so i follow the adage..                           <* 
- *>                                                                                   <* 
- *> TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;         <* 
- *> seek what they sought ~ Matsuo Basho                                              <* 
- *>                                                                                   <* 
- *> at the end of the day, this is wicked critical and deserves the attention.        <* 
- *> it is also full of learning opportunities ;)                                      <*/
+*> forward and clean implementation that we can learn from.  it is licenced          <* 
+*> under the gnu gpl and so is perfect as our base.  so, we study dcron...           <* 
+*>                                                                                   <* 
+*> so, as always, there are many stable, accepted, existing programs and             <* 
+*> utilities written by better programmers which are likely superior in              <* 
+*> speed, size, capability, and reliability; BUT, i would not have learned           <* 
+*> nearly as much just using them, so i follow the adage..                           <* 
+*>                                                                                   <* 
+*> TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;         <* 
+*> seek what they sought ~ Matsuo Basho                                              <* 
+*>                                                                                   <* 
+*> at the end of the day, this is wicked critical and deserves the attention.        <* 
+*> it is also full of learning opportunities ;)                                      <*/
 
 
 /*===[[ SUMMARY ]]=============================================================*
@@ -335,40 +337,40 @@
  *      - crontab names will allow for many files per user (like dcron)
  *      - crontabs will only be pulled from ~/c_quani/crontabs (std for us)
  *      - will not allow -c option as it is a security nightmare (no way)
- *      - will not allow -e option as it is a traceablilty nightmare (no loss)
- *      - will not allow - option as it is even worse than -e (who cares)
- *      - no mail at all (we will use other features to do it right)
- *
- *   on a large scale, khronos will not provide the other parts of batch work...
- *      - dependency-based scheduling (like init systems provide)
- *      - event-based launches like @reboot (daemons can and should do this)
- *      - resource-based changes to schedules, such as system load or avail
- *
- *   as a result of our changes, khronos is not a novice user tool, but neither
- *   was cron as admins can not allow crazy user processes to run all night.
- *   does anyone want users or installers to make decisions about what and when
- *   to run jobs on you system ?!#@!  really!!!
- *
- *   we don't want to just use the system, we want to *own* it; so that means
- *   we have to fundmentally understand the critical services which only tearing
- *   down and rebuilding can really teach -- even if its more basic in the end.
- *
- *   as luck would have it, dcron (dillon's cron) is a wonderfully straight
- *   forward and clean implementation that we can learn from.  it is licenced
- *   under the gnu gpl and so is perfect as our base.  so, we study dcron...
- *
- *   so, as always, there are many stable, accepted, existing programs and
- *   utilities written by better programmers which are likely superior in
- *   speed, size, capability, and reliability; BUT, i would not have learned
- *   nearly as much just using them, so i follow the adage..
- *
- *   TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;
- *   seek what they sought ~ Matsuo Basho
- *
- *   at the end of the day, this is wicked critical and deserves the attention.
- *   it is also full of learning opportunities ;)
- *
- */
+*      - will not allow -e option as it is a traceablilty nightmare (no loss)
+*      - will not allow - option as it is even worse than -e (who cares)
+*      - no mail at all (we will use other features to do it right)
+*
+*   on a large scale, khronos will not provide the other parts of batch work...
+*      - dependency-based scheduling (like init systems provide)
+*      - event-based launches like @reboot (daemons can and should do this)
+*      - resource-based changes to schedules, such as system load or avail
+*
+*   as a result of our changes, khronos is not a novice user tool, but neither
+*   was cron as admins can not allow crazy user processes to run all night.
+*   does anyone want users or installers to make decisions about what and when
+*   to run jobs on you system ?!#@!  really!!!
+*
+*   we don't want to just use the system, we want to *own* it; so that means
+*   we have to fundmentally understand the critical services which only tearing
+*   down and rebuilding can really teach -- even if its more basic in the end.
+*
+*   as luck would have it, dcron (dillon's cron) is a wonderfully straight
+*   forward and clean implementation that we can learn from.  it is licenced
+*   under the gnu gpl and so is perfect as our base.  so, we study dcron...
+*
+*   so, as always, there are many stable, accepted, existing programs and
+*   utilities written by better programmers which are likely superior in
+*   speed, size, capability, and reliability; BUT, i would not have learned
+*   nearly as much just using them, so i follow the adage..
+*
+*   TO TRULY LEARN> do not seek to follow in the footsteps of the men of old;
+*   seek what they sought ~ Matsuo Basho
+*
+*   at the end of the day, this is wicked critical and deserves the attention.
+*   it is also full of learning opportunities ;)
+*
+*/
 /*===[[ ALTERNATIVES and COMPONENTS ]]=========================================*
 
  *   this is a survey of current cron implementations and related tools so we
@@ -591,14 +593,19 @@
  *      * do not allow the setting of environment variables !!!
  *
  */
+
 /*===[[ TODOS ]]===============================================================*
 
- *   TODO : handle system time changes -- look at dcron's logic
- *   metis § · · · · · § khaos output format provided
- *   metis § · · · · · § automatically use --daemon mode if none provided
- *   metis § · · · · · § --fix able to install spool directory if not existing
- *   metis § · · · · · § next run time provided on reporting
- *   metis § · · · · · § maybe use limits like -- min, lower, avg, upper, max
+ *
+ *
+ * metis § ····· § status file as a report                                                § MB1Nii §  · §
+ * metis § ····· § actuals report with 3hrs of schedule, maybe by shift                   § MB1NjW §  · §
+ * metis § ····· § report that shows next expected run for each job                       § MB1NkM §  · §
+ * metis § ····· § version of hup, kill self and exec new version of code                 § MB1Nkd §  · §
+ * metis § ····· § version of hup, waits until nothing running                            § MB1NlG §  · §
+ * metis § ····· § api file for sending command-line requests                             § MB1Nlg §  · §
+ * metis § ····· § help screen listing yJOBS and local options                            § MB1Nns §  · §
+ *
  *
  */
 /*===[[ END HDOC ]]===========================================================*/
@@ -690,7 +697,7 @@
 
 
 
- /*===[[ ACTIONS ]]=============================*/
+/*===[[ ACTIONS ]]=============================*/
 /*---(local)----------------*/
 #define     ACT_VERIFY      'v'
 #define     ACT_VVERIFY     'V'
@@ -986,6 +993,9 @@ struct cLINE {
 #define  KHRONOS_LATE        'l'
 
 
+#define  KHRONOS_INFANT      "rsB"
+#define  KHRONOS_SIGS        "OKTgvGV"
+#define  KHRONOS_NODUR       "[ras"
 
 
 
@@ -1138,9 +1148,6 @@ char        EXEC_linekill           (char *a_file, char *a_line, char a_sig);
 char        EXEC_mark_done          (char a_yexec, int a_return);
 /*---(timekeep)-------------*/
 long        EXEC_epoch              (char y, char o, char d, char h, char m);
-char        EXEC_elapsed            (long a_now);
-char        EXEC_sysstart           (void);
-char        EXEC_sysload            (void);
 long        EXEC_time               (long a_now);
 char        EXEC_wait_min           (void);
 /*---(hour)-----------------*/
@@ -1165,6 +1172,7 @@ char        RPTG_track_sig          (char a_sig, char *a_name, char *a_desc);
 char        RPTG_status__open       (FILE **f);
 char        RPTG_status__close      (FILE **f);
 char        RPTG_status__header     (FILE *f);
+char        RPTG_status__break      (FILE *f);
 char        RPTG_status__footer     (FILE *f, int c);
 char        RPTG_status             (void);
 char        RPTG_by_min__prepare    (void);

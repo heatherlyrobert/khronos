@@ -2,6 +2,8 @@
 #include   "khronos.h"
 
 
+/*> khronos-anileis (merciless time) primary batch-automation daemon                  <* 
+ *> khronos --daemon --abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrs                  <*/
 
 /*====================------------------------------------====================*/
 /*===----                   standard program functions                 ----===*/
@@ -239,6 +241,7 @@ PROG__args              (int a_argc, char *a_argv[])
    int         len         =    0;            /* argument length                     */
    char        two_arg     =    0;
    int         x_args      =    0;          /* argument count                 */
+   int         x_max       =    0;
    /*---(begin)--------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    yURG_msg ('>', "command line arguments handling...");
@@ -274,13 +277,23 @@ PROG__args              (int a_argc, char *a_argv[])
       if (rc > 0)  continue;
       /*---(local args)------------------*/
       rc = 0;
-      if      (strcmp (a, "--defactual") == 0)    my.actuals = 'd';
-      else if (strcmp (a, "--plan"     ) == 0)    my.actuals = 'p';
-      else if (strcmp (a, "--unplan"   ) == 0)    my.actuals = 'u';
-      else if (strcmp (a, "--replan"   ) == 0)    my.actuals = 'r';
+      if      (strcmp  (a, "--defactual") == 0)    my.actuals = 'd';
+      else if (strcmp  (a, "--plan"     ) == 0)    my.actuals = 'p';
+      else if (strcmp  (a, "--unplan"   ) == 0)    my.actuals = 'u';
+      else if (strcmp  (a, "--replan"   ) == 0)    my.actuals = 'r';
+      else if (strcmp  (a, "--replan"   ) == 0)    my.actuals = 'r';
+      else if (strcmp  (a, "--replan"   ) == 0)    my.actuals = 'r';
+      else if (strncmp (a, "--abcdef", 8) == 0)    ;
+      else if (strncmp (a, "--123456", 8) == 0)    ;
       else                                        rc = rce;
       if (rc < 0)  break;
       /*---(done)------------------------*/
+   }
+   /*---(max name)-----------------------*/
+   IF_RUNNING {
+      rc = yEXEC_maxname (a_argc, a_argv, &x_max);
+      printf ("len = %d\n", x_max);
+      strlcpy (a_argv [0], P_ONELINE, x_max);
    }
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
@@ -295,6 +308,7 @@ PROG__begin             (void)
    /*---(header)-------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    DEBUG_INPT  yLOG_char    ("my.run_mode"     , my.run_mode);
+   DEBUG_INPT  yLOG_char    ("my.run_as"       , my.run_as);
    /*> yJOBS_final (my.m_uid);                                                        <*/
    if (my.run_as == IAM_UKHRONOS)  PROG__unit_prepare ();
    /*---(complete)-----------------------*/
