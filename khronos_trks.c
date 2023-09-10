@@ -66,12 +66,12 @@ TRKS__wipe              (tTRKS *a_cur)
    /*---(defense)--------------*/
    if (a_cur == NULL)  return -1;
    /*---(master)-------------------------*/
-   strlcpy (a_cur->file   , "" , LEN_TITLE);
-   strlcpy (a_cur->tracker, "" , LEN_TITLE);
-   strlcpy (a_cur->last   , "" , LEN_HUND);
-   strlcpy (a_cur->stats  , "" , LEN_FULL);
-   strlcpy (a_cur->durs   , "" , LEN_FULL);
-   strlcpy (a_cur->actual , "" , LEN_RECD);
+   ystrlcpy (a_cur->file   , "" , LEN_TITLE);
+   ystrlcpy (a_cur->tracker, "" , LEN_TITLE);
+   ystrlcpy (a_cur->last   , "" , LEN_HUND);
+   ystrlcpy (a_cur->stats  , "" , LEN_FULL);
+   ystrlcpy (a_cur->durs   , "" , LEN_FULL);
+   ystrlcpy (a_cur->actual , "" , LEN_RECD);
    a_cur->parent  = NULL;
    a_cur->m_prev  = NULL;
    a_cur->m_next  = NULL;
@@ -83,7 +83,7 @@ char*
 TRKS__memory            (tTRKS *a_cur)
 {
    int         n           =    0;
-   strlcpy (g_print, "å___.___.___æ", LEN_RECD);
+   ystrlcpy (g_print, "å___.___.___æ", LEN_RECD);
    ++n;  if (a_cur->file    [0] != '\0')        g_print [n] = 'X';
    ++n;  if (a_cur->tracker [0] != '\0')        g_print [n] = 'X';
    ++n;  if (a_cur->last    [0] != '\0')        g_print [n] = 'X';
@@ -127,7 +127,7 @@ TRKS__tracker           (cchar *a_tracker)
       DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   rc = strlgood (a_tracker, ySTR_WRITE, LEN_TITLE);
+   rc = ystrlgood (a_tracker, ySTR_WRITE, LEN_TITLE);
    DEBUG_OUTP   yLOG_value   ("good"      , rc);
    --rce;  if (rc < 0) {
       DEBUG_OUTP   yLOG_note    ("found non-writing/special characters (ySTR_WRITE)");
@@ -200,7 +200,7 @@ TRKS__coded             (char a_type, cchar *a_key, char *a_str)
    }
    /*---(append on actuals)--------------*/
    --rce;  if (a_type == 'a') {
-      if (l <  strlen (a_key))  strlcat (a_str, KHRONOS_DEFACTUAL + l,  LEN_RECD);
+      if (l <  strlen (a_key))  ystrlcat (a_str, KHRONOS_DEFACTUAL + l,  LEN_RECD);
       if (l >  strlen (a_key)) {
          DEBUG_OUTP   yLOG_note    ("actual is longer than default length");
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
@@ -331,10 +331,10 @@ char
 TRKS__default           (tTRKS *a_cur)
 {
    char        i           =    0;
-   strlcpy (a_cur->last  , KHRONOS_DEFLAST  , LEN_HUND);
-   strlcpy (a_cur->stats , KHRONOS_DEFSTATS , LEN_FULL);
-   strlcpy (a_cur->durs  , KHRONOS_DEFDURS  , LEN_FULL);
-   strlcpy (a_cur->actual, KHRONOS_DEFACTUAL, LEN_RECD);
+   ystrlcpy (a_cur->last  , KHRONOS_DEFLAST  , LEN_HUND);
+   ystrlcpy (a_cur->stats , KHRONOS_DEFSTATS , LEN_FULL);
+   ystrlcpy (a_cur->durs  , KHRONOS_DEFDURS  , LEN_FULL);
+   ystrlcpy (a_cur->actual, KHRONOS_DEFACTUAL, LEN_RECD);
    return 0;
 }
 
@@ -482,8 +482,8 @@ TRKS_create             (cchar *a_file, cchar *a_tracker, tLINE *a_line, tTRKS *
       return rce;
    }
    /*---(add data)--------------------*/
-   strlcpy (x_cur->file   , a_file   , LEN_TITLE);
-   strlcpy (x_cur->tracker, a_tracker, LEN_TITLE);
+   ystrlcpy (x_cur->file   , a_file   , LEN_TITLE);
+   ystrlcpy (x_cur->tracker, a_tracker, LEN_TITLE);
    if (a_line != NULL)  x_cur->parent = a_line;
    TRKS__default (x_cur);
    /*---(hook)------------------------*/
@@ -540,7 +540,7 @@ TRKS__open              (char *a_name, char *a_perms)
       return rce;
    }
    /*---(save)---------------------------*/
-   strlcpy (s_name, a_name, LEN_PATH);
+   ystrlcpy (s_name, a_name, LEN_PATH);
    /*---(complete)-----------------------*/
    DEBUG_OUTP   yLOG_sexit   (__FUNCTION__);
    return 0;
@@ -571,7 +571,7 @@ TRKS__close             (void)
    f_trks = NULL;
    DEBUG_OUTP   yLOG_spoint  (f_trks);
    /*---(save)---------------------------*/
-   strlcpy (s_name, "", LEN_PATH);
+   ystrlcpy (s_name, "", LEN_PATH);
    /*---(complete)-----------------------*/
    DEBUG_OUTP   yLOG_sexit   (__FUNCTION__);
    return 0;
@@ -611,7 +611,7 @@ TRKS__parse             (cchar *a_recd)
       return rce;
    }
    /*---(prepare)------------------------*/
-   strlcpy (x_recd, a_recd, LEN_HUGE);
+   ystrlcpy (x_recd, a_recd, LEN_HUGE);
    p = strtok (x_recd, "§");
    /*---(parse fields)-------------------*/
    --rce;  while (p != NULL) {
@@ -625,15 +625,15 @@ TRKS__parse             (cchar *a_recd)
       case  5 : x_dst = x_cur->actual;   l = LEN_RECD;   break;
       default : break;  /* too many fields */
       }
-      strlcpy  (t, p        , LEN_RECD);
-      strltrim (t, ySTR_BOTH, LEN_RECD);
+      ystrlcpy  (t, p        , LEN_RECD);
+      ystrltrim (t, ySTR_BOTH, LEN_RECD);
       x_len = strlen (t);
       DEBUG_OUTP   yLOG_complex ("saving"    , "%d, %p, %d, %d, %s", n, x_dst, l, x_len, t);
       if (x_len >= l) {
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      strlcpy  (x_dst, t, l);
+      ystrlcpy  (x_dst, t, l);
       /*---(enough)----------------------*/
       if (n == 1) {
          rc = TRKS_create (x_file, x_tracker, NULL, &x_cur);
@@ -660,13 +660,13 @@ TRKS__parse             (cchar *a_recd)
    }
    /*---(data quality checks)------------*/
    if (TRKS__coded ('l', KHRONOS_DEFLAST  , x_cur->last     ) < 0)
-      strlcpy (x_cur->last  , KHRONOS_DEFLAST  , LEN_HUND);
+      ystrlcpy (x_cur->last  , KHRONOS_DEFLAST  , LEN_HUND);
    if (TRKS__coded ('s', KHRONOS_DEFSTATS , x_cur->stats    ) < 0)
-      strlcpy (x_cur->stats , KHRONOS_DEFSTATS , LEN_FULL);
+      ystrlcpy (x_cur->stats , KHRONOS_DEFSTATS , LEN_FULL);
    if (TRKS__coded ('d', KHRONOS_DEFDURS  , x_cur->durs     ) < 0)
-      strlcpy (x_cur->durs  , KHRONOS_DEFDURS  , LEN_FULL);
+      ystrlcpy (x_cur->durs  , KHRONOS_DEFDURS  , LEN_FULL);
    if (TRKS__coded ('a' ,KHRONOS_DEFACTUAL, x_cur->actual   ) < 0)
-      strlcpy (x_cur->actual, KHRONOS_DEFACTUAL, LEN_RECD);
+      ystrlcpy (x_cur->actual, KHRONOS_DEFACTUAL, LEN_RECD);
    if (x_cur->stats [3] == '0')  x_cur->stats [3] == '·';
    x_cur->stats [5] = '·';
    /*---(update rolling)-----------------*/
@@ -717,7 +717,7 @@ TRKS_import_full        (cchar *a_file)
       if (x_recd [0] == '#')   continue;
       if (x_recd [0] == ' ')   continue;
       /*---(clean-up)--------------------*/
-      strltrim (x_recd, ySTR_BOTH, LEN_HUGE);
+      ystrltrim (x_recd, ySTR_BOTH, LEN_HUGE);
       x_len = strlen (x_recd);
       if (x_len <  5)          continue;
       if (x_recd [x_len - 1] == '\n')  x_recd [--x_len] = '\0';
@@ -832,7 +832,7 @@ TRKS_export_full        (cchar *a_file)
          /*---(periodic breaks)----------*/
          if (k % 5 == 0) {
             /*---(all but actual)--------*/
-            strlcpy (s, "##---file--------------------  ---tracker-------------------  ---heartbeat--------------··--epoch---··--ppid  ---statistics--------------------··---shistory----------------------------------------------------  ---durations---------------------------------------··---dhistory----------------------------------------------------  -pos- ", LEN_RECD);
+            ystrlcpy (s, "##---file--------------------  ---tracker-------------------  ---heartbeat--------------··--epoch---··--ppid  ---statistics--------------------··---shistory----------------------------------------------------  ---durations---------------------------------------··---dhistory----------------------------------------------------  -pos- ", LEN_RECD);
             /*---(actual header)---------*/
             x_hr = 20;
             for (j = 0; j < 25; ++j) {
@@ -840,7 +840,7 @@ TRKS_export_full        (cchar *a_file)
                if (x_hr < 10)  sprintf (t, "[%d>-", x_hr);
                else            sprintf (t, "[%2d>", x_hr);
                sprintf (r, "%s-´----Á----´----Â----´----Ã----´----Ä----´----Å----´----", t);
-               strlcat (s, r, LEN_RECD);
+               ystrlcat (s, r, LEN_RECD);
                ++x_hr;
             }
             /*---(current marker)--------*/
@@ -1201,7 +1201,7 @@ TRKS__stat_restat       (char *b_str, char a_roll, char a_hist)
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
    /*---(capture history)----------------*/
-   strlcpy (t, b_str + 35, LEN_FULL);
+   ystrlcpy (t, b_str + 35, LEN_FULL);
    l = strlen (t);
    DEBUG_OUTP    yLOG_complex ("t"         , "%2då%sæ", l, t);
    /*---(check active)-------------------*/
@@ -1226,7 +1226,7 @@ TRKS__stat_restat       (char *b_str, char a_roll, char a_hist)
       rc = TRKS__stat_update (b_str, KHRONOS_BEG, a_roll);
       if (rc < 0) {
          DEBUG_OUTP   yLOG_note    ("failed to begin a job");
-         strlcpy (b_str, KHRONOS_DEFSTATS, LEN_FULL);
+         ystrlcpy (b_str, KHRONOS_DEFSTATS, LEN_FULL);
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
@@ -1234,7 +1234,7 @@ TRKS__stat_restat       (char *b_str, char a_roll, char a_hist)
       rc = TRKS__stat_update (b_str, x_code, a_roll);
       if (rc < 0) {
          DEBUG_OUTP   yLOG_complex ("failed"    , "at pos %d, could not update with (%c), stopping", i, t [i]);
-         strlcpy (b_str, KHRONOS_DEFSTATS, LEN_FULL);
+         ystrlcpy (b_str, KHRONOS_DEFSTATS, LEN_FULL);
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
@@ -1515,7 +1515,7 @@ TRKS__durs_redur        (char *b_str, char a_roll, char a_hist, int a_min, int a
    /*---(header)-------------------------*/
    DEBUG_OUTP    yLOG_enter   (__FUNCTION__);
    /*---(capture history)----------------*/
-   strlcpy (t, b_str + 53, LEN_FULL);
+   ystrlcpy (t, b_str + 53, LEN_FULL);
    l = strlen (t);
    DEBUG_OUTP    yLOG_complex ("t"         , "%2då%sæ", l, t);
    /*---(refresh stats)------------------*/
@@ -1537,7 +1537,7 @@ TRKS__durs_redur        (char *b_str, char a_roll, char a_hist, int a_min, int a
       rc = TRKS__durs_update (b_str, x_dur, a_min, a_est, a_max);
       if (rc < 0) {
          DEBUG_OUTP   yLOG_complex ("failed"    , "at pos %d, could not update with (%c), stopping", i, t [i]);
-         strlcpy (b_str, KHRONOS_DEFDURS , LEN_FULL);
+         ystrlcpy (b_str, KHRONOS_DEFDURS , LEN_FULL);
          DEBUG_OUTP   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
@@ -1655,7 +1655,7 @@ TRKS__actual_reset      (tTRKS *a_trks)
       return rce;
    }
    /*---(default actuals)----------------*/
-   strlcpy (a_trks->actual, KHRONOS_DEFACTUAL, LEN_RECD);
+   ystrlcpy (a_trks->actual, KHRONOS_DEFACTUAL, LEN_RECD);
    /*---(reset remaining)----------------*/
    s_rem = 0;
    /*---(complete)-----------------------*/
@@ -1780,7 +1780,7 @@ TRKS__planning_hour     (tTRKS *a_trks, char a_vis, char a_yr, char a_mo, char a
       /*---(done)------------------------*/
    }
    /*---(save back)----------------------*/
-   if (a_out != NULL)  strlcpy (a_out, x_hour, 61);
+   if (a_out != NULL)  ystrlcpy (a_out, x_hour, 61);
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -2034,7 +2034,7 @@ TRKS_actual_shift       (char *a_file, char *a_tracker, char a_shift)
    n = 6 + a_shift * (60 * 3);
    DEBUG_OUTP    yLOG_value   ("n"         , n);
    /*---(save-back)----------------------*/
-   strlcpy (g_print, x_line->trks->actual + n, 182);
+   ystrlcpy (g_print, x_line->trks->actual + n, 182);
    DEBUG_OUTP    yLOG_info    ("g_print"   , g_print);
    /*---(complete)-----------------------*/
    DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
@@ -2073,7 +2073,7 @@ TRKS_actual_shift_OLD   (char *a_tracker, char a_shift)
    n = 6 + a_shift * (60 * 3);
    DEBUG_OUTP    yLOG_value   ("n"         , n);
    /*---(save-back)----------------------*/
-   strlcpy (g_print, x_line->trks->actual + n, 182);
+   ystrlcpy (g_print, x_line->trks->actual + n, 182);
    DEBUG_OUTP    yLOG_info    ("g_print"   , g_print);
    /*---(complete)-----------------------*/
    DEBUG_OUTP    yLOG_exit    (__FUNCTION__);
@@ -2111,7 +2111,7 @@ TRKS__actual            (char *b_str, char a_hr, char a_mn, char a_code)
       return rce;
    }
    /*---(prepare)------------------------*/
-   strlcpy (t, b_str, 5);
+   ystrlcpy (t, b_str, 5);
    x_next  = atoi (t);
    DEBUG_OUTP    yLOG_complex ("x_next"    , "%s, %d", t, x_next);
    if (a_hr >= 20)  x_hr = a_hr - 20;
@@ -2194,7 +2194,7 @@ TRKS__exec              (char *a_func, tTRKS *a_cur, char a_hr, char a_mn, char 
       return rce;
    }
    /*---(update heartbeat)---------------*/
-   strlcpy (a_cur->last, my.heartbeat, 47);
+   ystrlcpy (a_cur->last, my.heartbeat, 47);
    /*---(update statistics)--------------*/
    DEBUG_OUTP    yLOG_info    ("->stats"   , a_cur->stats);
    rc = TRKS__stat  (a_cur->stats, a_code);
@@ -2266,7 +2266,7 @@ TRKS__unit              (char *a_question, int a_num)
    int         x_fore      =    0;
    int         x_back      =    0;
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "RPTG             : question not understood", LEN_HUND);
+   ystrlcpy  (unit_answer, "RPTG             : question not understood", LEN_HUND);
    /*---(simple requests)----------------*/
    if      (strcmp (a_question, "file"          )  == 0) {
       x_lines = yURG_peek_count (s_name);
@@ -2317,7 +2317,7 @@ TRKS__unit              (char *a_question, int a_num)
       rc = TRKS__by_index (a_num, &x_cur);
       if (x_cur  == NULL)  snprintf (unit_answer, LEN_FULL, "TRKS actual (%2d) : åæ", a_num);
       else {
-         strlcpy  (t, x_cur->actual + 6 + 60 * 4, LEN_HUND);
+         ystrlcpy  (t, x_cur->actual + 6 + 60 * 4, LEN_HUND);
          snprintf (unit_answer, LEN_FULL, "TRKS actual (%2d) : å%sæ", a_num, t);
       }
    }

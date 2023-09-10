@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1a"
-#define     P_VERTXT    "caught-up unit testing with previous changes and verified"
+#define     P_VERNUM    "2.1b"
+#define     P_VERTXT    "fixes due to changed str functions to ¶ystr¶ in ySTR"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -598,13 +598,13 @@
 
  *
  *
- * metis § ····· § status file as a report                                                § MB1Nii §  · §
- * metis § ····· § actuals report with 3hrs of schedule, maybe by shift                   § MB1NjW §  · §
- * metis § ····· § report that shows next expected run for each job                       § MB1NkM §  · §
- * metis § ····· § version of hup, kill self and exec new version of code                 § MB1Nkd §  · §
- * metis § ····· § version of hup, waits until nothing running                            § MB1NlG §  · §
- * metis § ····· § api file for sending command-line requests                             § MB1Nlg §  · §
- * metis § ····· § help screen listing yJOBS and local options                            § MB1Nns §  · §
+ * Metis § ····· § status file as a report                                                § MB1Nii §  · §
+ * Metis § ····· § actuals report with 3hrs of schedule, maybe by shift                   § MB1NjW §  · §
+ * Metis § ····· § report that shows next expected run for each job                       § MB1NkM §  · §
+ * Metis § ····· § version of hup, kill self and exec new version of code                 § MB1Nkd §  · §
+ * Metis § ····· § version of hup, waits until nothing running                            § MB1NlG §  · §
+ * Metis § ····· § api file for sending command-line requests                             § MB1Nlg §  · §
+ * Metis § ····· § help screen listing yJOBS and local options                            § MB1Nns §  · §
  *
  *
  */

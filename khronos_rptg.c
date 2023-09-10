@@ -593,8 +593,8 @@ RPTG_status             (void)
             x_file->title, x_line->recdno, x_line->tracker);
       fprintf (f, "%c %c ",
             x_focus, x_active);
-      strlcpy (t, RPTG__number (10, x_line->start , " "), LEN_RECD);
-      strlcat (t, RPTG__number ( 5, x_line->rpid  , " "), LEN_RECD);
+      ystrlcpy (t, RPTG__number (10, x_line->start , " "), LEN_RECD);
+      ystrlcat (t, RPTG__number ( 5, x_line->rpid  , " "), LEN_RECD);
       fprintf (f, "%s", t);
       /*---(statistics)------------------*/
       if (x_line->trks != NULL) {
@@ -606,15 +606,15 @@ RPTG_status             (void)
       }
       /*---(last run)--------------------*/
       fprintf (f, " ");
-      strlcpy (t, RPTG__number ( 5, x_line->l_rpid     , " "), LEN_RECD);
+      ystrlcpy (t, RPTG__number ( 5, x_line->l_rpid     , " "), LEN_RECD);
       if (x_line->l_rpid == 0) {
-         strlcat (t, "   ·    · ", LEN_RECD);
+         ystrlcat (t, "   ·    · ", LEN_RECD);
       } else {
          sprintf (s, "%4d %4d ", x_line->l_dur / 60, x_line->l_rc);
-         strlcat (t, s, LEN_RECD);
+         ystrlcat (t, s, LEN_RECD);
       }
-      /*> strlcat (t, RPTG__number ( 4, x_line->l_dur / 60 , " "), LEN_RECD);         <*/
-      /*> strlcat (t, RPTG__number ( 4, x_line->l_rc       , " "), LEN_RECD);         <*/
+      /*> ystrlcat (t, RPTG__number ( 4, x_line->l_dur / 60 , " "), LEN_RECD);         <*/
+      /*> ystrlcat (t, RPTG__number ( 4, x_line->l_rc       , " "), LEN_RECD);         <*/
       fprintf (f, "%s  ", t);
       /*---(controls)--------------------*/
       if (x_line->tracker [0] != '.') {
@@ -708,20 +708,20 @@ RPTG_by_min__header     (FILE *f, char a_color, char *a_name, char a_beg, char a
    fprintf  (f, "\n");
    fflush  (f);
    /*---(save title line)----------------*/
-   strlcpy (s_title, "", LEN_RECD);
+   ystrlcpy (s_title, "", LEN_RECD);
    i = a_beg;
    for (j = 0; j < 3; j++) {
       if (i < 10)  sprintf (t, "[%d>-", i);
       else         sprintf (t, "[%2d>", i);
       if (j < 2)   sprintf (u, "%s-´----Á----´----Â----´----Ã----´----Ä----´----Å----´----", t);
       else         sprintf (u, "%s-´----Á----´----Â----´----Ã----´----Ä----´----Å----´--"  , t);
-      strlcat (s_title, u, LEN_RECD);
+      ystrlcat (s_title, u, LEN_RECD);
       ++i;
       if (i >= 24)  i -= 24;
    }
    if (i < 10)  sprintf (t, "-[%d", i);
    else         sprintf (t, "[%2d", i);
-   strlcat (s_title, t, LEN_RECD);
+   ystrlcat (s_title, t, LEN_RECD);
    /*---(complete)-----------------------*/
    DEBUG_RPTG   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -744,10 +744,10 @@ RPTG_by_min__hour       (char a_color, int n, tLINE *a_line, char a_yr, char a_m
       DEBUG_RPTG   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   strlcpy (a_out, "", LEN_RECD);
-   if (a_color == 'y') strlcpy (a_out, FORE_OFF, LEN_RECD);
+   ystrlcpy (a_out, "", LEN_RECD);
+   if (a_color == 'y') ystrlcpy (a_out, FORE_OFF, LEN_RECD);
    ySCHED_date (a_yr, a_mo, a_dy);
-   if (a_color == 'y' && s [n] >  0) strlcat (a_out, BOLD_CYN, LEN_RECD);
+   if (a_color == 'y' && s [n] >  0) ystrlcat (a_out, BOLD_CYN, LEN_RECD);
    for (i = 0; i < 60; ++i) {
       rc = ySCHED_test (a_line->sched, a_hr, i, NULL);
       if      (strncmp (a_line->tracker, ".graceful", 9) == 0) x_type = '·';
@@ -755,41 +755,41 @@ RPTG_by_min__hour       (char a_color, int n, tLINE *a_line, char a_yr, char a_m
       else if (a_line->tracker [0] == '.')                     x_type = 'V';
       else                                                     x_type = '·';
       if (x_type == '·') {
-         if      (rc <  0)   strlcat (a_out, "¢", LEN_RECD);
+         if      (rc <  0)   ystrlcat (a_out, "¢", LEN_RECD);
          else if (rc == 0) {
             if (s [n] > 0) {
-               strlcat (a_out, "´", LEN_RECD);
+               ystrlcat (a_out, "´", LEN_RECD);
                s [n] -= 60;
-               if (a_color == 'y' && s [n] <= 0)     strlcat (a_out, BOLD_OFF, LEN_RECD);
+               if (a_color == 'y' && s [n] <= 0)     ystrlcat (a_out, BOLD_OFF, LEN_RECD);
             }
-            else if (i ==  0)      strlcat (a_out, "¨", LEN_RECD);
-            else if (i == 30)      strlcat (a_out, "|", LEN_RECD);
-            else if (i % 10 == 0)  strlcat (a_out, "+", LEN_RECD);
-            else                   strlcat (a_out, "·", LEN_RECD);
+            else if (i ==  0)      ystrlcat (a_out, "¨", LEN_RECD);
+            else if (i == 30)      ystrlcat (a_out, "|", LEN_RECD);
+            else if (i % 10 == 0)  ystrlcat (a_out, "+", LEN_RECD);
+            else                   ystrlcat (a_out, "·", LEN_RECD);
          }
          else if (rc >  0) {
             if (s [n] > 0)  {
-               strlcat (a_out, "¥", LEN_RECD);
+               ystrlcat (a_out, "¥", LEN_RECD);
                s [n] -= 60;
             } else  {
-               if (a_color == 'y') strlcat (a_out, BOLD_CYN, LEN_RECD);
-               strlcat (a_out, "Ï", LEN_RECD);
+               if (a_color == 'y') ystrlcat (a_out, BOLD_CYN, LEN_RECD);
+               ystrlcat (a_out, "Ï", LEN_RECD);
                s [n] = a_line->est - 60;
-               if (a_color == 'y' && s [n] <= 0)     strlcat (a_out, BOLD_OFF, LEN_RECD);
+               if (a_color == 'y' && s [n] <= 0)     ystrlcat (a_out, BOLD_OFF, LEN_RECD);
             }
          }
       } else {
          if (rc >  0)  {
-            if (a_color == 'y' && x_last != '=') strlcat (a_out, BOLD_GRN, LEN_RECD);
-            strlcat (a_out, "=", LEN_RECD);
+            if (a_color == 'y' && x_last != '=') ystrlcat (a_out, BOLD_GRN, LEN_RECD);
+            ystrlcat (a_out, "=", LEN_RECD);
          }
          else {
-            if (a_color == 'y' && x_last != '­') strlcat (a_out, BOLD_RED, LEN_RECD);
-            strlcat (a_out, "­", LEN_RECD);
+            if (a_color == 'y' && x_last != '­') ystrlcat (a_out, BOLD_RED, LEN_RECD);
+            ystrlcat (a_out, "­", LEN_RECD);
          }
       }
    }
-   if (a_color == 'y') strlcat (a_out, FORE_OFF, LEN_RECD);
+   if (a_color == 'y') ystrlcat (a_out, FORE_OFF, LEN_RECD);
    /*---(complete)-----------------------*/
    DEBUG_RPTG   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -1115,7 +1115,7 @@ rptg__unit              (char *a_question, int a_num)
    int         rc          =    0;
    char        x_heartbeat [LEN_HUND];
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "RPTG             : question not understood", LEN_HUND);
+   ystrlcpy  (unit_answer, "RPTG             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    /*---(complete)-----------------------*/
    return unit_answer;

@@ -225,7 +225,7 @@ static void      o___UNITTEST________________o (void) {;}
  *>    int         x_count     =    0;                                                                                <* 
  *>    int         x_total     =    0;                                                                                <* 
  *>    /+---(prepare)------------------------+/                                                                       <* 
- *>    strlcpy  (unit_answer, "TABS             : question not understood", LEN_HUND);                                <* 
+ *>    ystrlcpy  (unit_answer, "TABS             : question not understood", LEN_HUND);                                <* 
  *>    /+---(crontab name)-------------------+/                                                                       <* 
  *>    if      (strcmp (a_question, "file"          )  == 0) {                                                        <* 
  *>       snprintf (unit_answer, LEN_HUND, "TABS file        : %2d[%.35s]", strlen (my.f_name), my.f_name);           <* 

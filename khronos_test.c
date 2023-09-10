@@ -21,11 +21,11 @@ prog__unit              (char *a_question)
    char        s           [LEN_HUND]  = "";
    char        t           [LEN_HUND]  = "";
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "PROG             : question not understood", LEN_HUND);
+   ystrlcpy  (unit_answer, "PROG             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "mode"          )  == 0) {
-      strlcpy (s, yJOBS_iam ()  , LEN_HUND);
-      strlcpy (t, yJOBS_mode () , LEN_HUND);
+      ystrlcpy (s, yJOBS_iam ()  , LEN_HUND);
+      ystrlcpy (t, yJOBS_mode () , LEN_HUND);
       snprintf (unit_answer, LEN_HUND, "PROG mode        : (%c) %-18.18s, (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
    }
    else if (strcmp (a_question, "action"        )  == 0) {
@@ -91,7 +91,7 @@ PROG__unit_cleanup      (void)
    /*> getcwd (x_home, LEN_PATH);                                                     <* 
     *> chdir  ("/tmp");                                                               <* 
     *> yURG_rmdir (DIR_UNIT);                                                         <* 
-    *> strlcpy (my.n_central, DIR_CENTRAL, LEN_PATH);                                 <* 
+    *> ystrlcpy (my.n_central, DIR_CENTRAL, LEN_PATH);                                 <* 
     *> chdir  (x_home);                                                               <*/
    /*---(complete)-----------------------*/
    return 0;

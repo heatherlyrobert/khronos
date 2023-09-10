@@ -722,7 +722,7 @@ exec__unit              (char *a_question, int a_num)
    int         c           =    0;
    tLINE      *o           = NULL;
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "EXEC             : question not understood", LEN_HUND);
+   ystrlcpy  (unit_answer, "EXEC             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "time"    )        == 0) {
       snprintf (unit_answer, LEN_HUND, "EXEC time        : %-10d, %02dy %02dm %02dd %02dh %02dm, %d", my.now, my.year, my.month, my.day, my.hour, my.minute, my.clean);

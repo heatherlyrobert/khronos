@@ -17,13 +17,13 @@ PROG_version            (void)
 {
    char    t [20] = "";
 #if    __TINYC__ > 0
-   strlcpy (t, "[tcc built  ]", 15);
+   ystrlcpy (t, "[tcc built  ]", 15);
 #elif  __GNUC__  > 0
-   strlcpy (t, "[gnu gcc    ]", 15);
+   ystrlcpy (t, "[gnu gcc    ]", 15);
 #elif  __CBANG__  > 0
-   strlcpy (t, "[cbang      ]", 15);
+   ystrlcpy (t, "[cbang      ]", 15);
 #else
-   strlcpy (t, "[unknown    ]", 15);
+   ystrlcpy (t, "[unknown    ]", 15);
 #endif
    snprintf (verstring, 100, "%s   %s : %s", t, P_VERNUM, P_VERTXT);
    return verstring;
@@ -167,14 +167,14 @@ PROG__init              (int a_argc, char *a_argv[])
    /*> my.ucnt  = 0;                                                                  <*/
    /*> my.uavg  = 0.0;                                                                <*/
    /*> my.m_stime = my.m_utime = 0;                                                   <*/
-   strlcpy (my.elapsed, "", LEN_HUND);
-   strlcpy (my.usage  , "", LEN_HUND);
+   ystrlcpy (my.elapsed, "", LEN_HUND);
+   ystrlcpy (my.usage  , "", LEN_HUND);
    my.actuals = '·';
    my.year = my.month = my.day = my.hour = my.minute = 0;;
    /*---(defaults)-----------------------*/
    my.run_as   = IAM_KHRONOS;
    my.run_mode = ACT_NONE;
-   strlcpy (my.run_file, "", LEN_PATH);
+   ystrlcpy (my.run_file, "", LEN_PATH);
    /*---(begin)--------------------------*/
    g_seq = 0;
    rc = yJOBS_runas (a_argv [0], &(my.run_as), P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, P_NAMESAKE, P_PRONOUNCE, P_HERITAGE, P_BRIEFLY, P_IMAGERY, P_REASON, P_ONELINE, P_HOMEDIR, P_BASENAME, P_FULLPATH, P_SUFFIX, P_CONTENT, P_SYSTEM, P_LANGUAGE, P_COMPILER, P_CODESIZE, P_DEPENDS, P_AUTHOR, P_CREATED, P_VERMAJOR, P_VERMINOR, P_VERNUM, P_VERTXT, P_DEFINE, P_POTENTIAL, P_SCOPE, P_EXAMPLE, P_TROUBLE, P_NEWMIND, P_SUMMARY, P_GREEK, NULL);
@@ -247,7 +247,7 @@ PROG__args              (int a_argc, char *a_argv[])
    yURG_msg ('>', "command line arguments handling...");
    yURG_msg ('-', "total of %d arguments, including name", a_argc);
    /*---(program name)--------------------------*/
-   strlcpy (my.m_prog, a_argv [0], LEN_DESC);
+   ystrlcpy (my.m_prog, a_argv [0], LEN_DESC);
    DEBUG_PROG   yLOG_info    ("prog name" , my.m_prog);
    /*---(check for no args)--------------*/
    DEBUG_PROG   yLOG_value   ("a_argc"    , a_argc);
@@ -293,7 +293,7 @@ PROG__args              (int a_argc, char *a_argv[])
    IF_RUNNING {
       rc = yEXEC_maxname (a_argc, a_argv, &x_max);
       printf ("len = %d\n", x_max);
-      strlcpy (a_argv [0], P_ONELINE, x_max);
+      ystrlcpy (a_argv [0], P_ONELINE, x_max);
    }
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);

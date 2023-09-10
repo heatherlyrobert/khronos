@@ -14,10 +14,10 @@ LINE__wipe              (tLINE *a_cur)
    /*---(defense)--------------*/
    if (a_cur == NULL)  return -1;
    /*---(master)-------------------------*/
-   strlcpy (a_cur->tracker , "·", LEN_TITLE);
+   ystrlcpy (a_cur->tracker , "·", LEN_TITLE);
    a_cur->recdno      =   -1;
    a_cur->sched       =  NULL;
-   strlcpy (a_cur->command , "" , LEN_RECD);
+   ystrlcpy (a_cur->command , "" , LEN_RECD);
    /*---(working)--------------*/
    a_cur->retire      =  '-';
    a_cur->rpid        =    0;
@@ -68,7 +68,7 @@ char*
 LINE__memory            (tLINE *a_cur)
 {
    int         n           =    0;
-   strlcpy (g_print, "å____.____.___._______._____.______._æ", LEN_RECD);
+   ystrlcpy (g_print, "å____.____.___._______._____.______._æ", LEN_RECD);
    ++n;  if (a_cur->tracker [0]  != '·')         g_print [n] = 'X';
    ++n;  if (a_cur->recdno       >= 0)           g_print [n] = 'X';
    ++n;  if (a_cur->sched        != NULL)        g_print [n] = 'X';
@@ -207,10 +207,10 @@ LINE_dup                (tLINE *a_orig, tLINE **a_new)
    }
    /*---(master)-------------------------*/
    DEBUG_INPT   yLOG_note    ("master data");
-   strlcpy (x_new->tracker  , a_orig->tracker  , LEN_TITLE);
+   ystrlcpy (x_new->tracker  , a_orig->tracker  , LEN_TITLE);
    x_new->recdno      = a_orig->recdno;
    x_new->sched       = a_orig->sched;
-   strlcpy (x_new->command  , a_orig->command  , LEN_RECD);
+   ystrlcpy (x_new->command  , a_orig->command  , LEN_RECD);
    /*---(working)------------------------*/
    DEBUG_INPT   yLOG_note    ("working");
    x_new->rpid        = a_orig->rpid;
@@ -295,11 +295,11 @@ LINE__prepare            (void)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
-   strlcpy (my.t_schedule, ""             , LEN_RECD);
-   strlcpy (my.t_tracker , ""             , LEN_TITLE);
-   strlcpy (my.t_duration, "0"            , LEN_TERSE);
-   strlcpy (my.t_flags   , "--·---·-·---" , LEN_LABEL);
-   strlcpy (my.t_command , ""             , LEN_FULL);
+   ystrlcpy (my.t_schedule, ""             , LEN_RECD);
+   ystrlcpy (my.t_tracker , ""             , LEN_TITLE);
+   ystrlcpy (my.t_duration, "0"            , LEN_TERSE);
+   ystrlcpy (my.t_flags   , "--·---·-·---" , LEN_LABEL);
+   ystrlcpy (my.t_command , ""             , LEN_FULL);
    my.t_recdno = -1;
    my.t_ready  = '-';
    /*---(complete)-----------------------*/
@@ -313,7 +313,7 @@ LINE__flagfix           (void)
    int         l           =   0;
    char        t           [LEN_LABEL] = "";
    char        x_def       [LEN_LABEL] = "--·---·-·---";
-   strlcpy (t, my.t_flags, LEN_LABEL);
+   ystrlcpy (t, my.t_flags, LEN_LABEL);
    l = strlen (t);
    sprintf (my.t_flags, "%s%s", t, x_def + l);
    return 0;
@@ -337,23 +337,23 @@ LINE__original          (int n, uchar *a_verb)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   strlcpy  (x_recd, a_verb, LEN_RECD);
-   strltrim (x_recd, ySTR_SINGLE, LEN_RECD);
+   ystrlcpy  (x_recd, a_verb, LEN_RECD);
+   ystrltrim (x_recd, ySTR_SINGLE, LEN_RECD);
    DEBUG_INPT   yLOG_info    ("x_recd"    , x_recd);
    /*---(parse)--------------------------*/
-   c = strldcnt (x_recd, ' ', LEN_RECD);
+   c = ystrldcnt (x_recd, ' ', LEN_RECD);
    DEBUG_INPT   yLOG_value   ("c"         , c);
    --rce;  if (c < 5) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   x_pos = strldpos (x_recd, ' ', 4, LEN_RECD);
+   x_pos = ystrldpos (x_recd, ' ', 4, LEN_RECD);
    DEBUG_INPT   yLOG_value   ("x_pos"     , x_pos);
    x_recd [x_pos] = '\0';
    /*---(save values)--------------------*/
-   strlcpy (my.t_schedule, x_recd, LEN_RECD);
+   ystrlcpy (my.t_schedule, x_recd, LEN_RECD);
    DEBUG_INPT   yLOG_info    ("t_schedule", my.t_schedule);
-   strlcpy (my.t_command , x_recd + x_pos + 1, LEN_FULL);
+   ystrlcpy (my.t_command , x_recd + x_pos + 1, LEN_FULL);
    DEBUG_INPT   yLOG_info    ("t_command" , my.t_command);
    /*---(set to ready)-------------------*/
    LINE__flagfix ();
@@ -382,8 +382,8 @@ LINE__revised           (int n, uchar *a_verb, int c)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   strlcpy  (my.t_schedule, a_verb, LEN_RECD);
-   strltrim (my.t_schedule, ySTR_SINGLE, LEN_RECD);
+   ystrlcpy  (my.t_schedule, a_verb, LEN_RECD);
+   ystrltrim (my.t_schedule, ySTR_SINGLE, LEN_RECD);
    DEBUG_INPT   yLOG_info    ("schedule"  , my.t_schedule);
    --rce;  switch (c) {
    case  2 : rc = yPARSE_scanf ("line", "F"     , my.t_command);  break;
@@ -400,20 +400,20 @@ LINE__revised           (int n, uchar *a_verb, int c)
    }
    /*---(shortened specialty lines)------*/
    if (strcmp (my.t_tracker, "") == 0 && my.t_command [0] == '.') {
-      strlcpy (my.t_tracker, my.t_command, LEN_TITLE);
+      ystrlcpy (my.t_tracker, my.t_command, LEN_TITLE);
       strcpy  (my.t_command, "");
    }
    /*---(check special)------------------*/
    DEBUG_INPT   yLOG_info    ("tracker"   , my.t_tracker);
    if (my.t_tracker [0] == '.') {
-      strlcpy (my.t_duration, ""             , LEN_TERSE);
-      strlcpy (my.t_flags   , ""             , LEN_LABEL);
-      strlcpy (my.t_command , ""             , LEN_FULL);
+      ystrlcpy (my.t_duration, ""             , LEN_TERSE);
+      ystrlcpy (my.t_flags   , ""             , LEN_LABEL);
+      ystrlcpy (my.t_command , ""             , LEN_FULL);
    }
    /*---(default in minutes)-------------*/
    l = strlen (my.t_duration);
    if (my.t_duration > 1) {
-      if (strchr (YSTR_NUMBER, my.t_duration [l - 1]) != NULL)  strlcat (my.t_duration, "m", LEN_TERSE);
+      if (strchr (YSTR_NUMBER, my.t_duration [l - 1]) != NULL)  ystrlcat (my.t_duration, "m", LEN_TERSE);
    }
    /*---(set to ready)-------------------*/
    LINE__flagfix ();
@@ -497,9 +497,9 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
    /*> DEBUG_INPT   yLOG_value   ("strlen"    , strlen (a_tracker));                  <*/
    sprintf (t, "line %d", n);
-   if (a_tracker == NULL)                  strlcpy (a_new->tracker, t, LEN_TITLE);
-   else if (a_tracker [0] == '\0')         strlcpy (a_new->tracker, t, LEN_TITLE);
-   else                                    strlcpy (a_new->tracker, a_tracker, LEN_TITLE);
+   if (a_tracker == NULL)                  ystrlcpy (a_new->tracker, t, LEN_TITLE);
+   else if (a_tracker [0] == '£')         ystrlcpy (a_new->tracker, t, LEN_TITLE);
+   else                                    ystrlcpy (a_new->tracker, a_tracker, LEN_TITLE);
    DEBUG_INPT   yLOG_info    ("tracker"   , a_new->tracker);
    /*---(specialty)-------------------*/
    --rce;  if (a_new->tracker [0] == '.') {
@@ -576,7 +576,7 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    case '@' : yURG_err ('w', "demanded SYMLINK executable with @-worm (security risk)"); break;
    }
    yURG_msg ('-', "executable is found, real, absolute, and runable");
-   strlcpy (a_new->command, a_command, LEN_FULL);
+   ystrlcpy (a_new->command, a_command, LEN_FULL);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -856,7 +856,7 @@ line__unit              (char *a_question, int a_num)
    char        x_ready     =  '-';
    int         x_fields    =    0;
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "LINE             : question not understood", LEN_HUND);
+   ystrlcpy  (unit_answer, "LINE             : question not understood", LEN_HUND);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "tracker" )        == 0) {
       snprintf (unit_answer, LEN_HUND, "LINE tracker     : %2då%.37sæ", strlen (my.t_tracker), my.t_tracker);
@@ -939,8 +939,8 @@ line__unit              (char *a_question, int a_num)
     *> case KHRONOS_FAIL :  x_off = 28;    break;                                     <* 
     *> case KHRONOS_WARN :  x_off = 30;    break;                                     <* 
     *> case KHRONOS_PASS :  x_off = 32;    break;                                     <*/
-         if (x_line->trks != NULL)   strlcpy (x_stats, x_line->trks->stats + 3, 31);
-         if (x_line->trks != NULL)   strlcpy (x_durs , x_line->trks->durs  + 3,  4);
+         if (x_line->trks != NULL)   ystrlcpy (x_stats, x_line->trks->stats + 3, 31);
+         if (x_line->trks != NULL)   ystrlcpy (x_durs , x_line->trks->durs  + 3,  4);
          /*> strcat  (x, line__unit_str ( 1, x_line->c_runs , "r "));                 <* 
           *> strcat  (x, line__unit_str ( 1, x_line->c_skip , "s "));                 <* 
           *> strcat  (x, line__unit_str ( 1, x_line->c_badd , "b "));                 <* 
