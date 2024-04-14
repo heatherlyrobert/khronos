@@ -187,8 +187,7 @@ PROG__init              (int a_argc, char *a_argv[])
    if (my.run_as == IAM_KHRONOS)  PROG__files_normal ();
    else                           PROG__files_unit   ();
    rc = yDLST_init ();
-   rc = yPARSE_init  ('-', NULL, '-');
-   rc = yPARSE_delimiters  ("§");
+   rc = yPARSE_config (YPARSE_MANUAL, NULL, YPARSE_ONETIME, YPARSE_FIELD, YPARSE_FILL);
    /*---(call whoami)--------------------*/
    rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), &my.m_root, &my.m_who, 'n');
    DEBUG_PROG   yLOG_value   ("whoami"    , rc);

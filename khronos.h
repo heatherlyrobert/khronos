@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1b"
-#define     P_VERTXT    "fixes due to changed str functions to ¶ystr¶ in ySTR"
+#define     P_VERNUM    "2.1c"
+#define     P_VERTXT    "minor catchup with library changes"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
