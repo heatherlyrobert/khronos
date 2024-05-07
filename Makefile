@@ -8,7 +8,7 @@ NAME_BASE  = khronos
 # additional standard and outside libraries
 LIB_STD    = 
 # all heatherly libraries used, debug versions whenever available
-LIB_MINE   = -lyDLST_debug -lyPARSE_debug -lySTR_debug -lyJOBS_debug -lyEXEC_debug -lySCHED_debug -lyREGEX_debug
+LIB_MINE   = -lyENV_debug -lyDLST_debug -lyPARSE_debug -lySTR_debug -lyJOBS_debug -lyEXEC_debug -lySCHED_debug -lyREGEX_debug
 # directory for production code, no trailing slash
 INST_DIR   = /usr/sbin
 

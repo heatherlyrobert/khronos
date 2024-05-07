@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1c"
-#define     P_VERTXT    "minor catchup with library changes"
+#define     P_VERNUM    "2.1d"
+#define     P_VERTXT    "update for yEXEC_whoami change and yENV_lines (move from yURG)"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -625,6 +625,7 @@
 /*---(always)---------------*/
 #include    <yLOG.h>              /* heatherly logger                         */
 #include    <yURG.h>              /* heatherly debugging framework            */
+#include    <yENV.h>              /* heatherly environment handling           */
 /*---(common)---------------*/
 #include    <ySTR.h>              /* heatherly safe string library            */
 #include    <yPARSE.h>            /* heatherly file parsing                   */

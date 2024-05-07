@@ -2269,7 +2269,7 @@ TRKS__unit              (char *a_question, int a_num)
    ystrlcpy  (unit_answer, "RPTG             : question not understood", LEN_HUND);
    /*---(simple requests)----------------*/
    if      (strcmp (a_question, "file"          )  == 0) {
-      x_lines = yURG_peek_count (s_name);
+      x_lines = yENV_lines (s_name);
       if (x_lines < 0)    x_lines = 0;
       else                x_exist = 'y';
       if (f_trks == NULL)  snprintf (unit_answer, LEN_HUND, "TRKS file        : %c  %3d  null            %2då%sæ", x_exist, x_lines, strlen (s_name), s_name);

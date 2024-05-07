@@ -147,7 +147,7 @@ char
 RPTG_track__guidelines  (FILE *f)
 {
    int         c           =    0;
-   c = yURG_peek_count (my.n_activity);
+   c = yENV_lines (my.n_activity);
    if (c > 0)  return 0;
    fprintf (f, "## %s\n", P_ONELINE);
    fprintf (f, "## detailed launch tracker\n");

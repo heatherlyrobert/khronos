@@ -189,7 +189,7 @@ PROG__init              (int a_argc, char *a_argv[])
    rc = yDLST_init ();
    rc = yPARSE_config (YPARSE_MANUAL, NULL, YPARSE_ONETIME, YPARSE_FIELD, YPARSE_FILL);
    /*---(call whoami)--------------------*/
-   rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), &my.m_root, &my.m_who, 'n');
+   rc = yEXEC_whoami (&(my.m_pid), &(my.m_ppid), &(my.m_uid), NULL, &my.m_root, &my.m_who, 'n', NULL, NULL, NULL);
    DEBUG_PROG   yLOG_value   ("whoami"    , rc);
    --rce;  if (rc < 0) {
       DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
