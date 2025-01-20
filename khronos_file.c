@@ -503,7 +503,7 @@ FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    }
    my.f_uid  = a_fuid;
    /*---(create file)--------------------*/
-   yURG_msg ('>', "create file entity and add to yDLST...");
+   yURG_msg ('>', "verify/load the contents of a file (pull)...");
    yURG_msg ('-', "file is å%sæ in %c", a_fname, a_loc);
    yURG_msg ('-', "owner is å%sæ as %d", a_fuser, a_fuid);
    rc = FILE_create (a_fname, a_fuser, a_fuid);
@@ -524,8 +524,10 @@ FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       return rce;
    }
    /*---(read all lines)-----------------*/
+   yURG_msg ('-', "re-configure yPARSE");
+   rc = yPARSE_config (YPARSE_MANUAL, NULL, YPARSE_ONETIME, YPARSE_FIELD, YPARSE_FILL);
+   /*---(read all lines)-----------------*/
    yURG_msg ('-', "calling auto-reader in yPARSE");
-   yURG_msg (' ', "");
    DEBUG_INPT  yLOG_info    ("f_full"     , a_full);
    rc = yPARSE_autoread (a_full, NULL, LINE_handler);
    DEBUG_PROG  yLOG_value   ("read"      , rc);
@@ -552,8 +554,8 @@ FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       return rce;
    }
    /*---(show success)-------------------*/
-   yURG_msg ('-', "SUCCESS all lines read, reviewed %d, accepted %d", x_file->lines, c);
-   yURG_msg (' ', "");
+   yURG_msg ('>', "summary of incomming data...");
+   yURG_msg ('-', "success, all read correctly, reviewed %d , accepted %d", x_file->lines, c);
    ystrlcpy (x_file->note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);

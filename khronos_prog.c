@@ -105,7 +105,7 @@ PROG__header            (void)
 }
 
 char
-PROG_urgents            (int a_argc, char *a_argv [])
+PROG_debugging          (int a_argc, char *a_argv [])
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -348,6 +348,56 @@ PROG_startup            (int a_argc, char *a_argv [])
    /*---(complete)-----------------------*/
    DEBUG_PROG  yLOG_exit  (__FUNCTION__);
    yURG_stage_check (YURG_MID);
+   return rc;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                        program shutdown                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___DRIVER__________________o (void) {;}
+
+int        /* PURPOSE : main driver ------------------------------------------*/
+PROG_main               (int a_argc, char *a_argv [])
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   long        x_save      =    0;                       /* last hour ran            */
+   long        x_hour      =    0;                       /* curr hour                */
+   int         x_min       =    0;                       /* curr minute              */
+   /*---(header)-------------------------*/
+   DEBUG_PROG  yLOG_enter   (__FUNCTION__);
+   /*---(pre_startup)--------------------*/
+   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv);
+   DEBUG_PROG  yLOG_value   ("debugging" , rc);
+   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv);
+   DEBUG_PROG  yLOG_value   ("startup"   , rc);
+   /*---(defense)------------------------*/
+   --rce;  if (rc <  0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      PROG_shutdown ();
+      return rce;
+   }
+   /*---(main)---------------------------*/
+   rc = yJOBS_driver (P_ONELINE, khronos_yjobs);
+   DEBUG_PROG   yLOG_value    ("driver"    , rc);
+   --rce;  if (rc <  0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      PROG_shutdown ();
+      return rce;
+   }
+   /*---(run)----------------------------*/
+   IF_RUNNING {
+      IF_NORMAL  yURG_msg ('>', "requested an actual run in NORMAL mode...");
+      IF_STRICT  yURG_msg ('>', "requested an actual run in STRICT mode...");
+      rc = BASE_execute ();
+      DEBUG_PROG   yLOG_value    ("execute"   , rc);
+   }
+   /*---(wrapup)-------------------------*/
+   rc = PROG_shutdown  ();
+   /*---(complete)-----------------------*/
    return rc;
 }
 

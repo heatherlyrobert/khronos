@@ -103,7 +103,7 @@ prog__unit_quiet   (void)
    char        rc          =    0;
    int         x_argc      =    1;
    char       *x_argv [1]  = { "khronos" };
-   rc = PROG_urgents   (x_argc, x_argv);
+   rc = PROG_debugging (x_argc, x_argv);
    PROG__files_unit ();
    rc = PROG_startup   (x_argc, x_argv);
    return rc;
@@ -115,7 +115,7 @@ prog__unit_loud    (void)
    char        rc          =    0;
    int         x_argc      =    7;
    char       *x_argv [7]  = { "khronos_unit", "@@kitchen", "@@yjobs", "@@yparse", "@@ydlst", "@@ysched", "@@yexec"  };
-   rc = PROG_urgents   (x_argc, x_argv);
+   rc = PROG_debugging (x_argc, x_argv);
    PROG__files_unit ();
    rc = PROG_startup   (x_argc, x_argv);
    return rc;

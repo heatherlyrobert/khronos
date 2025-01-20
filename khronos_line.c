@@ -497,9 +497,9 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
    /*> DEBUG_INPT   yLOG_value   ("strlen"    , strlen (a_tracker));                  <*/
    sprintf (t, "line %d", n);
-   if (a_tracker == NULL)                  ystrlcpy (a_new->tracker, t, LEN_TITLE);
-   else if (a_tracker [0] == '£')         ystrlcpy (a_new->tracker, t, LEN_TITLE);
-   else                                    ystrlcpy (a_new->tracker, a_tracker, LEN_TITLE);
+   if      (a_tracker == NULL)            ystrlcpy (a_new->tracker, t, LEN_TITLE);
+   else if (a_tracker [0] == '\0')        ystrlcpy (a_new->tracker, t, LEN_TITLE);
+   else                                   ystrlcpy (a_new->tracker, a_tracker, LEN_TITLE);
    DEBUG_INPT   yLOG_info    ("tracker"   , a_new->tracker);
    /*---(specialty)-------------------*/
    --rce;  if (a_new->tracker [0] == '.') {
@@ -717,8 +717,7 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       return rce;
    }
    /*---(final message)------------------*/
-   yURG_msg ('-', "SUCCESS, created a new line from the crontab entry");
-   yURG_msg (' ', "");
+   yURG_msg ('-', "success, created a new line from the crontab entry");
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -742,7 +741,9 @@ LINE__purge             (char a_scope, char a_type)
    tLINE      *x_line      = NULL;
    int         n           =    0;
    /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT   yLOG_complex ("args"      , "a_scope %c, a_type %c", a_scope, a_type);
+   DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (a_scope));
    /*---(find retired)-------------------*/
    rc = yDLST_list_by_name ("RETIRED", NULL, &x_retired);
    DEBUG_INPT   yLOG_point   ("x_retired" , x_retired);
@@ -789,6 +790,7 @@ LINE__purge             (char a_scope, char a_type)
       /*---(destroy)---------------------*/
       else {
          DEBUG_INPT   yLOG_note    ("not running, destroy");
+         --(x_file->lines);
          rc = yDLST_line_destroy (x_line->tracker);
          DEBUG_INPT   yLOG_value   ("destroy"   , rc);
          if (rc < 0) {
@@ -797,9 +799,11 @@ LINE__purge             (char a_scope, char a_type)
          }
       }
       /*---(next)------------------------*/
+      DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (a_scope));
       rc = yDLST_line_by_index  (a_scope, n, NULL, &x_line);
       /*---(done)------------------------*/
    }
+   DEBUG_INPT   yLOG_value   ("lines"     , yDLST_line_count (a_scope));
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return n;
