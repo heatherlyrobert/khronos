@@ -63,7 +63,7 @@ SCRP          (PROG) verify switching run-as and directory locations           
      exec     ... root home                        yENV_exists                 "/tmp/root"                                                                                           i_lesser    0                                                                                                    
 
    COND       verify startup as unit testing ukhronos                            - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((02.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     ... call startup                     PROG_startup                1             , x_argA                                                                                i_equal     0                                                                                                    
+     exec     ... call startup                     PROG_startup                1             , x_argA            , 'y'                                                               i_equal     0                                                                                                    
 
    DITTO (2)  verify unit testing file setup                                     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
@@ -78,14 +78,14 @@ SCRP          (PROG) verify switching run-as and directory locations           
    DITTO (0)  check unit testing directories missing                             - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       verify startup as normal khronos                                   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((02.010))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     ... call startup                     PROG_startup                1             , x_argB                                                                                i_equal     0                                                                                                    
+     exec     ... call startup                     PROG_startup                1             , x_argB            , 'y'                                                               i_equal     0                                                                                                    
 
    DITTO (3)  verify normal file setup                                           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    DITTO (0)  check unit testing directories missing                             - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
    COND       put back into unit testing                                         - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((02.012))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-     exec     ... call startup                     PROG_startup                1             , x_argA                                                                                i_equal     0                                                                                                    
+     exec     ... call startup                     PROG_startup                1             , x_argA            , 'y'                                                               i_equal     0                                                                                                    
 
    DITTO (2)  verify unit testing file setup                                     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -   ((03.006))  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 

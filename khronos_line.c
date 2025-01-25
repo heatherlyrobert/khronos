@@ -330,7 +330,7 @@ LINE__original          (int n, uchar *a_verb)
    int         x_pos       =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_msg ('-', "found an original-style record");
+   yURG_msg ('-', "found an original, posix-style record");
    /*---(get record)---------------------*/
    DEBUG_INPT   yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL) {
@@ -359,8 +359,8 @@ LINE__original          (int n, uchar *a_verb)
    LINE__flagfix ();
    my.t_recdno = n;
    my.t_ready  = 'y';
-   yURG_msg ('-', "schedule  %s", my.t_schedule);
-   yURG_msg ('-', "command   %s", my.t_command);
+   yURG_msg ('-', "schedule : %2då%sæ", strlen (my.t_schedule), my.t_schedule);
+   yURG_msg ('-', "command  : %2då%sæ", strlen (my.t_command ), my.t_command);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -375,7 +375,7 @@ LINE__revised           (int n, uchar *a_verb, int c)
    char        l           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_msg ('-', "found a revised-style record");
+   yURG_msg ('-', "found a revised-style record, with %d fields", c);
    /*---(get record)---------------------*/
    DEBUG_INPT   yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL) {
@@ -406,9 +406,12 @@ LINE__revised           (int n, uchar *a_verb, int c)
    /*---(check special)------------------*/
    DEBUG_INPT   yLOG_info    ("tracker"   , my.t_tracker);
    if (my.t_tracker [0] == '.') {
+      yURG_msg ('-', "CONTROL record, non-executable entry");
       ystrlcpy (my.t_duration, ""             , LEN_TERSE);
       ystrlcpy (my.t_flags   , ""             , LEN_LABEL);
       ystrlcpy (my.t_command , ""             , LEN_FULL);
+   } else {
+      yURG_msg ('-', "EXECUTABLE record, normal entry");
    }
    /*---(default in minutes)-------------*/
    l = strlen (my.t_duration);
@@ -419,11 +422,11 @@ LINE__revised           (int n, uchar *a_verb, int c)
    LINE__flagfix ();
    my.t_recdno = n;
    my.t_ready  = 'y';
-   yURG_msg ('-', "schedule  %s", my.t_schedule);
-   yURG_msg ('-', "tracker   %s", my.t_tracker);
-   yURG_msg ('-', "duration  %s", my.t_duration);
-   yURG_msg ('-', "flags     %s", my.t_flags);
-   yURG_msg ('-', "command   %s", my.t_command);
+   yURG_msg ('-', "schedule : %2då%sæ", strlen (my.t_schedule), my.t_schedule);
+   yURG_msg ('-', "tracker  : %2då%sæ", strlen (my.t_tracker ), my.t_tracker);
+   yURG_msg ('-', "duration : %2då%sæ", strlen (my.t_duration), my.t_duration);
+   yURG_msg ('-', "flags    : %2då%sæ", strlen (my.t_flags   ), my.t_flags);
+   yURG_msg ('-', "command  : %2då%sæ", strlen (my.t_command ), my.t_command);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -476,7 +479,7 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    rc = ySCHED_create (&(a_new->sched), a_schedule);
    DEBUG_INPT   yLOG_value   ("sched_rc"  , rc);
    ySCHED_feedback (&x_line, x_sect, x_focus, x_issue, &x_pos, &x_len, x_fancy);
-   yURG_msg ('-', "fancy     %s", x_fancy);
+   yURG_msg ('-', "fancy    : --å%sæ", x_fancy);
    --rce;  if (rc < 0) {
       yURG_err ('f', "%d, %s, %s, %s, %d, %d", x_line, x_sect, x_focus, x_issue, x_pos, x_len);
       yURG_msg (' ', "");
@@ -486,13 +489,13 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    DEBUG_INPT   yLOG_info    ("MY RAW"    , ySCHED_raw (a_new->sched));
    /*---(feedback)--------------------*/
    rc = ySCHED_details (my.s_min, my.s_hrs, my.s_dys, my.s_mos, my.s_dow, my.s_wks, my.s_yrs);
-   yURG_msg ('-', "min       %s", my.s_min);
-   yURG_msg ('-', "hrs       %s", my.s_hrs);
-   yURG_msg ('-', "dys       %s", my.s_dys);
-   yURG_msg ('-', "mos       %s", my.s_mos);
-   yURG_msg ('-', "dow       %s", my.s_dow);
-   yURG_msg ('-', "wks       %s", my.s_wks);
-   yURG_msg ('-', "yrs       %s", my.s_yrs);
+   yURG_msg ('-', "min      : %2då%sæ", strlen (my.s_min), my.s_min);
+   yURG_msg ('-', "hrs      : %2då%sæ", strlen (my.s_hrs), my.s_hrs);
+   yURG_msg ('-', "dys      : %2då%sæ", strlen (my.s_dys), my.s_dys);
+   yURG_msg ('-', "mos      : %2då%sæ", strlen (my.s_mos), my.s_mos);
+   yURG_msg ('-', "dow      : %2då%sæ", strlen (my.s_dow), my.s_dow);
+   yURG_msg ('-', "wks      : %2då%sæ", strlen (my.s_wks), my.s_wks);
+   yURG_msg ('-', "yrs      : %2då%sæ", strlen (my.s_yrs), my.s_yrs);
    /*---(tracker)---------------------*/
    DEBUG_INPT   yLOG_info    ("tracker"   , a_tracker);
    /*> DEBUG_INPT   yLOG_value   ("strlen"    , strlen (a_tracker));                  <*/
@@ -545,7 +548,9 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
          DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      yURG_msg ('-', "seconds   %d", a_new->est);
+      yURG_msg ('-', "dur (sec): %d", a_new->est);
+   } else {
+      yURG_msg ('-', "dur (sec): zero");
    }
    /*---(flags)-----------------------*/
    --rce;  if (a_flags != NULL) {
@@ -557,11 +562,13 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
             &(a_new->throttle), &(a_new->cpu),
             &(a_new->disk)    , &(a_new->net));
       yEXEC_flags_feedback (x_terse, x_fancy);
-      yURG_msg ('-', "fancy     %s", x_terse);
-      yURG_msg ('-', "details   %s", x_fancy);
+      yURG_msg ('-', "fancy    : --å%sæ", x_terse);
+      yURG_msg ('-', "details  : --å%sæ", x_fancy);
       DEBUG_INPT   yLOG_value   ("est"       , a_new->est);
       DEBUG_INPT   yLOG_value   ("est_min"   , a_new->est_min);
       DEBUG_INPT   yLOG_value   ("est_max"   , a_new->est_max);
+   } else {
+      yURG_msg ('-', "flags    : defaulted");
    }
    /*---(command)---------------------*/
    DEBUG_INPT   yLOG_info    ("command"   , a_command);

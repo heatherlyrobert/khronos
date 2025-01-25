@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1e"
-#define     P_VERTXT    "take guts of main to PROG_main to help fuller unit testing"
+#define     P_VERNUM    "2.1f"
+#define     P_VERTXT    "unit tested yJOBS incomming for missing and normal"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -1015,22 +1015,23 @@ char        wait_minute        (void);
 /*---(program)--------------*/
 char*       PROG_version            (void);
 char        PROG_vershow            (void);
+char        PROG_reset              (void);
 /*---(preinit)--------------*/
 char        PROG__header            (void);
-char        PROG_debugging          (int a_argc, char *a_argv []);
+char        PROG_debugging          (int a_argc, char *a_argv [], char a_unit);
 /*---(startup)--------------*/
 char        PROG__files_normal      (void);
 char        PROG__files_unit        (void);
-char        PROG__init              (int a_argc, char *a_argv[]);
-char        PROG__args              (int a_argc, char *a_argv[]);
+char        PROG__init              (int a_argc, char *a_argv [], char a_unit);
+char        PROG__args              (int a_argc, char *a_argv [], char a_unit);
 char        PROG__begin             (void);
-char        PROG_startup            (int a_argc, char *a_argv[]);
+char        PROG_startup            (int a_argc, char *a_argv [], char a_unit);
 /*---(driver)---------------*/
-int         PROG_main               (int a_argc, char *a_argv []);
+int         PROG_main               (int a_argc, char *a_argv [], char a_unit);
 /*---(shutdown)-------------*/
 char        PROG_term               (void);
-char        PROG__end               (void);
-char        PROG_shutdown           (void);
+char        PROG__end               (char a_unit);
+char        PROG_shutdown           (char a_unit);
 /*---(done)-----------------*/
 
 /*---(unit testing)---------*/

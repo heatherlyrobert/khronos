@@ -504,8 +504,9 @@ FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    my.f_uid  = a_fuid;
    /*---(create file)--------------------*/
    yURG_msg ('>', "verify/load the contents of a file (pull)...");
-   yURG_msg ('-', "file is å%sæ in %c", a_fname, a_loc);
-   yURG_msg ('-', "owner is å%sæ as %d", a_fuser, a_fuid);
+   yURG_msg ('-', "requested  %2då%sæ", strlen (a_full), a_full);
+   yURG_msg ('-', "short name %2då%sæ", strlen (a_fname), a_fname);
+   yURG_msg ('-', "ownership  %2då%sæ, uid %d", strlen (a_fuser), a_fuser, a_fuid);
    rc = FILE_create (a_fname, a_fuser, a_fuid);
    DEBUG_INPT   yLOG_value   ("file"      , rc);
    --rce;  if (rc < 0) {
@@ -513,9 +514,8 @@ FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   yURG_msg ('-', "created a list to house the lines");
+   yURG_msg ('-', "created new list to house execution lines");
    /*---(get current file)---------------*/
-   yURG_msg ('-', "find the new/created yDLST entry");
    rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
    DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
    --rce;  if (x_file == NULL) {

@@ -26,7 +26,7 @@ prog__unit              (char *a_question)
    if      (strcmp (a_question, "mode"          )  == 0) {
       ystrlcpy (s, yJOBS_iam ()  , LEN_HUND);
       ystrlcpy (t, yJOBS_mode () , LEN_HUND);
-      snprintf (unit_answer, LEN_HUND, "PROG mode        : (%c) %-18.18s, (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
+      snprintf (unit_answer, LEN_RECD, "PROG mode        : iam (%c) %-18.18s, run (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
    }
    else if (strcmp (a_question, "action"        )  == 0) {
       snprintf (unit_answer, LEN_HUND, "PROG action      : %c  %c  %2då%sæ", my.run_as, my.run_mode, strlen (my.run_file), my.run_file);
@@ -60,7 +60,7 @@ PROG__unit_prepare      (void)
    char        x_home      [LEN_PATH];
    char        x_dir       [LEN_RECD]  = "";
    PROG__files_unit ();
-   yJOBS_mkdirs ();
+   /*> yJOBS_mkdirs ();                                                               <*/
    /*---(directories)--------------------*/
    /*> getcwd (x_home, LEN_PATH);                                                     <* 
     *> chdir  ("/tmp");                                                               <* 
@@ -87,7 +87,7 @@ PROG__unit_cleanup      (void)
    char        x_cmd       [LEN_RECD];
    char        x_home      [LEN_PATH];
    /*---(directories)--------------------*/
-   yJOBS_rmdirs ();
+   /*> yJOBS_rmdirs ();                                                               <*/
    /*> getcwd (x_home, LEN_PATH);                                                     <* 
     *> chdir  ("/tmp");                                                               <* 
     *> yURG_rmdir (DIR_UNIT);                                                         <* 
@@ -103,9 +103,9 @@ prog__unit_quiet   (void)
    char        rc          =    0;
    int         x_argc      =    1;
    char       *x_argv [1]  = { "khronos" };
-   rc = PROG_debugging (x_argc, x_argv);
+   rc = PROG_debugging (x_argc, x_argv, 'y');
    PROG__files_unit ();
-   rc = PROG_startup   (x_argc, x_argv);
+   rc = PROG_startup   (x_argc, x_argv, 'y');
    return rc;
 }
 
@@ -115,16 +115,16 @@ prog__unit_loud    (void)
    char        rc          =    0;
    int         x_argc      =    7;
    char       *x_argv [7]  = { "khronos_unit", "@@kitchen", "@@yjobs", "@@yparse", "@@ydlst", "@@ysched", "@@yexec"  };
-   rc = PROG_debugging (x_argc, x_argv);
+   rc = PROG_debugging (x_argc, x_argv, 'y');
    PROG__files_unit ();
-   rc = PROG_startup   (x_argc, x_argv);
+   rc = PROG_startup   (x_argc, x_argv, 'y');
    return rc;
 }
 
 char       /*----: set up program urgents/debugging --------------------------*/
 prog__unit_end     (void)
 {
-   PROG_shutdown  ();
+   PROG_shutdown  ('y');
    return 0;
 }
 

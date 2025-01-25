@@ -69,6 +69,8 @@ PROG__files_unit        (void)
    return 0;
 }
 
+char PROG_reset              (void) { return yJOBS_reset (&(my.run_as), &(my.run_mode), my.run_file); }
+
 
 
 /*====================------------------------------------====================*/
@@ -105,7 +107,7 @@ PROG__header            (void)
 }
 
 char
-PROG_debugging          (int a_argc, char *a_argv [])
+PROG_debugging          (int a_argc, char *a_argv [], char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -145,7 +147,7 @@ PROG_debugging          (int a_argc, char *a_argv [])
 static void      o___STARTUP_________________o (void) {;}
 
 char       /*----: very first setup ------------------s-----------------------*/
-PROG__init              (int a_argc, char *a_argv[])
+PROG__init              (int a_argc, char *a_argv [], char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -229,7 +231,7 @@ PROG__init              (int a_argc, char *a_argv[])
 }
 
 char       /* PURPOSE : process the command line arguments -------------------*/
-PROG__args              (int a_argc, char *a_argv[])
+PROG__args              (int a_argc, char *a_argv [], char a_unit)
 {
    /*---(locals)-------------------------*/
    char        rce         =  -10;
@@ -316,7 +318,7 @@ PROG__begin             (void)
 }
 
 char
-PROG_startup            (int a_argc, char *a_argv [])
+PROG_startup            (int a_argc, char *a_argv [], char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -325,14 +327,14 @@ PROG_startup            (int a_argc, char *a_argv [])
    yURG_stage_check (YURG_BEG);
    DEBUG_PROG  yLOG_enter   (__FUNCTION__);
    /*---(initialize)---------------------*/
-   rc = PROG__init   (a_argc, a_argv);
+   rc = PROG__init   (a_argc, a_argv, a_unit);
    DEBUG_PROG   yLOG_value    ("init"      , rc);
    --rce;  if (rc < 0) {
       DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
       return rce;
    }
    /*---(arguments)----------------------*/
-   rc = PROG__args   (a_argc, a_argv);
+   rc = PROG__args   (a_argc, a_argv, a_unit);
    DEBUG_PROG   yLOG_value    ("args"      , rc);
    --rce;  if (rc < 0) {
       DEBUG_PROG   yLOG_exitr    (__FUNCTION__, rce);
@@ -359,7 +361,7 @@ PROG_startup            (int a_argc, char *a_argv [])
 static void      o___DRIVER__________________o (void) {;}
 
 int        /* PURPOSE : main driver ------------------------------------------*/
-PROG_main               (int a_argc, char *a_argv [])
+PROG_main               (int a_argc, char *a_argv [], char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -370,14 +372,14 @@ PROG_main               (int a_argc, char *a_argv [])
    /*---(header)-------------------------*/
    DEBUG_PROG  yLOG_enter   (__FUNCTION__);
    /*---(pre_startup)--------------------*/
-   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv, a_unit);
    DEBUG_PROG  yLOG_value   ("debugging" , rc);
-   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv, a_unit);
    DEBUG_PROG  yLOG_value   ("startup"   , rc);
    /*---(defense)------------------------*/
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-      PROG_shutdown ();
+      PROG_shutdown (a_unit);
       return rce;
    }
    /*---(main)---------------------------*/
@@ -385,7 +387,7 @@ PROG_main               (int a_argc, char *a_argv [])
    DEBUG_PROG   yLOG_value    ("driver"    , rc);
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-      PROG_shutdown ();
+      PROG_shutdown (a_unit);
       return rce;
    }
    /*---(run)----------------------------*/
@@ -396,7 +398,7 @@ PROG_main               (int a_argc, char *a_argv [])
       DEBUG_PROG   yLOG_value    ("execute"   , rc);
    }
    /*---(wrapup)-------------------------*/
-   rc = PROG_shutdown  ();
+   rc = PROG_shutdown  (a_unit);
    /*---(complete)-----------------------*/
    return rc;
 }
@@ -422,28 +424,28 @@ PROG_term               (void)
 }
 
 char       /*----: drive the program closure activities ----------------------*/
-PROG__end               (void)
+PROG__end               (char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
    /*---(shutdown)--------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
-   yDLST_wrap ();
-   PROG__unit_cleanup ();
+   if (a_unit != 'y')  yDLST_wrap ();
+   /*> PROG__unit_cleanup ();                                                         <*/
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char             /* [------] drive the program closure activities ------------*/
-PROG_shutdown           (void)
+PROG_shutdown           (char a_unit)
 {
    /*---(stage-check)--------------------*/
    yURG_stage_check (YURG_END);
    /*---(header)-------------------------*/
    DEBUG_PROG   yLOG_enter    (__FUNCTION__);
-   PROG__end ();
+   PROG__end (a_unit);
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit     (__FUNCTION__);
    DEBUG_PROG   yLOGS_end    ();

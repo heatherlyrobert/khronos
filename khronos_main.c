@@ -8,7 +8,7 @@
 /*====================------------------------------------====================*/
 static void      o___MAIN____________________o (void) {;}
 
-int  main  (int a_argc, char *a_argv[])  { return PROG_main (a_argc, a_argv); }
+int  main  (int a_argc, char *a_argv[])  { return PROG_main (a_argc, a_argv, '-'); }
 
 
 
