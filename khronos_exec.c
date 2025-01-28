@@ -344,8 +344,8 @@ EXEC__focus_file        (tFILE *a_file)
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(header)----------------------*/
    DEBUG_INPT   yLOG_point   ("x_file"    , a_file);
-   DEBUG_INPT   yLOG_info    ("->title"   , a_file->title);
-   if (strcmp (a_file->title, "RETIRED") == 0) {
+   DEBUG_INPT   yLOG_info    ("->title"   , a_file->f_title);
+   if (strcmp (a_file->f_title, "RETIRED") == 0) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return 0;
    }
@@ -508,10 +508,10 @@ EXEC_check              (void)
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
+      DEBUG_INPT   yLOG_info    ("->title"   , x_file->f_title);
       /*---(check)-----------------------*/
       DEBUG_INPT   yLOG_info    ("tracker"   , x_line->tracker);
-      snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
+      snprintf (t, 200, "%-16.16s,%3d", x_file->f_title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
       rc = yEXEC_verify (t, x_line->rpid, &x_return, &x_csec);
       DEBUG_INPT   yLOG_value   ("check"     , rc);
@@ -561,8 +561,8 @@ EXEC__prep_files        (void)
    /*---(walk files)---------------------*/
    rc = yDLST_list_by_cursor (YDLST_HEAD, NULL, &x_file);
    while (x_file != NULL && rc >= 0) {
-      DEBUG_INPT   yLOG_info    ("title"     , x_file->title);
-      x_file->valid = '·';
+      DEBUG_INPT   yLOG_info    ("title"     , x_file->f_title);
+      x_file->f_valid = '·';
       rc = yDLST_list_by_cursor (YDLST_NEXT, NULL, &x_file);
    }
    /*---(complete)-----------------------*/
@@ -606,7 +606,7 @@ EXEC_dispatch           (int a_min)
          if (rc == 0) {
             if (strcmp (x_line->tracker, ".only"    ) == 0) {
                DEBUG_INPT  yLOG_note    ("validity record, .only, turn off");
-               x_file->valid = '·';
+               x_file->f_valid = '·';
             } else {
                DEBUG_LOOP   yLOG_note  ("not scheduled on this minute");
             }
@@ -623,19 +623,19 @@ EXEC_dispatch           (int a_min)
          DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      DEBUG_INPT   yLOG_info    ("->title"   , x_file->title);
+      DEBUG_INPT   yLOG_info    ("->title"   , x_file->f_title);
       /*---(check specialty)-------------*/
       if (x_line->tracker [0] == '.') {
          DEBUG_INPT  yLOG_info    ("control"   ,  x_line->tracker);
          if        (strcmp (x_line->tracker, ".valid"   ) == 0) {
             DEBUG_INPT  yLOG_note    ("validity record, .valid, turn on/active");
-            x_file->valid = 'y';
+            x_file->f_valid = 'y';
          } else if (strcmp (x_line->tracker, ".retire"  ) == 0) {
             DEBUG_INPT  yLOG_note    ("validity record, .retire, turn off");
-            x_file->valid = '·';
+            x_file->f_valid = '·';
          } else if (strcmp (x_line->tracker, ".blackout") == 0) {
             DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
-            x_file->valid = '·';
+            x_file->f_valid = '·';
          } else if (strcmp (x_line->tracker, ".plan"    ) == 0) {
             DEBUG_INPT  yLOG_note    ("planning record, .plan, default and plan");
             TRKS_plan ();
@@ -651,7 +651,7 @@ EXEC_dispatch           (int a_min)
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
       }
-      if (x_file->valid != 'y') {
+      if (x_file->f_valid != 'y') {
          DEBUG_INPT  yLOG_note    ("file not currently valid/active");
          rc = yDLST_focus_by_cursor (YDLST_NEXT, NULL, &x_line);
          continue;
@@ -674,14 +674,14 @@ EXEC_dispatch           (int a_min)
       yDLST_active_on ();
       ++c;
       /*---(run)-------------------------*/
-      snprintf (t, 200, "%-16.16s,%3d", x_file->title, x_line->recdno);
+      snprintf (t, 200, "%-16.16s,%3d", x_file->f_title, x_line->recdno);
       DEBUG_INPT   yLOG_info    ("t"         , t);
       DEBUG_INPT   yLOG_char    ("->track", x_line->track);
       sprintf (x_cmd, "%s", x_line->command);
       /*> if (x_line->track != 'y')    sprintf (x_cmd, "%s", x_line->command);          <* 
        *> else                         sprintf (x_cmd, "scythe %s", x_line->command);   <*/
       DEBUG_INPT   yLOG_info    ("x_cmd"     , x_cmd);
-      x_rpid = yEXEC_full (t, x_file->user, x_cmd, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, NULL);
+      x_rpid = yEXEC_full (t, x_file->f_user, x_cmd, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, NULL);
       DEBUG_INPT   yLOG_value   ("x_rpid"    , x_rpid);
       if (x_rpid <  0) {
          DEBUG_INPT  yLOG_note    ("line/process could not launch");

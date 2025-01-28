@@ -44,7 +44,7 @@ BASE_init               (void)
       return rce;
    }
    /*---(update retired flag)------------*/
-   x_file->retired = 'y';
+   x_file->f_retired = 'y';
    /*---(clear usec)---------------------*/
    rc = yEXEC_heartlong (my.m_pid, my.now, 60, "daemonizing, initializing, and waiting for next min", my.n_heartbeat, my.heartbeat);
    DEBUG_LOOP   yLOG_value   ("yEXEC"     , rc);
@@ -76,10 +76,10 @@ BASE__purge             (char a_type)
    rc = yDLST_list_by_index (n, NULL, &x_file);
    while (rc >= 0 && x_file != NULL) {
       c  = yDLST_line_count (YDLST_LOCAL);
-      DEBUG_INPT   yLOG_complex ("current"   , "%3dn, %-20.20s, %2d#", n, x_file->title, c);
+      DEBUG_INPT   yLOG_complex ("current"   , "%3dn, %-20.20s, %2d#", n, x_file->f_title, c);
       if (c == 0) {
          DEBUG_INPT  yLOG_note    ("no contents, deleting");
-         rc = FILE_delete (x_file->title);
+         rc = FILE_delete (x_file->f_title);
       } else {
          DEBUG_INPT  yLOG_note    ("with contents, skipping");
          ++n;

@@ -39,6 +39,7 @@ khronos_yjobs           (cchar a_req, cchar *a_data)
       rc = BASE_purge ();
       break;
    }
+   DEBUG_PROG    yLOG_value   ("rc"        , rc);
    /*---(trouble)------------------------*/
    if (rc < 0) {
       DEBUG_PROG    yLOG_exitr   (__FUNCTION__, rc);
@@ -46,5 +47,5 @@ khronos_yjobs           (cchar a_req, cchar *a_data)
    }
    /*---(complete)-----------------------*/
    DEBUG_PROG    yLOG_exit    (__FUNCTION__);
-   return 0;
+   return rc;
 }

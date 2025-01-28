@@ -18,6 +18,7 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->recdno      =   -1;
    a_cur->sched       =  NULL;
    ystrlcpy (a_cur->command , "" , LEN_RECD);
+   a_cur->warning     =  '-';
    /*---(working)--------------*/
    a_cur->retire      =  '-';
    a_cur->rpid        =    0;
@@ -50,16 +51,6 @@ LINE__wipe              (tLINE *a_cur)
    a_cur->l_rc        =    0;
    /*---(counts)---------------*/
    a_cur->trks        =  NULL;
-   /*> a_cur->c_runs      =    0;                                                     <* 
-    *> a_cur->c_skip      =    0;                                                     <* 
-    *> a_cur->c_badd      =    0;                                                     <* 
-    *> a_cur->c_boom      =    0;                                                     <* 
-    *> a_cur->c_kill      =    0;                                                     <* 
-    *> a_cur->c_shut      =    0;                                                     <* 
-    *> a_cur->c_fail      =    0;                                                     <* 
-    *> a_cur->c_pass      =    0;                                                     <* 
-    *> a_cur->c_earl      =    0;                                                     <* 
-    *> a_cur->c_late      =    0;                                                     <*/
    /*---(complete)-------------*/
    return 1;
 }
@@ -73,6 +64,7 @@ LINE__memory            (tLINE *a_cur)
    ++n;  if (a_cur->recdno       >= 0)           g_print [n] = 'X';
    ++n;  if (a_cur->sched        != NULL)        g_print [n] = 'X';
    ++n;  if (a_cur->command [0]  != '\0')        g_print [n] = 'X';
+   ++n;  if (a_cur->warning      != '-')         g_print [n] = 'X';
    ++n;
    ++n;  if (a_cur->retire       != '-')         g_print [n] = 'X';
    ++n;  if (a_cur->rpid         >  0)           g_print [n] = 'X';
@@ -105,15 +97,6 @@ LINE__memory            (tLINE *a_cur)
    ++n;  if (a_cur->l_rc         != 0)           g_print [n] = 'X';
    ++n;
    ++n;  if (a_cur->trks         != NULL)        g_print [n] = 'X';
-   /*> ++n;  if (a_cur->c_skip       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_badd       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_boom       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_kill       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_shut       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_fail       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_pass       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_earl       != 0)           g_print [n] = 'X';               <* 
-    *> ++n;  if (a_cur->c_late       != 0)           g_print [n] = 'X';               <*/
    return g_print;
 }
 
@@ -211,6 +194,7 @@ LINE_dup                (tLINE *a_orig, tLINE **a_new)
    x_new->recdno      = a_orig->recdno;
    x_new->sched       = a_orig->sched;
    ystrlcpy (x_new->command  , a_orig->command  , LEN_RECD);
+   x_new->warning     = a_orig->warning;
    /*---(working)------------------------*/
    DEBUG_INPT   yLOG_note    ("working");
    x_new->rpid        = a_orig->rpid;
@@ -300,8 +284,8 @@ LINE__prepare            (void)
    ystrlcpy (my.t_duration, "0"            , LEN_TERSE);
    ystrlcpy (my.t_flags   , "--·---·-·---" , LEN_LABEL);
    ystrlcpy (my.t_command , ""             , LEN_FULL);
-   my.t_recdno = -1;
-   my.t_ready  = '-';
+   my.t_recdno   = -1;
+   my.t_ready    = '-';
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return c;
@@ -510,19 +494,19 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       if        (strcmp (a_new->tracker, ".valid"   ) == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .valid, turn on/active");
          yURG_msg ('-', "validity record, .valid, turn on/active");
-         x_file->valid = 'y';
+         x_file->f_valid = 'y';
       } else if (strcmp (a_new->tracker, ".retire"  ) == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .retire, turn off");
          yURG_msg ('-', "validity record, .retire, turn on/active");
-         x_file->valid = '·';
+         x_file->f_valid = '·';
       } else if (strcmp (a_new->tracker, ".blackout") == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .blackout, turn off");
          yURG_msg ('-', "validity record, .blackout, turn on/active");
-         x_file->valid = '·';
+         x_file->f_valid = '·';
       } else if (strcmp (a_new->tracker, ".only"    ) == 0) {
          DEBUG_INPT  yLOG_note    ("validity record, .only, turn on");
          yURG_msg ('-', "validity record, .only, turn on/active");
-         x_file->valid = 'y';
+         x_file->f_valid = 'y';
       } else if (strncmp (a_new->tracker, ".graceful", 9) == 0) {
          DEBUG_INPT  yLOG_note    ("shutdown record, .graceful, turn on");
          DEBUG_INPT  yLOG_note    ("shutdown record, .graceful");
@@ -545,8 +529,10 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
       rc = yEXEC_dur_in_sec (a_duration, &(a_new->est));
       DEBUG_INPT   yLOG_value   ("dur"       , rc);
       if (rc < 0) {
-         DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
+         /*> DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);                           <*/
+         /*> return rce;                                                              <*/
+         yURG_err ('w', "duration could not be interpreted (defaulted zero)");
+         a_new->est = 0;
       }
       yURG_msg ('-', "dur (sec): %d", a_new->est);
    } else {
@@ -561,6 +547,14 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
             &(a_new->remedy)  , &(a_new->flex),
             &(a_new->throttle), &(a_new->cpu),
             &(a_new->disk)    , &(a_new->net));
+      DEBUG_INPT   yLOG_value   ("flags"     , rc);
+      if (rc < 0) {
+         DEBUG_INPT   yLOG_note    ("mark line with warning");
+         yURG_err ('w', "one-or-more execution flags were not recognized (defaulted)");
+         a_new->warning = 'W';
+         ++(my.t_warning);
+         DEBUG_INPT   yLOG_value   ("warning"   , my.t_warning);
+      }
       yEXEC_flags_feedback (x_terse, x_fancy);
       yURG_msg ('-', "fancy    : --å%sæ", x_terse);
       yURG_msg ('-', "details  : --å%sæ", x_fancy);
@@ -572,15 +566,23 @@ LINE__populate          (tLINE *a_new, int n, char *a_schedule, char *a_tracker,
    }
    /*---(command)---------------------*/
    DEBUG_INPT   yLOG_info    ("command"   , a_command);
-   rc = yEXEC_runable (a_new->tracker, x_file->user, a_command, YEXEC_FULL);
+   rc = yEXEC_runable (a_new->tracker, x_file->f_user, a_command, YEXEC_FULL);
    DEBUG_INPT   yLOG_value   ("runnable"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    switch (a_command [0]) {
-   case '!' : yURG_err ('w', "demanded OFF-PATH executable with !-bang (security risk)"); break;
-   case '@' : yURG_err ('w', "demanded SYMLINK executable with @-worm (security risk)"); break;
+   case '!' : yURG_err ('w', "demanded OFF-PATH executable with !-bang (security risk)");
+              a_new->warning = 'W';
+              ++(my.t_warning);
+              DEBUG_INPT   yLOG_value   ("warning"   , my.t_warning);
+              break;
+   case '@' : yURG_err ('w', "demanded SYMLINK executable with @-worm (security risk)");
+              a_new->warning = 'W';
+              ++(my.t_warning);
+              DEBUG_INPT   yLOG_value   ("warning"   , my.t_warning);
+              break;
    }
    yURG_msg ('-', "executable is found, real, absolute, and runable");
    ystrlcpy (a_new->command, a_command, LEN_FULL);
@@ -610,7 +612,6 @@ LINE__create            (int n, char *a_schedule, char *a_tracker, char *a_durat
    DEBUG_INPT   yLOG_value   ("populate"  , rc);
    --rce;  if (rc < 0) {
       LINE__free (&x_new);
-      yURG_msg (' ', "");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -646,14 +647,6 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    yURG_msg ('>', "handle line number %d...", n);
-   /*---(increment count)----------------*/
-   rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
-   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
-   --rce;  if (x_file == NULL) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   ++x_file->lines;
    /*---(defense)------------------------*/
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL) {
@@ -661,6 +654,14 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       return rce;
    }
    DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
+   /*---(increment count)----------------*/
+   rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
+   DEBUG_INPT  yLOG_point   ("x_file"    , x_file);
+   --rce;  if (x_file == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   ++x_file->f_tried;
    /*---(check for normal lines)---------*/
    rc = LINE__prepare ();
    DEBUG_INPT   yLOG_value   ("prepare"   , rc);
@@ -716,8 +717,9 @@ LINE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   ++x_file->f_built;
    /*---(create tracker)--------------*/
-   rc = TRKS_create (x_file->title, x_line->tracker, x_line, &(x_line->trks));
+   rc = TRKS_create (x_file->f_title, x_line->tracker, x_line, &(x_line->trks));
    DEBUG_INPT   yLOG_value   ("trks"      , rc);
    --rce; if (rc < 0) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
@@ -770,7 +772,7 @@ LINE__purge             (char a_scope, char a_type)
          return rce;
       }
       /*---(header)----------------------*/
-      DEBUG_INPT   yLOG_complex ("current"   , "%3dn, %-20.20s, %-10.10p, %2d#, %5dr, %c, %s", n, x_file->title, x_line, x_line->recdno, x_line->rpid, x_line->retire, x_line->tracker);
+      DEBUG_INPT   yLOG_complex ("current"   , "%3dn, %-20.20s, %-10.10p, %2d#, %5dr, %c, %s", n, x_file->f_title, x_line, x_line->recdno, x_line->rpid, x_line->retire, x_line->tracker);
       /*---(skip retired)----------------*/
       if (a_type != 'a' && x_line->retire == 'y') {
          DEBUG_INPT   yLOG_note    ("found retired process, skipping");
@@ -791,13 +793,13 @@ LINE__purge             (char a_scope, char a_type)
          rc = yDLST_line_create (x_line->tracker, x_line);
          DEBUG_INPT   yLOG_value   ("create"    , rc);
          x_line->retire = 'y';
-         rc = yDLST_list_by_name (x_file->title, NULL, NULL);
+         rc = yDLST_list_by_name (x_file->f_title, NULL, NULL);
          DEBUG_INPT   yLOG_value   ("x_file"    , rc);
       }
       /*---(destroy)---------------------*/
       else {
          DEBUG_INPT   yLOG_note    ("not running, destroy");
-         --(x_file->lines);
+         --(x_file->f_built);
          rc = yDLST_line_destroy (x_line->tracker);
          DEBUG_INPT   yLOG_value   ("destroy"   , rc);
          if (rc < 0) {
@@ -855,7 +857,7 @@ line__unit              (char *a_question, int a_num)
    char        rc          =    0;
    char        t           [LEN_LABEL] = "åæ";
    char        s           [LEN_LABEL] = "åæ";
-   char        r           [LEN_LABEL] = "åæ";
+   char        r           [LEN_DESC]  = "åæ";
    char        u           [LEN_LABEL] = "åæ";
    char        x           [LEN_RECD]  = "";
    char        x_stats     [LEN_TITLE] = "";
@@ -907,10 +909,10 @@ line__unit              (char *a_question, int a_num)
          sprintf (t, "%2då%-.12sæ", strlen (x_line->tracker), x_line->tracker);
          sprintf (s, "%2då%-.12sæ", strlen (x_line->command), x_line->command);
          sprintf (u, "%3d %7d %7d", x_line->est, x_line->est_min, x_line->est_max);
-         sprintf (r, "%c %c %c  %c %c %c %c", x_line->value, x_line->track, x_line->rolling, x_line->strict, x_line->lower, x_line->upper, x_line->remedy);
-         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) : %2d/%2d  %-16.16s  %-16.16s  %s   %s", a_num, x_file->seq, x_line->recdno, t, s, u, r);
+         sprintf (r, "%c %c %c  %c %c %c %c  · · · · ·   %c", x_line->value, x_line->track, x_line->rolling, x_line->strict, x_line->lower, x_line->upper, x_line->remedy, x_line->warning);
+         snprintf (unit_answer, LEN_FULL, "LINE entry  (%2d) : %2d/%2d  %-16.16s  %-16.16s  %s   %s", a_num, x_file->f_seq, x_line->recdno, t, s, u, r);
       } else {
-         snprintf (unit_answer, LEN_HUND, "LINE entry  (%2d) :  -/ -   -åæ               -åæ                -       -       -   · · ·  · · · ·", a_num);
+         snprintf (unit_answer, LEN_FULL, "LINE entry  (%2d) :  -/ -   -åæ               -åæ                -       -       -   · · ·  · · · ·  · · · · ·   ·", a_num);
       }
    }
    else if (strcmp (a_question, "runs"    )        == 0) {
@@ -938,18 +940,18 @@ line__unit              (char *a_question, int a_num)
           *
           *
           */
-   /*> case KHRONOS_SKIP :  x_off =  8;    break;                                     <* 
-    *> case KHRONOS_BADD :  x_off = 10;    break;                                     <* 
-    *> case KHRONOS_BOOM :  x_off = 12;    break;                                     <* 
-    *> case KHRONOS_KILL :  x_off = 14;    break;                                     <* 
-    *> case KHRONOS_TERM :  x_off = 16;    break;                                     <* 
-    *> case KHRONOS_LGRA :  x_off = 19;    break;                                     <* 
-    *> case KHRONOS_LVIO :  x_off = 21;    break;                                     <* 
-    *> case KHRONOS_GGRA :  x_off = 23;    break;                                     <* 
-    *> case KHRONOS_GVIO :  x_off = 25;    break;                                     <* 
-    *> case KHRONOS_FAIL :  x_off = 28;    break;                                     <* 
-    *> case KHRONOS_WARN :  x_off = 30;    break;                                     <* 
-    *> case KHRONOS_PASS :  x_off = 32;    break;                                     <*/
+         /*> case KHRONOS_SKIP :  x_off =  8;    break;                                     <* 
+          *> case KHRONOS_BADD :  x_off = 10;    break;                                     <* 
+          *> case KHRONOS_BOOM :  x_off = 12;    break;                                     <* 
+          *> case KHRONOS_KILL :  x_off = 14;    break;                                     <* 
+          *> case KHRONOS_TERM :  x_off = 16;    break;                                     <* 
+          *> case KHRONOS_LGRA :  x_off = 19;    break;                                     <* 
+          *> case KHRONOS_LVIO :  x_off = 21;    break;                                     <* 
+          *> case KHRONOS_GGRA :  x_off = 23;    break;                                     <* 
+          *> case KHRONOS_GVIO :  x_off = 25;    break;                                     <* 
+          *> case KHRONOS_FAIL :  x_off = 28;    break;                                     <* 
+          *> case KHRONOS_WARN :  x_off = 30;    break;                                     <* 
+          *> case KHRONOS_PASS :  x_off = 32;    break;                                     <*/
          if (x_line->trks != NULL)   ystrlcpy (x_stats, x_line->trks->stats + 3, 31);
          if (x_line->trks != NULL)   ystrlcpy (x_durs , x_line->trks->durs  + 3,  4);
          /*> strcat  (x, line__unit_str ( 1, x_line->c_runs , "r "));                 <* 

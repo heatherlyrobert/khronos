@@ -261,7 +261,7 @@ RPTG_track_exec         (tFILE *a_file, tLINE *a_line, char a_reason, char a_not
    /*---(prefix)-------------------------*/
    fprintf (f_track, "%-26.26s  %10d  %5d  %-30.30s %4d %-30.30s ",
          my.heartbeat, my.now, my.m_pid,
-         a_file->title, a_line->recdno, a_line->tracker);
+         a_file->f_title, a_line->recdno, a_line->tracker);
    /*---(message)------------------------*/
    switch (a_reason) {
    case KHRONOS_RUN  :
@@ -578,7 +578,7 @@ RPTG_status             (void)
    while (rc >= 0 && x_line != NULL) {
       /*---(debug)-----------------------*/
       DEBUG_INPT   yLOG_point   ("x_line"    , x_line);
-      DEBUG_INPT   yLOG_info    ("->title"   , x_line->tracker);
+      DEBUG_INPT   yLOG_info    ("->tracker" , x_line->tracker);
       /*---(prepare)---------------------*/
       rc = yDLST_list_by_cursor (YDLST_CURR, NULL, &x_file);
       if (x_file != x_save) {
@@ -590,7 +590,7 @@ RPTG_status             (void)
       x_focus  = (yDLST_focus_check  (x_line->tracker) > 0) ? 'y' : '·';
       /*---(current)---------------------*/
       fprintf (f, "%-30.30s %4d %-30.30s ",
-            x_file->title, x_line->recdno, x_line->tracker);
+            x_file->f_title, x_line->recdno, x_line->tracker);
       fprintf (f, "%c %c ",
             x_focus, x_active);
       ystrlcpy (t, RPTG__number (10, x_line->start , " "), LEN_RECD);
@@ -870,7 +870,7 @@ RPTG_by_min__block      (FILE *f, char a_color, char a_yr, char a_mo, char a_dy,
       if (f != NULL) {
          fprintf (f, "\n");
          if (a_color == 'y') fprintf (f, "%s", BOLD_MAG);
-         sprintf (t, "%s (%d)", x_file->title, n);
+         sprintf (t, "%s (%d)", x_file->f_title, n);
          fprintf (f, "%-30.30s %s", t, s_title);
          if (a_color == 'y') fprintf (f, "%s", BOLD_OFF);
          fprintf (f, "\n");

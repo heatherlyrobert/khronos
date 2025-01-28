@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1f"
-#define     P_VERTXT    "unit tested yJOBS incomming for missing and normal"
+#define     P_VERNUM    "2.1g"
+#define     P_VERTXT    "unit tested yJOBS incomming for warning and bad files"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
@@ -861,6 +861,7 @@ struct cACCESSOR
    char        action      [LEN_SHORT];     /* crontab action requested       */
    char        full        [LEN_RECD];      /* full name (path and all)       */
    /*---(lines)----------------*/
+   char        t_warning;                   /* warnings on line               */
    char        t_ready;                     /* task line checks out           */
    int         t_recdno;                    /* task line number in crontab    */
    char        t_schedule  [LEN_RECD];      /* task schedule requested        */
@@ -894,14 +895,16 @@ extern    struct cACCESSOR my;
 
 struct cFILE {
    /*---(master)---------------*/
-   char        seq;                         /* unique id for testing          */
-   char        title       [LEN_TITLE];     /* name of the cronfile           */
-   char        user        [LEN_USER];      /* execution user name            */
-   int         uid;                         /* execution user uid             */
-   char        note        [LEN_TERSE];     /* processing note for sysadmin   */
-   int         lines;                       /* number of lines attempted      */
-   int         valid;                       /* currently valid/active         */
-   char        retired;                     /* special file of retired lines  */
+   char        f_seq;                       /* unique id for testing          */
+   char        f_title     [LEN_TITLE];     /* name of the cronfile           */
+   char        f_user      [LEN_USER];      /* execution user name            */
+   int         f_uid;                       /* execution user uid             */
+   char        f_note      [LEN_TERSE];     /* processing note for sysadmin   */
+   int         f_tried;                     /* number of lines attempted      */
+   int         f_built;                     /* number of lines attempted      */
+   int         f_warn;                      /* number of warning lines        */
+   int         f_valid;                     /* currently valid/active         */
+   char        f_retired;                   /* special file of retired lines  */
    /*---(done)-----------------*/
 };
 
@@ -934,6 +937,7 @@ struct cLINE {
    int         recdno;                      /* line number in crontab         */
    void       *sched;                       /* schedule structure             */
    char        command     [LEN_RECD];      /* shell command                  */
+   char        warning;                     /* data entry warning (y/n)       */
    /*---(working)--------------*/
    char        retire;                      /* line no longer in use          */
    int         rpid;                        /* pid if executing               */
