@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1g"
-#define     P_VERTXT    "unit tested yJOBS incomming for warning and bad files"
+#define     P_VERNUM    "2.1h"
+#define     P_VERTXT    "unit tested yJOBS incomming finished bad files with install part"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
