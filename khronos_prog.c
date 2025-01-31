@@ -112,8 +112,8 @@ PROG_debugging          (int a_argc, char *a_argv [], char a_unit)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   /*---(set mute)-----------------------*/
-   yURG_all_mute ();
+   /*---(clear)--------------------------*/
+   yURG_all_tmp   ();
    /*---(start logger)-------------------*/
    rc = yURG_logger  (a_argc, a_argv);
    DEBUG_PROG   yLOG_value    ("logger"    , rc);
@@ -160,10 +160,11 @@ PROG__init              (int a_argc, char *a_argv [], char a_unit)
    /*> yURG_msg_none ();                                                              <*/
    /*> yURG_err_std  ();                                                              <*/
    /*> yURG_err_live ();                                                              <*/
-   yURG_err_none ();
+   /*> yURG_err_none ();                                                              <*/
+   /*> yURG_msg_none ();                                                              <*/
    yURG_err_mute ();
-   yURG_msg_none ();
    yURG_msg_mute ();
+   yURG_msg ('>', "initialization");
    ySCHED_date (11,  5, 14);    /* MUST FIX FIX FIX */
    /*> my.start = 0;                                                                  <*/
    /*> my.ucnt  = 0;                                                                  <*/
@@ -243,6 +244,7 @@ PROG__args              (int a_argc, char *a_argv [], char a_unit)
    char        two_arg     =    0;
    int         x_args      =    0;          /* argument count                 */
    int         x_max       =    0;
+   char        x_noise     =  '-';
    /*---(begin)--------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    yURG_msg ('>', "command line arguments handling...");
@@ -256,6 +258,9 @@ PROG__args              (int a_argc, char *a_argv [], char a_unit)
       DEBUG_PROG   yLOG_exit    (__FUNCTION__);
       return 0;
    }
+   /*---(prepare for trouble)-------------------*/
+   x_noise = yJOBS_noise (a_argc, a_argv);
+   DEBUG_ARGS  yLOG_char     ("x_noise"   , x_noise);
    /*---(walk args)-----------------------------*/
    for (i = 1; i < a_argc; ++i) {
       /*---(prepare)---------------------*/
@@ -275,7 +280,20 @@ PROG__args              (int a_argc, char *a_argv [], char a_unit)
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
       rc = yJOBS_argument (&i, a, b, &(my.run_as), &(my.run_mode), my.run_file);
       DEBUG_ARGS  yLOG_value    ("rc"        , rc);
-      if (rc > 0)  continue;
+      if (rc > 0)  {
+         DEBUG_PROG   yLOG_note    ("yJOBS handled option");
+         continue;
+      }
+      if (rc == -1) {
+         DEBUG_PROG   yLOG_note    ("yJOBS handled, but option not allowed");
+         DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rc);
+         return rc;
+      }
+      if (rc == -2) {
+         DEBUG_PROG   yLOG_note    ("yJOBS handled option, but needs file");
+         DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rc);
+         return rc;
+      }
       /*---(local args)------------------*/
       rc = 0;
       if      (strcmp  (a, "--defactual") == 0)    my.actuals = 'd';
@@ -286,8 +304,13 @@ PROG__args              (int a_argc, char *a_argv [], char a_unit)
       else if (strcmp  (a, "--replan"   ) == 0)    my.actuals = 'r';
       else if (strncmp (a, "--abcdef", 8) == 0)    ;
       else if (strncmp (a, "--123456", 8) == 0)    ;
-      else                                        rc = rce;
-      if (rc < 0)  break;
+      else                                         rc = rce;
+      /*---(bottom line)-----------------*/
+      if (rc < 0) {
+         DEBUG_PROG   yLOG_note    ("no yJOBS or local option found, bad");
+         DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rc);
+         return rc;
+      }
       /*---(done)------------------------*/
    }
    /*---(max name)-----------------------*/
