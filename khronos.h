@@ -35,9 +35,9 @@
 #define     P_CREATED   "2010-05"
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
-#define     P_VERMINOR  "2.1-, keep moving on updated system"
-#define     P_VERNUM    "2.1i"
-#define     P_VERTXT    "added unit testing for empty files to yJOBS incomming "
+#define     P_VERMINOR  "2.2-, yJOB_maint unit testing"
+#define     P_VERNUM    "2.2a"
+#define     P_VERTXT    "yJOBS_maint unit testing complete for list (empty and sample"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
