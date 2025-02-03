@@ -36,8 +36,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, simplify and harden code"
 #define     P_VERMINOR  "2.2-, yJOB_maint unit testing"
-#define     P_VERNUM    "2.2a"
-#define     P_VERTXT    "yJOBS_maint unit testing complete for list (empty and sample"
+#define     P_VERNUM    "2.2b"
+#define     P_VERTXT    "yJOBS_maint unit testing audit and fix in empty directory"
 /*········· ··········· ´·····························´········································*/
 #define     P_TOPOFMIND "wild ideas, big experimental code base, single maintainer"
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
