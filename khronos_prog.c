@@ -265,6 +265,7 @@ PROG__args              (int a_argc, char *a_argv [], char a_unit)
    for (i = 1; i < a_argc; ++i) {
       /*---(prepare)---------------------*/
       a = a_argv [i];
+      DEBUG_ARGS  yLOG_info     ("argument"  , a);
       if (a == NULL) {
          yURG_err ('f', "arg %d is NULL", i);
          DEBUG_PROG   yLOG_note    ("FATAL, found a null argument, really bad news");
@@ -273,11 +274,11 @@ PROG__args              (int a_argc, char *a_argv [], char a_unit)
       }
       if (i < a_argc - 1)  b = a_argv [i + 1];
       else                 b = NULL;
+      DEBUG_ARGS  yLOG_info     ("extra"     , b);
       /*---(debugging--------------------*/
       if (a [0] == '@')       continue;
       /*---(two arg check)---------------*/
       ++x_args;
-      DEBUG_ARGS  yLOG_info     ("argument"  , a);
       rc = yJOBS_argument (&i, a, b, &(my.run_as), &(my.run_mode), my.run_file);
       DEBUG_ARGS  yLOG_value    ("rc"        , rc);
       if (rc > 0)  {
@@ -388,7 +389,8 @@ PROG_main               (int a_argc, char *a_argv [], char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
-   int         rc          =    0;
+   char        rc          =    0;
+   char        rc_final    =    0;
    long        x_save      =    0;                       /* last hour ran            */
    long        x_hour      =    0;                       /* curr hour                */
    int         x_min       =    0;                       /* curr minute              */
@@ -406,7 +408,7 @@ PROG_main               (int a_argc, char *a_argv [], char a_unit)
       return rce;
    }
    /*---(main)---------------------------*/
-   rc = yJOBS_driver (P_ONELINE, khronos_yjobs);
+   rc_final = yJOBS_driver (P_ONELINE, khronos_yjobs);
    DEBUG_PROG   yLOG_value    ("driver"    , rc);
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
@@ -419,11 +421,13 @@ PROG_main               (int a_argc, char *a_argv [], char a_unit)
       IF_STRICT  yURG_msg ('>', "requested an actual run in STRICT mode...");
       rc = BASE_execute ();
       DEBUG_PROG   yLOG_value    ("execute"   , rc);
+      rc_final = rc;
    }
+   DEBUG_PROG   yLOG_value    ("rc_final"  , rc_final);
    /*---(wrapup)-------------------------*/
    rc = PROG_shutdown  (a_unit);
    /*---(complete)-----------------------*/
-   return rc;
+   return rc_final;
 }
 
 

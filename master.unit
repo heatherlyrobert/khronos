@@ -55,6 +55,7 @@ GLOBAL   -B-  create a simple central cron file (for member)                   
      system   add lines                            - - - - - - - - - - - - -   echo ¶¶                                                                                                             >> member.sample                                                                                     
      exec     ... check ownership/permissions      yENV_touch                  s_central                                                  ,  "root"  , "root"  , "0600"              c_equal     'r'                                                                                                  
      exec     ... check file is installed          yENV_lines                  s_central                                                                                             i_greater   0                                                                                                    
+     exec     ... check ownership/permissions      yENV_detail_unit            s_central                                                                                             s_equal     /tmp/spool/khronos/member.sample               r  root        root        rw-------  ´               
 
 
 
@@ -74,6 +75,7 @@ GLOBAL   -C-  create a simple central cron file (for root)                     
      system   add lines                            - - - - - - - - - - - - -   echo ¶¶                                                                                                             >> root.sample                                                                                       
      exec     ... check ownership/permissions      yENV_touch                  s_root                                                     ,  "root"  , "root"  , "0600"              c_equal     'r'                                                                                                  
      exec     ... check file is installed          yENV_lines                  s_root                                                                                                i_greater   0                                                                                                    
+     exec     ... check ownership/permissions      yENV_detail_unit            s_root                                                                                                s_equal     /tmp/spool/khronos/root.sample                 r  root        root        rw-------  ´               
 
 
 

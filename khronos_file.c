@@ -565,19 +565,28 @@ FILE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       yURG_msg ('-', "all lines read, WARNINGS, count %d, tried %d, built %d, warns %d", c, x_file->f_tried, x_file->f_built, x_file->f_warn);
       ystrlcpy (x_file->f_note, "warnings", LEN_TERSE);
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-      return 1;
+      return 4;
    }
    /*---(show success)-------------------*/
    yURG_msg ('-', "success, all read correctly, count %d, tried %d, built %d, warns %d", c, x_file->f_tried, x_file->f_built, x_file->f_warn);
    ystrlcpy (x_file->f_note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
+   return 1;
 }
 
 char
 FILE_pull               (cchar *a_fname)
-{
+{  /*---(design notes)-------------------*/
+   /*
+    * yJOBS expects a clear return code...
+    *    < 0   can not even evaluate data
+    *      1   pass
+    *      2   known over-rides (still noted)
+    *      3   repaired, in some way, to pass
+    *      4   outstandard warnings or defaulting
+    *      5   data errors
+    */
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
@@ -613,7 +622,6 @@ FILE_pull               (cchar *a_fname)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   if (rc > 0)  rc = 1;
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return rc;
